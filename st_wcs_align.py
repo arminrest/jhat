@@ -715,9 +715,9 @@ class st_wcs_align:
         if telescope is None:
             if imname is None:
                 raise RuntimeError('neither telescope not image name is specified, cannot determine telescope')
-            if re.search('^jw',imname):
+            if re.search('^jw',os.path.basename(imname)):
                 telescope = 'JWST'
-            elif re.search('^hst',imname):
+            elif re.search('^hst',os.path.basename(imname)):
                 telescope = 'JWST'
             else:
                 raise RuntimeError(f'Cannot parse image name {imname} to determine telescope! image name needs to start with "jw" or "hst"...')                
@@ -1176,7 +1176,7 @@ class st_wcs_align:
                 #distortion_file=None,
                 overwrite = False,
                 skip_if_exists = False,
-                skip_applydistortions_if_exists = False,
+                #skip_applydistortions_if_exists = False,
                 use_dq=False,
                 # refcat parameters
                 refcatname = 'Gaia',
@@ -1314,7 +1314,7 @@ if __name__ == '__main__':
                      telescope = args.telescope,
                      #distortion_file = args.distortion_file,
                      overwrite = args.overwrite,
-                     skip_applydistortions_if_exists=args.skip_applydistortions_if_exists,
+                     #skip_applydistortions_if_exists=args.skip_applydistortions_if_exists,
                      use_dq = args.use_dq,
                      refcatname = args.refcat,
                      refcat_racol = args.refcat_racol,
