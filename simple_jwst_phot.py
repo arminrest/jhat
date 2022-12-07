@@ -1467,8 +1467,8 @@ class jwst_photclass(pdastrostatsclass):
             self.write()
             raise RuntimeError('NO  OBJECTS FOUND IN  IMAGE!!')
         
-        self.write('DELME0.txt',columns=['x','y','mag','dmag'])
-        self.write('DELME1.txt',indices=ixs_clean,columns=['x','y','mag','dmag'])
+        #self.write('DELME0.txt',columns=['x','y','mag','dmag'])
+        #self.write('DELME1.txt',indices=ixs_clean,columns=['x','y','mag','dmag'])
         #sys.exit(0)
         
         if Nbright4match is not None:
@@ -1507,7 +1507,7 @@ class jwst_photclass(pdastrostatsclass):
                                  refcat_magcol=refcat_magcol,
                                  refcat_magerrcol=refcat_magerrcol,
                                  refcat_colorcol=refcat_colorcol)
-                self.refcat.write('DELMErefcat.txt')
+                #self.refcat.write('DELMErefcat.txt')
                 self.match_refcat(indices=ixs_clean)
             else:
                 # set refcat parameters like refcat.

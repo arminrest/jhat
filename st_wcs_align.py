@@ -639,6 +639,14 @@ class st_wcs_align:
         if parser is None:
             parser = argparse.ArgumentParser(usage=usage,conflict_handler=conflict_handler)
 
+        #parser.add_argument('--rate_dir', default=ratedir, help='Directory in which the rate images are located, which will be used to test the distortions. (default=%(default)s)')
+        parser.add_argument('cal_image',  help='cal.fits filename or any other image that is at a similar reduction stage.')
+
+        parser = self.default_options(parser)
+        return(parser)
+
+    def default_options(self,parser):
+
         # default directory for input images
         #if 'JWST_DISTORTION_IMAGEDIR' in os.environ:
         #    ratedir = os.environ['JWST_DISTORTION_IMAGEDIR']
@@ -650,9 +658,6 @@ class st_wcs_align:
             outrootdir = os.environ['JWST_OUTROOTDIR']
         else:
             outrootdir = None
-
-        #parser.add_argument('--rate_dir', default=ratedir, help='Directory in which the rate images are located, which will be used to test the distortions. (default=%(default)s)')
-        parser.add_argument('cal_image',  help='cal.fits filename or any other image that is at a similar reduction stage.')
 
         parser.add_argument('--outrootdir', default=outrootdir, help='output root directory. The output directoy is the output root directory + the outsubdir if not None (default=%(default)s)')
         parser.add_argument('--outsubdir', default=None, help='outsubdir added to output root directory (default=%(default)s)')
@@ -700,7 +705,7 @@ class st_wcs_align:
         parser.add_argument('--saveplots', default=0, action='count',help='saveplots=1: most important plots. saveplots=2: all plots (debug/test/finetune)')
         parser.add_argument('-t','--savephottable', default=0, action='count',help='Save the final photometry table')
         parser.add_argument('--replace_sip', default=True, action='store_true',help='Replace the tweaked fits image wcs with the SIP representation.')
-        parser.add_argument('--sip_err', default=0.1, type=float,help='max_pix_error for SIP transformation.')
+        parser.add_argument('--sip_err', default=0.3, type=float,help='max_pix_error for SIP transformation.')
         parser.add_argument('--sip_degree', default=3, type=int,help='degree for SIP transformation.')
         parser.add_argument('--sip_points', default=128, type=int,help='npoints for SIP transformation.')
         parser.add_argument('--ee_radius', default=70, type=int, help='encircled energy percentage (multiples of 10) for photometry')
@@ -729,6 +734,7 @@ class st_wcs_align:
         else:
             raise RuntimeError(f'unknown telescope {telescope}')
         self.phot.ixs4use=None            
+        if self.verbose: print(f'telescope set to {self.telescope}')
 
     def set_outdir(self,outrootdir=None,outsubdir=None):
         self.outdir = outrootdir
