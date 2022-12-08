@@ -50,7 +50,7 @@ setup(
     install_requires=['argparse', 'numpy', 'matplotlib', 'astropy', 'jwst', 'scipy', 
                         'photutils', 'pysiaf', 'astroquery', 'pandas', 'stsci.skypac',
                          'tweakreg_hack','tweakwcs==0.8','pytest-astropy',
-                        'jwcf @ git+//git@github.com/spacetelescope/jwst-calibration-field.git',
+                        'jwcf @ git+https://git@github.com/spacetelescope/jwst-calibration-field.git',
 ],
     packages=[PACKAGENAME],
     version=VERSION,
