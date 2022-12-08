@@ -1,0 +1,90 @@
+# Compiled files
+*.py[co]
+.DS_Store
+
+# Ignore .c files by default to avoid including generated code. If you want to
+# add a non-generated .c extension, use `git add -f filename.c`.
+*.c
+*.so
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+.eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+htmlcov
+.coverage
+.tox
+
+#Translations
+*.mo
+
+#Mr Developer
+.mr.developer.cfg
+
+#  Documentation
+docs/_build
+docs/api
+docs/examples
+docs/modules
+
+# Other generated files
+MANIFEST
+
+# editors
+*~
+.vscode
+
+# pycharm files
+.idea
+
+# ipython notebooks
+*.ipynb_checkpoints
+
+# misc helpers
+misc/Make.user
+misc/*.o
+misc/*.d
+misc/test-salt2model
+
+# testing
+.cache
+.pytest_cache
+
+
+venv
+
+main.py
+
+*~
+\#*\#
+commit.txt
+
+# executables
+*.e
+
+# C extensions
+*.so
+
+# Installer logs
+pip-log.txt
+
+#figs
+*.pdf
+
+sntd/*.pyc
+
+*.eggs
+*.egg-info
