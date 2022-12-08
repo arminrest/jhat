@@ -12,7 +12,7 @@ Aligning HST images with JHAT.
    
 
 import sys,jwst,os,glob
-sys.path.append('../../../')
+#sys.path.append('../../../')
 from astropy.io import fits
 from astropy.table import Table,vstack
 
@@ -53,6 +53,7 @@ hst_phot = hst_photclass(psf_fwhm=1.8,aperture_radius=5)
 hst_phot.run_phot(imagename=ref_image,photfilename='auto',overwrite=True)
 
 wcs_align = st_wcs_align()
+wcs_align.showplots = 1
 wcs_align.outdir = 'mastDownload'
 
 ref_catname = ref_image.replace('.fits','.phot.txt')
