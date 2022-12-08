@@ -7,8 +7,6 @@ Created on Thu Apr 21 14:32:42 2022
 """
 
 import os,re,sys,copy
-from pdastro import makepath,rmfile,pdastroclass,AnotB
-from simple_jwst_phot import jwst_photclass,hst_photclass
 #from jwst.tweakreg import TweakRegStep
 import tweakreg_hack
 import argparse
@@ -18,7 +16,10 @@ from astropy.table import Table
 
 from jwst import datamodels
 
-#from apply_distortions_single_image import apply_distortion_singleim
+from .simple_jwst_phot import jwst_photclass,hst_photclass
+
+
+__all__ = ['st_wcs_align']
 
 plot_style={}
 plot_style['good_data']={'style':'o','color':'blue', 'ms':5 ,'alpha':0.5}
@@ -26,7 +27,6 @@ plot_style['cut_data']={'style':'o','color':'red', 'ms':5 ,'alpha':0.3}
 plot_style['do_not_use_data']={'style':'o','color':'gray', 'ms':3 ,'alpha':0.3}
 
 def initplot(nrows=1, ncols=1, figsize4subplot=5, **kwargs):
-    print('hello')
     sp=[]
     xfigsize=figsize4subplot*ncols
     yfigsize=figsize4subplot*nrows
@@ -616,6 +616,98 @@ def histogram_cut(phot,ixs,d_col,col,
 
 
 class st_wcs_align:
+    """
+    Main class for alignment.
+
+    Attributes
+    ----------
+    outrootdir : str
+        output root directory. The output directoy is the output root directory + the outsubdir if not None
+    outsubdir : str
+            outsubdir added to output root directory
+    overwrite : bool
+            overwrite files if they exist.
+    telescope : str
+            If None, then telescope is determined automatically from the filename ("jw*" and "hst*" for JWST and HST, respectively)
+    skip_if_exists : bool
+            Skip doing the analysis of a given input image if the cal file already exists, assuming the full analysis has been already done
+    verbose : int 
+            verbosity count (lower is less verbose)
+    SNR_min : float 
+            mininum SNR for objects in image to be used for analysis
+    use_dq : bool
+            use the DQ extensions for masking
+    refcat : str
+            reference catalog. Can be a filename or Gaia 
+    refcat_racol : str
+            RA column of reference catalog. If None, then automatically determined 
+    refcat_deccol : str
+            Dec column of reference catalog. If None, then automatically determined
+    refcat_magcol : str
+            mag column of reference catalog. If None and not one of the default refcats like gaia, then 3rd column is used
+    refcat_magerrcol : str
+            magerr column of reference catalog. If None, then not used 
+    refcat_colorcol : str:
+            color column of reference catalog. If None, then not used
+    refcat_pmflag : bool
+            Apply the proper motion correction (only for catalogs it is applicable, e.g., gaia
+    refcat_pmmedian : bool
+            Apply the MEDIAN proper motion correction (only for catalogs it is applicable, e.g., gaia
+    photfilename : str
+            photometry output filename. if "auto", the fits in the image filename is substituted with phot.txt 
+    load_photcat_if_exists : bool
+            If the photometric catalog file already exists, skip recreating it.
+    rematch_refcat : bool
+            if --load_photcat_if_exists and the photcat already exists, load the photcat, but rematch with refcat
+    d2d_max : float
+            maximum distance between source in image and refcat object, in arcsec
+    dmag_max : float
+            maximum uncertainty of sources in image 
+    sharpness_lim : list of float
+            sharpness limits of sources in image (iterable of length 2)
+    roundness1_lim : list of float
+            roundness1 limits of sources in image (iterable of length 2)
+    delta_mag_lim : list of float
+            limits on mag - refcat_mainfilter (iterable of length 2)
+    objmag_lim : list of float
+            limits on mag, the magnitude of the objects in the image (iterable of length 2)
+    refmag_lim : list of float
+            limits on refcat_mainfilter, the magnitude of the reference catalog (iterable of length 2)
+    slope_min : float
+            minimum slope for linear correction applied to dx/dy. This effectively accounts for rotation. slopes go from slopemin to -slopemin
+    Nbright4match : int 
+            Use only Nbright brightest objects for matching to the ref cat 
+    Nbright : int
+            Use only Nbright brightest objects in image that are matched to refcat for alignment 
+    histocut_order : str
+            histocut_order defines whether the histogram cut is first done for dx or first for dy (choices are 'dxdy' or 'dydx')
+    xshift : float
+            added to the x coordinate before calculating ra,dec (only impacts ra,dec, not x). This can be used to correct for large shifts before matching!
+    yshift : float
+            added to the y coordinate before calculating ra,dec (only impacts ra,dec, not y). This can be used to correct for large shifts before matching! 
+    showplots : int 
+            showplots=1: most important plots. showplots=2: all plots (debug/test/finetune)
+    saveplots : int 
+            saveplots=1: most important plots. saveplots=2: all plots (debug/test/finetune)
+    savephottable : bool
+            Save the final photometry table
+    replace_sip : bool
+            Replace the tweaked fits image wcs with the SIP representation.
+    sip_err : float
+            max_pix_error for SIP transformation.
+    sip_degree : int 
+            degree for SIP transformation.
+    sip_points : int
+            npoints for SIP transformation.
+    ee_radius : int 
+            encircled energy percentage (multiples of 10) for photometry
+    rough_cut_px_min : float
+            first rough cut: best d_rotated+-rough_cut_pix. This is the lower limit for rough_cut
+    rough_cut_px_max : float
+            first rough cut: best d_rotated+-rough_cut_pix. This is the upper limit for rough_cut 
+    d_rotated_Nsigma : float
+            Nsigma for sigma cut of d_rotated. If 0.0, then 3-sigma cut is skipped 
+    """
     def __init__(self):
         self.verbose=0
         self.outdir = None
@@ -717,6 +809,11 @@ class st_wcs_align:
         return(parser)
     
     def set_telescope(self,telescope=None,imname=None):
+        """
+        Figuring out which telescope your data come from (HST or JWST).
+        Note that if your filename is non-standard, then you MUST set
+        """
+
         if telescope is None:
             if imname is None:
                 raise RuntimeError('neither telescope not image name is specified, cannot determine telescope')
@@ -725,7 +822,7 @@ class st_wcs_align:
             elif re.search('^hst',os.path.basename(imname)):
                 telescope = 'JWST'
             else:
-                raise RuntimeError(f'Cannot parse image name {imname} to determine telescope! image name needs to start with "jw" or "hst"...')                
+                raise RuntimeError(f'Cannot parse image name {imname} to determine telescope! Please set the "telescope" argument')                
         self.telescope = telescope
         if telescope.lower() == 'jwst':
             self.phot=jwst_photclass()

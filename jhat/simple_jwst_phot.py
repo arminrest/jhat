@@ -3,7 +3,7 @@
 """
 Created on Wed Apr 27 09:21:15 2022
 
-@author: arest, mcorrenti
+@author: arest, jpierel, mcorrenti
 
 This is class wrapper around doing simple photometry on a single JWST image
 """
@@ -43,10 +43,12 @@ import pandas as pd
 from jwcf import hawki, hst
 from astropy.coordinates import SkyCoord
 
-
-from pdastro import pdastroclass,pdastrostatsclass,makepath4file,unique,AnotB,AorB,AandB,rmfile
 from astropy.coordinates import SkyCoord, match_coordinates_sky
 
+from .pdastro import pdastroclass,pdastrostatsclass,makepath4file,unique,AnotB,AorB,AandB,rmfile
+
+
+__all__ = ['jwst_photclass','hst_photclass']
 def hst_get_ee_corr(ap,filt,inst):
     if inst=='ir':
         if not os.path.exists('ir_ee_corrections.csv'):
@@ -428,7 +430,17 @@ def xy_to_idl(x,y, primaryhdr, scihdr,aperturename='APERNAME',instrument='INSTRU
     return xidl, yidl
 
 class jwst_photclass(pdastrostatsclass):
+    """The photometry class for JWST images.
+    """
     def __init__(self):
+        """
+        Constructor for JWST photometry class
+
+        Returns
+        -------
+        jwst_photclass : :class:`~jhat.jwst_photclass`
+        """
+
         pdastrostatsclass.__init__(self)
         
         self.filters = {}
@@ -787,7 +799,14 @@ class jwst_photclass(pdastrostatsclass):
                       radius_Nfwhm_for_mag =None,
                       primaryhdr=None, scihdr=None):
         
+        """
+        Aperture photometry routine for HST.
+            
+        Returns
+        -------
+        table_aper : :class:`astropy.table.Table`
 
+        """
         if primaryhdr is None: primaryhdr=self.primaryhdr
         if scihdr is None: scihdr=self.scihdr
         self.radii_px,self.apcorr,self.radius_sky_in_px,self.radius_sky_out_px = get_apcorr_params(self.imagename,self.ee_radius)
@@ -1140,28 +1159,6 @@ class jwst_photclass(pdastrostatsclass):
     
     def getrefcatcolname(self,colname,refcatshort=None,
                          requiredflag=False,existsflag=True):
-        """
-        returns the column name in the main photometry catalog
-        that got copied from the reference catalog
-        In general, this is refcatshort
-
-        Parameters
-        ----------
-        colname : string
-            column name in the reference catalog.
-        refcatshort : string, optional
-            short name of reference catalog that is used as prefix for the column names. The default is None.
-            If None, then refcatshort is set to self.refcatshort
-        requiredflag : boolean, optional
-            colname cannot be None, and a RuntimeError is thrown if the table does not conain the column
-        existsflag : boolean, optional
-            if colname is not None, and a RuntimeError is thrown if the table does not conain the column
-            
-        Returns
-        -------
-        None.
-
-        """
         if refcatshort is None:
             refcatshort = self.refcatshort
         if colname is not None:
@@ -1175,26 +1172,6 @@ class jwst_photclass(pdastrostatsclass):
         return(colname)
         
     def set_important_refcatcols(self,refcatshort=None):
-        """
-        This routine sets the important reference cat column names 
-        in the main photometric catalog (i.e., with the short name of the 
-        reference cat as prefix), based on the info saved in the reference catalog
-        
-        Parameters
-        ----------
-        refcatshort : string, optional
-            short name of reference catalog that is used as prefix for the column names. The default is None.
-            If None, then refcatshort is set to self.refcat.short
-        Raises
-        ------
-        RuntimeError
-            DESCRIPTION.
-
-        Returns
-        -------
-        None.
-
-        """
         if refcatshort is None:
             refcatshort = self.refcat.short
             
@@ -1215,19 +1192,36 @@ class jwst_photclass(pdastrostatsclass):
                      max_sep = 1.0,
                      borderpadding=40,
                      refcatshort=None,
-                     aperturename=None,
-                     primaryhdr=None, 
-                     scihdr=None,
                      indices=None):
+        """
+        Matches the photometry catalog to the reference catalog.
+        
+        Parameters
+        ----------
+        max_sep : float
+            Maximum separation between sources in arcseconds
+        borderpadding : float
+            Pixel separation required from border of image
+        refcatshort : string, optional
+            Short name of reference catalog that is used as prefix for the column names. The default is None.
+            If None, then refcatshort is set to self.refcat.short
+        indices : list
+            The indices to access the photometry catalog, default None (use the full catalog)
+
+        Returns
+        -------
+        None.
+
+        """
         print(f'Matching reference catalog {self.refcat.name}')
 
         if refcatshort is None: refcatshort = self.refcat.short
 
-        if primaryhdr is None: primaryhdr=self.primaryhdr
-        if scihdr is None: scihdr=self.scihdr
+        #if primaryhdr is None: primaryhdr=self.primaryhdr
+        #if scihdr is None: scihdr=self.scihdr
         
-        if aperturename is None:
-            aperturename = self.aperture
+        # if aperturename is None:
+        #     aperturename = self.aperture
 
         # make sure there are no NaNs        
         ixs_obj = self.ix_not_null(['ra','dec'],indices=indices)
@@ -1525,9 +1519,22 @@ class jwst_photclass(pdastrostatsclass):
         return(self.photfilename)
 
 class hst_photclass(jwst_photclass):
-    def __init__(self,instrument,image_filter,psf_fwhm,aperture_radius,
-        aperture_name,detector=None,pupil=None,subarray=None):
+    """The photometry class for HST images.
+    """
+        
+    def __init__(self,psf_fwhm):
+        """
+        Constructor for HST photometry class
 
+        Parameters
+        ----------
+        psf_fwhm : float
+            PSF FWHM for image
+
+        Returns
+        -------
+        hst_photclass : :class:`~jhat.hst_photclass`
+        """
         from stsci.skypac import pamutils
 
 
@@ -1637,7 +1644,14 @@ class hst_photclass(jwst_photclass):
                       radius_Nfwhm_for_mag =None,
                       primaryhdr=None, scihdr=None):
         
+        """
+        Aperture photometry routine for HST.
+            
+        Returns
+        -------
+        table_aper : :class:`astropy.table.Table`
 
+        """
         if primaryhdr is None: primaryhdr=self.primaryhdr
         if scihdr is None: scihdr=self.scihdr
 
@@ -1823,19 +1837,39 @@ class hst_photclass(jwst_photclass):
                      max_sep = 1.0,
                      borderpadding=40,
                      refcatshort=None,
-                     aperturename=None,
-                     primaryhdr=None, 
-                     scihdr=None,
+                     #aperturename=None,
+                     #primaryhdr=None, 
+                     #scihdr=None,
                      indices=None):
+        """
+        Matches the photometry catalog to the reference catalog.
+        
+        Parameters
+        ----------
+        max_sep : float
+            Maximum separation between sources in arcseconds
+        borderpadding : float
+            Pixel separation required from border of image
+        refcatshort : string, optional
+            Short name of reference catalog that is used as prefix for the column names. The default is None.
+            If None, then refcatshort is set to self.refcat.short
+        indices : list
+            The indices to access the photometry catalog, default None (use the full catalog)
+            
+        Returns
+        -------
+        None.
+
+        """
         print(f'Matching reference catalog {self.refcat.name}')
 
         if refcatshort is None: refcatshort = self.refcat.short
 
-        if primaryhdr is None: primaryhdr=self.primaryhdr
-        if scihdr is None: scihdr=self.scihdr
+        #if primaryhdr is None: primaryhdr=self.primaryhdr
+        #if scihdr is None: scihdr=self.scihdr
         
-        if aperturename is None:
-            aperturename = self.aperture
+        #if aperturename is None:
+        #    aperturename = self.aperture
 
         # make sure there are no NaNs        
         ixs_obj = self.ix_not_null(['ra','dec'],indices=indices)

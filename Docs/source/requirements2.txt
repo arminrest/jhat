@@ -1,0 +1,17 @@
+argparse
+numpy
+matplotlib
+astropy
+jwst
+scipy
+photutils
+pysiaf
+astroquery
+pandas
+stsci.skypac
+pytest-astropy
+matplotlib
+sphinx_gallery
+tweakreg_hack
+tweakwcs==0.8
+git+https://github.com/spacetelescope/jwst-calibration-field.git

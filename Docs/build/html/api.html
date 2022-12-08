@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Documentation &mdash; jhat 0.0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/sg_gallery.css" type="text/css" />
+      <link rel="stylesheet" href="_static/sg_gallery-binder.css" type="text/css" />
+      <link rel="stylesheet" href="_static/sg_gallery-dataframe.css" type="text/css" />
+      <link rel="stylesheet" href="_static/sg_gallery-rendered-html.css" type="text/css" />
+    <link rel="shortcut icon" href="_static/jhat.png"/>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Primary Contributors" href="contributors.html" />
+    <link rel="prev" title="Installation" href="install.html" />
+    <link href="_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html">
+            <img src="_static/jhat.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributors.html">Primary Contributors</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">jhat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">API Documentation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="api-documentation">
+<h1>API Documentation<a class="headerlink" href="#api-documentation" title="Permalink to this heading"></a></h1>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<section id="jhat">
+<h2>jhat<a class="headerlink" href="#jhat" title="Permalink to this heading"></a></h2>
+<section id="module-jhat.st_wcs_align">
+<span id="st-wcs-align"></span><h3>st_wcs_align<a class="headerlink" href="#module-jhat.st_wcs_align" title="Permalink to this heading"></a></h3>
+<p>Created on Thu Apr 21 14:32:42 2022</p>
+<p>&#64;author: arest, bhilbert, mcorrenti, acanipe, jpierel</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">jhat.st_wcs_align.</span></span><span class="sig-name descname"><span class="pre">st_wcs_align</span></span><a class="reference internal" href="_modules/jhat/st_wcs_align.html#st_wcs_align"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align" title="Permalink to this definition"></a></dt>
+<dd><p>Main class for alignment.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.outrootdir">
+<span class="sig-name descname"><span class="pre">outrootdir</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.outrootdir" title="Permalink to this definition"></a></dt>
+<dd><p>output root directory. The output directoy is the output root directory + the outsubdir if not None</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.outsubdir">
+<span class="sig-name descname"><span class="pre">outsubdir</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.outsubdir" title="Permalink to this definition"></a></dt>
+<dd><p>outsubdir added to output root directory</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.overwrite">
+<span class="sig-name descname"><span class="pre">overwrite</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.overwrite" title="Permalink to this definition"></a></dt>
+<dd><p>overwrite files if they exist.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.telescope">
+<span class="sig-name descname"><span class="pre">telescope</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.telescope" title="Permalink to this definition"></a></dt>
+<dd><p>If None, then telescope is determined automatically from the filename (“jw*” and “hst*” for JWST and HST, respectively)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.skip_if_exists">
+<span class="sig-name descname"><span class="pre">skip_if_exists</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.skip_if_exists" title="Permalink to this definition"></a></dt>
+<dd><p>Skip doing the analysis of a given input image if the cal file already exists, assuming the full analysis has been already done</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.verbose">
+<span class="sig-name descname"><span class="pre">verbose</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.verbose" title="Permalink to this definition"></a></dt>
+<dd><p>verbosity count (lower is less verbose)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.SNR_min">
+<span class="sig-name descname"><span class="pre">SNR_min</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.SNR_min" title="Permalink to this definition"></a></dt>
+<dd><p>mininum SNR for objects in image to be used for analysis</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.use_dq">
+<span class="sig-name descname"><span class="pre">use_dq</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.use_dq" title="Permalink to this definition"></a></dt>
+<dd><p>use the DQ extensions for masking</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.refcat">
+<span class="sig-name descname"><span class="pre">refcat</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.refcat" title="Permalink to this definition"></a></dt>
+<dd><p>reference catalog. Can be a filename or Gaia</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.refcat_racol">
+<span class="sig-name descname"><span class="pre">refcat_racol</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.refcat_racol" title="Permalink to this definition"></a></dt>
+<dd><p>RA column of reference catalog. If None, then automatically determined</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.refcat_deccol">
+<span class="sig-name descname"><span class="pre">refcat_deccol</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.refcat_deccol" title="Permalink to this definition"></a></dt>
+<dd><p>Dec column of reference catalog. If None, then automatically determined</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.refcat_magcol">
+<span class="sig-name descname"><span class="pre">refcat_magcol</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.refcat_magcol" title="Permalink to this definition"></a></dt>
+<dd><p>mag column of reference catalog. If None and not one of the default refcats like gaia, then 3rd column is used</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.refcat_magerrcol">
+<span class="sig-name descname"><span class="pre">refcat_magerrcol</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.refcat_magerrcol" title="Permalink to this definition"></a></dt>
+<dd><p>magerr column of reference catalog. If None, then not used</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.refcat_colorcol">
+<span class="sig-name descname"><span class="pre">refcat_colorcol</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.refcat_colorcol" title="Permalink to this definition"></a></dt>
+<dd><p>color column of reference catalog. If None, then not used</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str:</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.refcat_pmflag">
+<span class="sig-name descname"><span class="pre">refcat_pmflag</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.refcat_pmflag" title="Permalink to this definition"></a></dt>
+<dd><p>Apply the proper motion correction (only for catalogs it is applicable, e.g., gaia</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.refcat_pmmedian">
+<span class="sig-name descname"><span class="pre">refcat_pmmedian</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.refcat_pmmedian" title="Permalink to this definition"></a></dt>
+<dd><p>Apply the MEDIAN proper motion correction (only for catalogs it is applicable, e.g., gaia</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.photfilename">
+<span class="sig-name descname"><span class="pre">photfilename</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.photfilename" title="Permalink to this definition"></a></dt>
+<dd><p>photometry output filename. if “auto”, the fits in the image filename is substituted with phot.txt</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.load_photcat_if_exists">
+<span class="sig-name descname"><span class="pre">load_photcat_if_exists</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.load_photcat_if_exists" title="Permalink to this definition"></a></dt>
+<dd><p>If the photometric catalog file already exists, skip recreating it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.rematch_refcat">
+<span class="sig-name descname"><span class="pre">rematch_refcat</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.rematch_refcat" title="Permalink to this definition"></a></dt>
+<dd><p>if –load_photcat_if_exists and the photcat already exists, load the photcat, but rematch with refcat</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.d2d_max">
+<span class="sig-name descname"><span class="pre">d2d_max</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.d2d_max" title="Permalink to this definition"></a></dt>
+<dd><p>maximum distance between source in image and refcat object, in arcsec</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.dmag_max">
+<span class="sig-name descname"><span class="pre">dmag_max</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.dmag_max" title="Permalink to this definition"></a></dt>
+<dd><p>maximum uncertainty of sources in image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.sharpness_lim">
+<span class="sig-name descname"><span class="pre">sharpness_lim</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.sharpness_lim" title="Permalink to this definition"></a></dt>
+<dd><p>sharpness limits of sources in image (iterable of length 2)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.roundness1_lim">
+<span class="sig-name descname"><span class="pre">roundness1_lim</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.roundness1_lim" title="Permalink to this definition"></a></dt>
+<dd><p>roundness1 limits of sources in image (iterable of length 2)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.delta_mag_lim">
+<span class="sig-name descname"><span class="pre">delta_mag_lim</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.delta_mag_lim" title="Permalink to this definition"></a></dt>
+<dd><p>limits on mag - refcat_mainfilter (iterable of length 2)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.objmag_lim">
+<span class="sig-name descname"><span class="pre">objmag_lim</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.objmag_lim" title="Permalink to this definition"></a></dt>
+<dd><p>limits on mag, the magnitude of the objects in the image (iterable of length 2)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.refmag_lim">
+<span class="sig-name descname"><span class="pre">refmag_lim</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.refmag_lim" title="Permalink to this definition"></a></dt>
+<dd><p>limits on refcat_mainfilter, the magnitude of the reference catalog (iterable of length 2)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.slope_min">
+<span class="sig-name descname"><span class="pre">slope_min</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.slope_min" title="Permalink to this definition"></a></dt>
+<dd><p>minimum slope for linear correction applied to dx/dy. This effectively accounts for rotation. slopes go from slopemin to -slopemin</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.Nbright4match">
+<span class="sig-name descname"><span class="pre">Nbright4match</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.Nbright4match" title="Permalink to this definition"></a></dt>
+<dd><p>Use only Nbright brightest objects for matching to the ref cat</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.Nbright">
+<span class="sig-name descname"><span class="pre">Nbright</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.Nbright" title="Permalink to this definition"></a></dt>
+<dd><p>Use only Nbright brightest objects in image that are matched to refcat for alignment</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.histocut_order">
+<span class="sig-name descname"><span class="pre">histocut_order</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.histocut_order" title="Permalink to this definition"></a></dt>
+<dd><p>histocut_order defines whether the histogram cut is first done for dx or first for dy (choices are ‘dxdy’ or ‘dydx’)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.xshift">
+<span class="sig-name descname"><span class="pre">xshift</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.xshift" title="Permalink to this definition"></a></dt>
+<dd><p>added to the x coordinate before calculating ra,dec (only impacts ra,dec, not x). This can be used to correct for large shifts before matching!</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.yshift">
+<span class="sig-name descname"><span class="pre">yshift</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.yshift" title="Permalink to this definition"></a></dt>
+<dd><p>added to the y coordinate before calculating ra,dec (only impacts ra,dec, not y). This can be used to correct for large shifts before matching!</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.showplots">
+<span class="sig-name descname"><span class="pre">showplots</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.showplots" title="Permalink to this definition"></a></dt>
+<dd><p>showplots=1: most important plots. showplots=2: all plots (debug/test/finetune)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.saveplots">
+<span class="sig-name descname"><span class="pre">saveplots</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.saveplots" title="Permalink to this definition"></a></dt>
+<dd><p>saveplots=1: most important plots. saveplots=2: all plots (debug/test/finetune)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.savephottable">
+<span class="sig-name descname"><span class="pre">savephottable</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.savephottable" title="Permalink to this definition"></a></dt>
+<dd><p>Save the final photometry table</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.replace_sip">
+<span class="sig-name descname"><span class="pre">replace_sip</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.replace_sip" title="Permalink to this definition"></a></dt>
+<dd><p>Replace the tweaked fits image wcs with the SIP representation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.sip_err">
+<span class="sig-name descname"><span class="pre">sip_err</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.sip_err" title="Permalink to this definition"></a></dt>
+<dd><p>max_pix_error for SIP transformation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.sip_degree">
+<span class="sig-name descname"><span class="pre">sip_degree</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.sip_degree" title="Permalink to this definition"></a></dt>
+<dd><p>degree for SIP transformation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.sip_points">
+<span class="sig-name descname"><span class="pre">sip_points</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.sip_points" title="Permalink to this definition"></a></dt>
+<dd><p>npoints for SIP transformation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.ee_radius">
+<span class="sig-name descname"><span class="pre">ee_radius</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.ee_radius" title="Permalink to this definition"></a></dt>
+<dd><p>encircled energy percentage (multiples of 10) for photometry</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.rough_cut_px_min">
+<span class="sig-name descname"><span class="pre">rough_cut_px_min</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.rough_cut_px_min" title="Permalink to this definition"></a></dt>
+<dd><p>first rough cut: best d_rotated+-rough_cut_pix. This is the lower limit for rough_cut</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.rough_cut_px_max">
+<span class="sig-name descname"><span class="pre">rough_cut_px_max</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.rough_cut_px_max" title="Permalink to this definition"></a></dt>
+<dd><p>first rough cut: best d_rotated+-rough_cut_pix. This is the upper limit for rough_cut</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.d_rotated_Nsigma">
+<span class="sig-name descname"><span class="pre">d_rotated_Nsigma</span></span><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.d_rotated_Nsigma" title="Permalink to this definition"></a></dt>
+<dd><p>Nsigma for sigma cut of d_rotated. If 0.0, then 3-sigma cut is skipped</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="jhat.st_wcs_align.st_wcs_align.set_telescope">
+<span class="sig-name descname"><span class="pre">set_telescope</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">telescope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">imname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jhat/st_wcs_align.html#st_wcs_align.set_telescope"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jhat.st_wcs_align.st_wcs_align.set_telescope" title="Permalink to this definition"></a></dt>
+<dd><p>Figuring out which telescope your data come from (HST or JWST).
+Note that if your filename is non-standard, then you MUST set</p>
+</dd></dl>
+
+</dd></dl>
+
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="module-jhat.simple_jwst_phot">
+<span id="simple-jwst-phot"></span><h3>simple_jwst_phot<a class="headerlink" href="#module-jhat.simple_jwst_phot" title="Permalink to this heading"></a></h3>
+<p>Created on Wed Apr 27 09:21:15 2022</p>
+<p>&#64;author: arest, jpierel, mcorrenti</p>
+<p>This is class wrapper around doing simple photometry on a single JWST image</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="jhat.simple_jwst_phot.hst_photclass">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">jhat.simple_jwst_phot.</span></span><span class="sig-name descname"><span class="pre">hst_photclass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">psf_fwhm</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jhat/simple_jwst_phot.html#hst_photclass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jhat.simple_jwst_phot.hst_photclass" title="Permalink to this definition"></a></dt>
+<dd><p>The photometry class for HST images.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="jhat.simple_jwst_phot.hst_photclass.aperture_phot">
+<span class="sig-name descname"><span class="pre">aperture_phot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pupil</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radii_Nfwhm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius_Nfwhm_sky_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius_Nfwhm_sky_out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius_Nfwhm_for_mag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">primaryhdr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scihdr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jhat/simple_jwst_phot.html#hst_photclass.aperture_phot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jhat.simple_jwst_phot.hst_photclass.aperture_phot" title="Permalink to this definition"></a></dt>
+<dd><p>Aperture photometry routine for HST.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>table_aper</strong></p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">astropy.table.Table</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="jhat.simple_jwst_phot.hst_photclass.match_refcat">
+<span class="sig-name descname"><span class="pre">match_refcat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_sep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">borderpadding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">refcatshort</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jhat/simple_jwst_phot.html#hst_photclass.match_refcat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jhat.simple_jwst_phot.hst_photclass.match_refcat" title="Permalink to this definition"></a></dt>
+<dd><p>Matches the photometry catalog to the reference catalog.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>max_sep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – Maximum separation between sources in arcseconds</p></li>
+<li><p><strong>borderpadding</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – Pixel separation required from border of image</p></li>
+<li><p><strong>refcatshort</strong> (<em>string</em><em>, </em><em>optional</em>) – Short name of reference catalog that is used as prefix for the column names. The default is None.
+If None, then refcatshort is set to self.refcat.short</p></li>
+<li><p><strong>indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a>) – The indices to access the photometry catalog, default None (use the full catalog)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="jhat.simple_jwst_phot.jwst_photclass">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">jhat.simple_jwst_phot.</span></span><span class="sig-name descname"><span class="pre">jwst_photclass</span></span><a class="reference internal" href="_modules/jhat/simple_jwst_phot.html#jwst_photclass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jhat.simple_jwst_phot.jwst_photclass" title="Permalink to this definition"></a></dt>
+<dd><p>The photometry class for JWST images.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="jhat.simple_jwst_phot.jwst_photclass.aperture_phot">
+<span class="sig-name descname"><span class="pre">aperture_phot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pupil</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radii_Nfwhm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius_Nfwhm_sky_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius_Nfwhm_sky_out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius_Nfwhm_for_mag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">primaryhdr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scihdr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jhat/simple_jwst_phot.html#jwst_photclass.aperture_phot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jhat.simple_jwst_phot.jwst_photclass.aperture_phot" title="Permalink to this definition"></a></dt>
+<dd><p>Aperture photometry routine for HST.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>table_aper</strong></p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">astropy.table.Table</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="jhat.simple_jwst_phot.jwst_photclass.find_stars">
+<span class="sig-name descname"><span class="pre">find_stars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_bkg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">primaryhdr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scihdr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jhat/simple_jwst_phot.html#jwst_photclass.find_stars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jhat.simple_jwst_phot.jwst_photclass.find_stars" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – The absolute image value above which to select sources.</p></li>
+<li><p><strong>fwhm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – The full-width half-maximum (FWHM) of the major axis of the Gaussian kernel in units of pixels.</p></li>
+<li><p><strong>var_bkg</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) – Use Background2D (see description above)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="jhat.simple_jwst_phot.jwst_photclass.match_refcat">
+<span class="sig-name descname"><span class="pre">match_refcat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_sep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">borderpadding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">refcatshort</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jhat/simple_jwst_phot.html#jwst_photclass.match_refcat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jhat.simple_jwst_phot.jwst_photclass.match_refcat" title="Permalink to this definition"></a></dt>
+<dd><p>Matches the photometry catalog to the reference catalog.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>max_sep</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – Maximum separation between sources in arcseconds</p></li>
+<li><p><strong>borderpadding</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – Pixel separation required from border of image</p></li>
+<li><p><strong>refcatshort</strong> (<em>string</em><em>, </em><em>optional</em>) – Short name of reference catalog that is used as prefix for the column names. The default is None.
+If None, then refcatshort is set to self.refcat.short</p></li>
+<li><p><strong>indices</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a>) – The indices to access the photometry catalog, default None (use the full catalog)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<section id="module-jhat.st_wcs_align_batch">
+<span id="st-wcs-align-batch"></span><h3>st_wcs_align_batch<a class="headerlink" href="#module-jhat.st_wcs_align_batch" title="Permalink to this heading"></a></h3>
+<p>Created on Mon Apr 25 09:39:07 2022</p>
+<p>&#64;author: arest</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="install.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="contributors.html" class="btn btn-neutral float-right" title="Primary Contributors" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022 Armin Rest &amp; Justin Pierel.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

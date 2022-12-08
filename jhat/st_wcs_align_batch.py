@@ -7,12 +7,12 @@ Created on Mon Apr 25 09:39:07 2022
 """
 
 import argparse,sys,os,re
-from st_wcs_align import st_wcs_align
-from simple_jwst_phot import jwst_photclass
-from pdastro import pdastroclass,unique
 from astropy.io import fits
 import glob
 
+from .pdastro import pdastroclass,unique
+from .st_wcs_align import st_wcs_align
+from .simple_jwst_phot import jwst_photclass
 
 class align_wcs_batch(pdastroclass):
     def __init__(self):
