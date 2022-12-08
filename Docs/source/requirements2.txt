@@ -3,13 +3,12 @@ numpy
 matplotlib
 astropy
 jwst
-urllib
 scipy
 photutils
 pysiaf
 astroquery
 pandas
-stsci
+stsci.skypac
 pytest-astropy
 matplotlib
 sphinx_gallery
