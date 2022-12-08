@@ -1,0 +1,15 @@
+argparse
+numpy
+matplotlib
+astropy
+jwst
+urllib
+scipy
+photutils
+pysiaf
+astroquery
+pandas
+stsci
+pytest-astropy
+matplotlib
+sphinx_gallery
