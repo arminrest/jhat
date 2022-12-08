@@ -1,0 +1,12 @@
+.wy-nav-content {
+    max-width: none;
+}
+
+body {
+    font-family: {{ theme_bodyfont }};
+    font-size: 130%;
+    background-color: {{ theme_footerbgcolor }};
+    color: #000;
+    margin: 0;
+    padding: 0;
+}
