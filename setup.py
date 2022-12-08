@@ -48,7 +48,7 @@ setup(
     cmdclass={'test': jhattest},
     setup_requires='numpy',
     install_requires=['argparse', 'numpy', 'matplotlib', 'astropy', 'jwst', 'scipy', 
-                        'extension_helpers'
+                        'extension_helpers',
                         'photutils', 'pysiaf', 'astroquery', 'pandas', 'stsci.skypac',
                          'pytest-astropy'],
     packages=[PACKAGENAME],
