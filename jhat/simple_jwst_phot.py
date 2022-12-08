@@ -45,12 +45,13 @@ from astropy.coordinates import SkyCoord
 
 from astropy.coordinates import SkyCoord, match_coordinates_sky
 
+from stsci.skypac import pamutils
 from .pdastro import pdastroclass,pdastrostatsclass,makepath4file,unique,AnotB,AorB,AandB,rmfile
 
 
 __all__ = ['jwst_photclass','hst_photclass']
 def hst_get_ee_corr(ap,filt,inst):
-    if inst=='ir':
+    if inst.lower()=='ir':
         if not os.path.exists('ir_ee_corrections.csv'):
             urllib.request.urlretrieve('https://www.stsci.edu/files/live/sites/www/files/home/hst/'+\
                                        'instrumentation/wfc3/data-analysis/photometric-calibration/'+\
@@ -58,6 +59,7 @@ def hst_get_ee_corr(ap,filt,inst):
                                        'ir_ee_corrections.csv')
         
         ee = Table.read('ir_ee_corrections.csv',format='ascii')
+        ee.rename_column('PIVOT','WAVELENGTH')
     else:
         if not os.path.exists('wfc3uvis2_aper_007_syn.csv'):
             urllib.request.urlretrieve('https://www.stsci.edu/files/live/sites/www/files/home/hst/'+\
@@ -65,6 +67,7 @@ def hst_get_ee_corr(ap,filt,inst):
                                    'uvis-encircled-energy/_documents/wfc3uvis2_aper_007_syn.csv',
                                       'wfc3uvis2_aper_007_syn.csv')
         ee = Table.read('wfc3uvis2_aper_007_syn.csv',format='ascii')
+
     filts = ee['FILTER']
     ee.remove_column('FILTER')
     waves = ee['WAVELENGTH']
@@ -675,15 +678,17 @@ class jwst_photclass(pdastrostatsclass):
     
         return data_bkgsub, std
     
-    def get_fwhm_psf(self,filt,pupil, instrument=None):
+    def get_fwhm_psf(self,filt,pupil=None, instrument=None):
         # in the future, this can be changed to get the values directly from CRDS
         if instrument is None:
             instrument = self.instrument
         if instrument is None:
             raise RuntimeError('Can\'t get FWHM, instrument is not known')
-            
+        
         # NIRISS is special: it has some filters in the pupil wheel
         if instrument.upper() == 'NIRISS':
+            if pupil is None:
+                raise RuntimeError("Must set pupil for NIRISS.") 
             if re.search('^F',filt) is None:
                 if re.search('^F',pupil) is None:
                     raise RuntimeError(f'can\'t figure out the NIRISS filter: {filt} {pupil}')
@@ -1513,6 +1518,7 @@ class jwst_photclass(pdastrostatsclass):
         
         #self.write(self.get_photfilename()+'.all')
         # save the catalog
+
         if self.photfilename is not None:
             print(f'Saving {self.photfilename}')
             self.write(self.photfilename,indices=ixs_clean)
@@ -1522,7 +1528,7 @@ class hst_photclass(jwst_photclass):
     """The photometry class for HST images.
     """
         
-    def __init__(self,psf_fwhm):
+    def __init__(self,psf_fwhm=2,aperture_radius = None):
         """
         Constructor for HST photometry class
 
@@ -1530,37 +1536,48 @@ class hst_photclass(jwst_photclass):
         ----------
         psf_fwhm : float
             PSF FWHM for image
-
+        aperture_radius : float
+            Radius for aperture photometry
+            
         Returns
         -------
         hst_photclass : :class:`~jhat.hst_photclass`
-        """
-        from stsci.skypac import pamutils
-
+        """        
 
         jwst_photclass.__init__(self)
 
-        self.filters = {instrument : [image_filter]}
 
-        self.psf_fwhm = {instrument : [psf_fwhm]}
+        #self.filters = {instrument : [image_filter]}
+
+        self.psf_fwhm = psf_fwhm
         
-        self.dict_utils = {}
-        for instrument in self.filters:
-            self.dict_utils[instrument.upper()] = {self.filters[instrument.upper()][i]: {'psf fwhm': self.psf_fwhm[instrument.upper()][i]} for i in range(len(self.filters[instrument]))}
-
-        self.instrument = instrument
-        self.detector = detector
-        self.filtername = image_filter
-        self.pupil = pupil
-        self.subarray = subarray
-        self.aperture = aperture_name
-        self.radii_px = aperture_radius
+        
+        #self.instrument = instrument
+        self.detector = None
+        #self.filtername = image_filter
+        self.pupil = None
+        #self.subarray = subarray
+        #self.aperture = aperture_name
+        if aperture_radius is None:
+            print('Warning: Setting aperture radius to twice the psf_fwhm (%f)'%(2*psf_fwhm))
+            self.radii_px = 2*self.psf_fwhm
+        else:
+            self.radii_px = aperture_radius
 
     def load_image(self, imagename, imagetype=None, DNunits=False, use_dq=False,skip_preparing=False):
         self.imagename = imagename
         self.im = fits.open(imagename)
         self.primaryhdr = self.im['PRIMARY'].header
         self.scihdr = self.im['SCI'].header
+        self.instrument = self.primaryhdr['INSTRUME']
+        self.filtername = self.primaryhdr['FILTER']
+        self.aperture = 'I'+self.primaryhdr['APERTURE']
+        self.filters = {self.instrument:[self.primaryhdr['FILTER']]}
+        self.psf_fwhm = {self.instrument : [self.psf_fwhm]}
+        self.dict_utils = {}
+        for instrument in self.filters:
+            self.dict_utils[instrument.upper()] = {self.filters[instrument.upper()][i]: {'psf fwhm': self.psf_fwhm[instrument.upper()][i]} for i in range(len(self.filters[instrument]))}
+
         self.sci_wcs = wcs.WCS(self.scihdr)
         try:
             self.err = self.im['ERR'].data
@@ -1654,11 +1671,13 @@ class hst_photclass(jwst_photclass):
         """
         if primaryhdr is None: primaryhdr=self.primaryhdr
         if scihdr is None: scihdr=self.scihdr
+        if filt is None: filt = self.filtername
 
         if scihdr['BUNIT']=='ELECTRON':
             epadu = 1
         else:
             epadu = primaryhdr['EXPTIME']
+        print(filt)
         try:
             zp = hst_get_zp(filt,'ab')
             inst = 'ir'

@@ -17,7 +17,7 @@ from astropy.table import Table
 from jwst import datamodels
 
 from .simple_jwst_phot import jwst_photclass,hst_photclass
-
+from .pdastro import *
 
 __all__ = ['st_wcs_align']
 
@@ -820,7 +820,7 @@ class st_wcs_align:
             if re.search('^jw',os.path.basename(imname)):
                 telescope = 'JWST'
             elif re.search('^hst',os.path.basename(imname)):
-                telescope = 'JWST'
+                telescope = 'HST'
             else:
                 raise RuntimeError(f'Cannot parse image name {imname} to determine telescope! Please set the "telescope" argument')                
         self.telescope = telescope
@@ -921,8 +921,11 @@ class st_wcs_align:
         if phot is None:
             phot=self.phot
         if outdir is None:
+            if self.outdir is None:
+                self.set_outdir()
             outdir=self.outdir
-            
+        
+
 #        if (racol is None) or (deccol is None): 
 #            if refcat_short is None:
 #                refcat_short = phot.refcat.short
@@ -1313,8 +1316,7 @@ class st_wcs_align:
                 showplots=0,
                 saveplots=0,
                 savephottable=0,
-                ee_radius=70
-                ):
+                ee_radius=70                ):
             
         
         # apply distortion coefficients if wanted.
