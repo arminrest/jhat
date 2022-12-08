@@ -49,7 +49,7 @@ setup(
     setup_requires=['numpy'],
     install_requires=['argparse', 'numpy', 'matplotlib', 'astropy', 'jwst', 'scipy', 
                         'photutils', 'pysiaf', 'astroquery', 'pandas', 'stsci.skypac',
-                         'tweakreg_hack','tweakwcs','pytest-astropy'],
+                         'tweakreg_hack','tweakwcs==0.8','pytest-astropy'],
     packages=[PACKAGENAME],
     version=VERSION,
     author=AUTHOR,

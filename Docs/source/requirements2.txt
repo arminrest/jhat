@@ -13,4 +13,4 @@ pytest-astropy
 matplotlib
 sphinx_gallery
 tweakreg_hack
-tweakwcs
+tweakwcs==0.8
