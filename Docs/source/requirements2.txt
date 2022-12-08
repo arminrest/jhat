@@ -14,4 +14,4 @@ matplotlib
 sphinx_gallery
 tweakreg_hack
 tweakwcs==0.8
-jwcf==0.0.dev18
+git+https://github.com/spacetelescope/jwst-calibration-field.git
