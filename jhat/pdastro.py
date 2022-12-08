@@ -196,12 +196,15 @@ class pdastroclass:
         return(0)
 
     def load(self,filename,raiseError=True,test4commentedheader=False,namesMapping=None,roundingMapping=None,
-             hexcols=None,auto_find_hexcols=True,verbose=False,delim_whitespace=True,**kwargs):
+             hexcols=None,auto_find_hexcols=True,verbose=False,delim_whitespace=True,check4csv=True,**kwargs):
         #self.t = ascii.read(filename,format='commented_header',delimiter='\s',fill_values=[('-',0),('--',0)])
 
         try:
             if verbose: print('Loading %s' % filename)
-            self.t = pd.read_table(filename,delim_whitespace=delim_whitespace,**kwargs)
+            if check4csv and re.search('csv$',filename):    
+                self.t = pd.read_csv(filename,delim_whitespace=delim_whitespace,comment='#',**kwargs)
+            else:
+                self.t = pd.read_table(filename,delim_whitespace=delim_whitespace,**kwargs)
             self.filename = filename
         except Exception as e:
             print('ERROR: could not read %s!' % filename)
