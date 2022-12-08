@@ -13,3 +13,4 @@ pytest-astropy
 matplotlib
 sphinx_gallery
 tweakreg_hack
+tweakwcs
