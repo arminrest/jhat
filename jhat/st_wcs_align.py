@@ -1001,26 +1001,29 @@ class st_wcs_align:
         if self.verbose: print(f'Fitting tweakreg fitgeometry={tweakreg.fitgeometry} to xy={xcol},{ycol} to ra,dec={refcat_racol},{refcat_deccol}')
         
         cal_data = [datamodels.open(cal_image)]
+        tweakreg.input_file = imfilename
+        tweakreg.output_file = tweakregfilename
         tweakreg.run(cal_data)
 
         if not os.path.isfile(tweakregfilename):
             raise RuntimeError(f'Image {tweakregfilename} did not get created!!')
         if self.replace_sip:
-            dm = datamodels.open(tweakregfilename)
-            gwcs_header = dm.meta.wcs.to_fits_sip(max_pix_error=self.sip_err,
-                                                   max_inv_pix_error=self.sip_err,
-                                                   degree=self.sip_degree,
-                                                   npoints=self.sip_points)
-            from astropy.io import fits
-            dm_fits = fits.open(tweakregfilename)
+            if self.telescope.lower()=='jwst':
+                dm = datamodels.open(tweakregfilename)
+                gwcs_header = dm.meta.wcs.to_fits_sip(max_pix_error=self.sip_err,
+                                                       max_inv_pix_error=self.sip_err,
+                                                       degree=self.sip_degree,
+                                                       npoints=self.sip_points)
+                from astropy.io import fits
+                dm_fits = fits.open(tweakregfilename)
 
-            for key,value in dict(gwcs_header).items():
-                for k in dm_fits['SCI',1].header.keys():
-                    if k==key:
-                        dm_fits['SCI',1].header[key] = value
-                        break
-                #astropy.wcs.WCS(header=gwcs_header)
-            dm_fits.writeto(tweakregfilename,overwrite=True)
+                for key,value in dict(gwcs_header).items():
+                    for k in dm_fits['SCI',1].header.keys():
+                        if k==key:
+                            dm_fits['SCI',1].header[key] = value
+                            break
+                    #astropy.wcs.WCS(header=gwcs_header)
+                dm_fits.writeto(tweakregfilename,overwrite=True)
         #print(imcat.meta['image_model'].wcs)
         #print(gwcs_header)
         #imcat.meta['image_model'].wcs = astropy.wcs.WCS(header=gwcs_header)
@@ -1382,8 +1385,8 @@ class st_wcs_align:
 
         (runflag,tweakregfilename) = self.run_align2refcat(calimname,ixs=ixs_bestmatch,
                                                            overwrite=overwrite,skip_if_exists=skip_if_exists)
-        
-        self.update_phottable_final_wcs(tweakregfilename,
+        if self.telescope.lower()=='jwst':
+            self.update_phottable_final_wcs(tweakregfilename,
                                         ixs_bestmatch = ixs_bestmatch,
                                         showplots=showplots,
                                         saveplots=saveplots,
