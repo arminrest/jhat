@@ -46,7 +46,7 @@ data_files = [f[len(PACKAGENAME)+1:] for f in data_files]
 setup(
     name=PACKAGENAME,
     cmdclass={'test': jhattest},
-    setup_requires=['numpy','extension_helpers'],
+    setup_requires=['numpy'],
     install_requires=['argparse', 'numpy', 'matplotlib', 'astropy', 'jwst', 'scipy', 
                         'photutils', 'pysiaf', 'astroquery', 'pandas', 'stsci.skypac',
                          'pytest-astropy'],

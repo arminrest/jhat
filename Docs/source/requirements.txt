@@ -1,2 +1,2 @@
 numpy
-SETUP_REQUIRES
+extension_helpers
