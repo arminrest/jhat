@@ -47,9 +47,8 @@ data_products_by_obs = data_products_by_obs[data_products_by_obs['productSubGrou
 Observations.download_products(data_products_by_obs,extension='fits')
 
 ####################################################################
-# **Create a Photometric Catalog for Relative Alignment**
-# We choose one of the images to be the reference image, and then
-# create a catalog that we will use to align the other image. 
+# **Examine the Reference Image**
+# 
 
 files = glob.glob('mastDownload/HST/*/*flt.fits')
 ref_image = files[0]
@@ -62,7 +61,12 @@ ax = fig.gca()
 ax.imshow(ref_data, origin='lower',
                        #interval=MinMaxInterval(),
                        norm=norm1,cmap='gray')
-plt.show()
+
+####################################################################
+# **Create a Photometric Catalog for Relative Alignment**
+#
+# We choose one of the images to be the reference image, and then
+# create a catalog that we will use to align the other image. 
 
 hst_phot = hst_photclass(psf_fwhm=1.8,aperture_radius=5)
 hst_phot.run_phot(imagename=ref_image,photfilename='auto',overwrite=True)
