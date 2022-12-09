@@ -29,7 +29,7 @@ Aligning HST images with JHAT.
 An example HST Dataset is downloaded, and then a series of
 alignment methods are used.
 
-.. GENERATED FROM PYTHON SOURCE LINES 12-26
+.. GENERATED FROM PYTHON SOURCE LINES 12-31
 
 .. code-block:: default
 
@@ -38,6 +38,11 @@ alignment methods are used.
     import sys,os,glob
     from astropy.io import fits
     from astropy.table import Table
+    from astropy.nddata import extract_array
+    from astropy.coordinates import SkyCoord
+    from astropy import wcs
+    from astropy.wcs.utils import skycoord_to_pixel
+    from astropy import units as u
     import numpy as np
     import matplotlib.pyplot as plt
     from astroquery.mast import Observations
@@ -54,7 +59,7 @@ alignment methods are used.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 27-32
+.. GENERATED FROM PYTHON SOURCE LINES 32-37
 
 **Download some Data**
 
@@ -62,25 +67,25 @@ For this example we download 2 HST FLT images from MAST. They're
 the same filter and same field, just separated in time. Note that 
 the code will also work for drizzled images.
 
-.. GENERATED FROM PYTHON SOURCE LINES 32-49
+.. GENERATED FROM PYTHON SOURCE LINES 37-54
 
 .. code-block:: default
 
 
-    obs_table = Observations.query_criteria(obs_id='hst_16264_13_wfc3_ir_f160w_iebc13')
-    obs_table1 = obs_table[obs_table['filters']=='F160W']
+    obs_table = Observations.query_criteria(obs_id='hst_16264_12_wfc3_ir_f110w_iebc12')
+    obs_table1 = obs_table[obs_table['filters']=='F110W']
 
-    obs_table = Observations.query_criteria(obs_id='hst_16264_14_wfc3_ir_f160w_iebc14')
-    obs_table2 = obs_table[obs_table['filters']=='F160W']
+    obs_table = Observations.query_criteria(obs_id='hst_16264_15_wfc3_ir_f110w_iebc15')
+    obs_table2 = obs_table[obs_table['filters']=='F110W']
 
     data_products_by_obs = Observations.get_product_list(obs_table1)
-    data_products_by_obs = data_products_by_obs[data_products_by_obs['calib_level']==2]
-    data_products_by_obs = data_products_by_obs[data_products_by_obs['productSubGroupDescription']=='FLT'][0]
+    data_products_by_obs = data_products_by_obs[data_products_by_obs['calib_level']==3]
+    data_products_by_obs = data_products_by_obs[data_products_by_obs['productSubGroupDescription']=='DRZ'][0]
     Observations.download_products(data_products_by_obs,extension='fits')
 
     data_products_by_obs = Observations.get_product_list(obs_table2)
-    data_products_by_obs = data_products_by_obs[data_products_by_obs['calib_level']==2]
-    data_products_by_obs = data_products_by_obs[data_products_by_obs['productSubGroupDescription']=='FLT'][0]
+    data_products_by_obs = data_products_by_obs[data_products_by_obs['calib_level']==3]
+    data_products_by_obs = data_products_by_obs[data_products_by_obs['productSubGroupDescription']=='DRZ'][0]
     Observations.download_products(data_products_by_obs,extension='fits')
 
 
@@ -91,36 +96,36 @@ the code will also work for drizzled images.
 
  .. code-block:: none
 
-    INFO: Found cached file ./mastDownload/HST/hst_16264_13_wfc3_ir_f160w_iebc13dy/hst_16264_13_wfc3_ir_f160w_iebc13dy_flt.fits with expected size 16580160. [astroquery.query]
-    INFO: Found cached file ./mastDownload/HST/hst_16264_14_wfc3_ir_f160w_iebc14qj/hst_16264_14_wfc3_ir_f160w_iebc14qj_flt.fits with expected size 16580160. [astroquery.query]
+    Downloading URL https://mast.stsci.edu/api/v0.1/Download/file?uri=mast:HST/product/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits to ./mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits ... [Done]
+    Downloading URL https://mast.stsci.edu/api/v0.1/Download/file?uri=mast:HST/product/hst_16264_15_wfc3_ir_f110w_iebc15_drz.fits to ./mastDownload/HST/hst_16264_15_wfc3_ir_f110w_iebc15/hst_16264_15_wfc3_ir_f110w_iebc15_drz.fits ... [Done]
 
 
 .. raw:: html
 
     <div class="output_subarea output_html rendered_html output_result">
     <div><i>Table length=1</i>
-    <table id="table140341424215520" class="table-striped table-bordered table-condensed">
+    <table id="table140409360865888" class="table-striped table-bordered table-condensed">
     <thead><tr><th>Local Path</th><th>Status</th><th>Message</th><th>URL</th></tr></thead>
-    <thead><tr><th>str99</th><th>str8</th><th>object</th><th>object</th></tr></thead>
-    <tr><td>./mastDownload/HST/hst_16264_14_wfc3_ir_f160w_iebc14qj/hst_16264_14_wfc3_ir_f160w_iebc14qj_flt.fits</td><td>COMPLETE</td><td>None</td><td>None</td></tr>
+    <thead><tr><th>str95</th><th>str8</th><th>object</th><th>object</th></tr></thead>
+    <tr><td>./mastDownload/HST/hst_16264_15_wfc3_ir_f110w_iebc15/hst_16264_15_wfc3_ir_f110w_iebc15_drz.fits</td><td>COMPLETE</td><td>None</td><td>None</td></tr>
     </table></div>
     </div>
     <br />
     <br />
 
-.. GENERATED FROM PYTHON SOURCE LINES 50-52
+.. GENERATED FROM PYTHON SOURCE LINES 55-57
 
 **Examine the Reference Image**
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 52-65
+.. GENERATED FROM PYTHON SOURCE LINES 57-69
 
 .. code-block:: default
 
 
-    files = glob.glob('mastDownload/HST/*/*flt.fits')
+    files = glob.glob('mastDownload/HST/*/*drz.fits')
     ref_image = files[0]
-    align_image = files[1]
+    ref_fits = fits.open(ref_image)
     ref_data = fits.open(ref_image)['SCI',1].data
     norm1 = simple_norm(ref_data,stretch='log',min_cut=-1,max_cut=15)
 
@@ -128,7 +133,6 @@ the code will also work for drizzled images.
                           #interval=MinMaxInterval(),
                           norm=norm1,cmap='gray')
     plt.show()
-
 
 
 
@@ -142,14 +146,67 @@ the code will also work for drizzled images.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 66-70
+.. GENERATED FROM PYTHON SOURCE LINES 70-76
+
+**Zoom in to see the offset**
+
+Here add an artificial offset to the wcs, and then we see the 
+same star in both images at the same ra/dec
+location, demonstrating a large offset between
+the images.  
+
+.. GENERATED FROM PYTHON SOURCE LINES 76-104
+
+.. code-block:: default
+
+
+    star_location = SkyCoord('21:29:40.5351','+0:04:42.697',unit=(u.hourangle,u.deg))
+    align_image = files[1]
+    align_fits = fits.open(align_image)
+    align_fits['SCI',1].header['CRPIX1']+=2
+    align_fits['SCI',1].header['CRPIX2']+=2
+    align_fits.writeto(align_image,overwrite=True)
+
+    align_data = fits.open(align_image)['SCI',1].data
+    ref_y,ref_x = skycoord_to_pixel(star_location,wcs.WCS(ref_fits['SCI',1],ref_fits))
+    align_y,align_x = skycoord_to_pixel(star_location,wcs.WCS(align_fits['SCI',1],align_fits))
+
+    ref_cutout = extract_array(ref_data,(11,11),(ref_x,ref_y))
+    align_cutout = extract_array(align_data,(11,11),(align_x,align_y))
+    norm1 = simple_norm(ref_cutout,stretch='log',min_cut=-1,max_cut=200)
+    norm2 = simple_norm(align_cutout,stretch='log',min_cut=-1,max_cut=200)
+    fig,axes = plt.subplots(1,2)
+    axes[0].imshow(ref_cutout, origin='lower',
+                          norm=norm1,cmap='gray')
+    axes[1].imshow(align_cutout, origin='lower',
+                          norm=norm2,cmap='gray')
+    axes[0].set_title('Reference')
+    axes[1].set_title('To Align')
+    axes[0].tick_params(labelcolor='none',axis='both',color='none')
+    axes[1].tick_params(labelcolor='none',axis='both',color='none')
+
+    plt.show()
+
+
+
+
+.. image-sg:: /examples/images/sphx_glr_plot_a_hst_002.png
+   :alt: Reference, To Align
+   :srcset: /examples/images/sphx_glr_plot_a_hst_002.png
+   :class: sphx-glr-single-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 105-109
 
 **Create a Photometric Catalog for Relative Alignment**
 
 We choose one of the images to be the reference image, and then 
 create a catalog that we will use to align the other image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 70-77
+.. GENERATED FROM PYTHON SOURCE LINES 109-116
 
 .. code-block:: default
 
@@ -169,77 +226,79 @@ create a catalog that we will use to align the other image.
  .. code-block:: none
 
 
-    ### Doing photometry on mastDownload/HST/hst_16264_14_wfc3_ir_f160w_iebc14qj/hst_16264_14_wfc3_ir_f160w_iebc14qj_flt.fits
-    photometry catalog filename: mastDownload/HST/hst_16264_14_wfc3_ir_f160w_iebc14qj/hst_16264_14_wfc3_ir_f160w_iebc14qj_flt.phot.txt
-    photcat mastDownload/HST/hst_16264_14_wfc3_ir_f160w_iebc14qj/hst_16264_14_wfc3_ir_f160w_iebc14qj_flt.phot.txt already exists, but recreating it since overwrite=True
-    Finding stars --- Detector: None, Filter: F160W
-    FWHM for the filter F160W: 1.8 px
+    ### Doing photometry on mastDownload/HST/hst_16264_15_wfc3_ir_f110w_iebc15/hst_16264_15_wfc3_ir_f110w_iebc15_drz.fits
+    photometry catalog filename: mastDownload/HST/hst_16264_15_wfc3_ir_f110w_iebc15/hst_16264_15_wfc3_ir_f110w_iebc15_drz.phot.txt
+    Finding stars --- Detector: None, Filter: F110W
+    FWHM for the filter F110W: 1.8 px
     /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
     /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
 
-    Number of sources found in the image: 1271
+    Number of sources found in the image: 1131
     -------------------------------------
 
-    F160W
+    F110W
     Performing aperture photometry for radius r = 5 px
     /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1787: RuntimeWarning: invalid value encountered in log10
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
     /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1790: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 1.3351416289999998
-    938 objects left after removing entries with NaNs in mag or dmag column
-    SNR_min cut: 623 objects left after removing entries dmag>0.36200000000000004 (SNR<3.0)
-    623 out of 938 entries remain in photometry table
-    0      524.978786
-    1       26.596518
-    2      774.521615
-    3      919.590958
-    4      883.557437
+    Time Elapsed: 1.0487007449999997
+    996 objects left after removing entries with NaNs in mag or dmag column
+    SNR_min cut: 769 objects left after removing entries dmag>0.36200000000000004 (SNR<3.0)
+    769 out of 996 entries remain in photometry table
+    0      564.920608
+    1      597.019189
+    2      598.103872
+    3      582.375299
+    4      584.963518
               ...    
-    933    140.001918
-    934     14.409272
-    935    572.772349
-    936    129.852899
-    937    475.565235
-    Name: x, Length: 938, dtype: float64
-    Saving mastDownload/HST/hst_16264_14_wfc3_ir_f160w_iebc14qj/hst_16264_14_wfc3_ir_f160w_iebc14qj_flt.phot.txt
-    aper_sum_5.0px annulus_median_5.0px aper_bkg_5.0px ...   x_idl      y_idl   
-    -------------- -------------------- -------------- ... ---------- ----------
-         76.846143             0.813785      63.914535 ... -71.479051 -66.554496
-          69.42839             0.831132      65.276935 ...  28.553249 -65.936446
-         69.730112             0.829916       65.18145 ...  47.949731 -65.662857
-         70.339757             0.843443      66.243875 ...  43.133439 -65.624671
-         87.938613             0.846547      66.487684 ...   -1.59125 -65.870071
-         69.933933             0.850303      66.782646 ...  11.611746 -65.897065
-         75.311855             0.880379      69.144786 ...   3.739262  -65.70978
-         71.494737             0.851171      66.850801 ...  44.206473 -65.433951
-          71.72497             0.857659      67.360416 ...  20.686379  -65.45116
-        234.408813             0.860027      67.546336 ... -44.566806 -65.679991
-               ...                  ...            ... ...        ...        ...
-        120.361815             0.865127      67.946932 ...   0.744926  54.484352
-        101.316655             0.861031      67.625254 ...    9.42922  54.363966
-        106.803819             0.870064      68.334666 ...    2.38579  54.385724
-         75.278567             0.831999      65.345021 ... -72.523642  54.426933
-         66.167621             0.795314      62.463789 ...  59.528286  54.850434
-         79.672269             0.853165      67.007429 ...   6.767199  54.859815
-         73.519655             0.836318      65.684291 ... -57.723841   54.85639
-        258.982721               -99.99   -7853.196236 ... -74.951206  55.020724
-       3398.450445             0.835942      65.654734 ...   1.613537  55.128669
-         75.111658             0.819459      64.360175 ... -59.118181  55.070524
-        -55.249793               -99.99   -7853.196236 ... -11.714238  55.260056
-    Length = 623 rows
+    991    727.293150
+    992    774.224117
+    993    768.362622
+    994    822.566556
+    995    783.355309
+    Name: x, Length: 996, dtype: float64
+    Saving mastDownload/HST/hst_16264_15_wfc3_ir_f110w_iebc15/hst_16264_15_wfc3_ir_f110w_iebc15_drz.phot.txt
+    aper_sum_5.0px annulus_median_5.0px aper_bkg_5.0px ...   x_idl     y_idl   
+    -------------- -------------------- -------------- ... --------- ----------
+         98.701667             1.222411       96.00792 ...   10.2829 -58.751291
+        112.858706             1.215698       95.48066 ...  0.099716 -56.988333
+        101.386792             1.221536      95.939216 ... 11.171638 -55.244084
+        103.395263             1.223189      96.069016 ... 12.050499 -54.702786
+         98.175293             1.216523      95.545525 ...   18.3728 -52.885932
+        105.185496             1.218957      95.736631 ... 20.125268 -52.409859
+         98.467547             1.222876      96.044429 ...  8.878883 -51.562419
+        101.177947             1.223379      96.083963 ...  9.447841 -51.376254
+        100.858702             1.222229      95.993609 ...  9.589213  -51.28844
+         97.385972             1.211675       95.16475 ... -1.323612 -51.067408
+               ...                  ...            ... ...       ...        ...
+        106.700343             1.228208      96.463241 ... 38.894967  98.502383
+        100.028488             1.227914      96.440138 ... 38.374138   99.52547
+         97.812187             1.220744       95.87702 ... 26.977885  99.641609
+         97.602171             1.223988      96.131806 ... 37.761717  100.23342
+        105.374356             1.219726      95.797025 ... 33.155941 100.494186
+           97.8211             1.222627       96.02488 ... 36.519167 101.346027
+        102.603917             1.224512      96.172937 ... 22.996226 101.696774
+         97.176473             1.223463      96.090578 ... 29.490227 101.683134
+        106.491542             1.221884      95.966541 ... 28.696313 105.056795
+        136.421425             1.214221      95.364713 ... 36.206767 105.813416
+        105.466896             1.229285      96.547856 ...  30.77963 106.393258
+    Length = 769 rows
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 78-80
+.. GENERATED FROM PYTHON SOURCE LINES 117-122
 
 **Align the second image**
 
+The plots outputted here show the various steps used by jhat to
+determine the true matching sources in the image, and the
+subsequent correction needed for optimal alignment.
 
-.. GENERATED FROM PYTHON SOURCE LINES 80-109
+.. GENERATED FROM PYTHON SOURCE LINES 122-145
 
 .. code-block:: default
 
@@ -249,55 +308,30 @@ create a catalog that we will use to align the other image.
 
 
     wcs_align.run_all(align_image,
+    		  telescope='hst',
               refcat_racol='ra',
               refcat_deccol='dec',
               refcat_magcol='mag',
               refcat_magerrcol='dmag',
               overwrite=True,
-              #Nbright=1000,
-              #Nbright4match=1000,
-              d2d_max=.12,
-              showplots=2,
-              #xshift=xshift,
-              #yshift=yshift,
-              #refcat_maincolor='gaia_g_rp',
-                      refcatname=ref_catname,
-                      histocut_order='dxdy',
-                          sharpness_lim=(0.3,0.9),
-                          roundness1_lim=(-0.7, 0.7),
-                          #rough_cut_px_min=0.2,
-                          #rough_cut_px_max=1.0,
-                          SNR_min= 3,
-                          dmag_max=1.0,
-                          objmag_lim =(14,24))
+              d2d_max=.5,
+              showplots=0,
+              refcatname=ref_catname,
+              histocut_order='dxdy',
+                  sharpness_lim=(0.3,0.9),
+                  roundness1_lim=(-0.7, 0.7),
+                  SNR_min= 3,
+                  dmag_max=1.0,
+                  objmag_lim =(14,24))
 
 
 
 
 
-.. rst-class:: sphx-glr-horizontal
-
-
-    *
-
-      .. image-sg:: /examples/images/sphx_glr_plot_a_hst_002.png
-         :alt: Initial cut: d2d_max=0.12, dmag_max=1.0, Nbright=None, delta_mag_lim=(None, None)
-         :srcset: /examples/images/sphx_glr_plot_a_hst_002.png
-         :class: sphx-glr-multi-img
-
-    *
-
-      .. image-sg:: /examples/images/sphx_glr_plot_a_hst_003.png
-         :alt: dx, dx, dx, slope:-0.00019531250000001665, 3-sigma cut: 111 out of 115 left mean = -0.108 px, stdev = 0.172 px
-         :srcset: /examples/images/sphx_glr_plot_a_hst_003.png
-         :class: sphx-glr-multi-img
-
-    *
-
-      .. image-sg:: /examples/images/sphx_glr_plot_a_hst_004.png
-         :alt: dy, dy, dy, slope:0.00073242187499998, 3-sigma cut: 109 out of 110 left mean = -0.044 px, stdev = 0.189 px
-         :srcset: /examples/images/sphx_glr_plot_a_hst_004.png
-         :class: sphx-glr-multi-img
+.. image-sg:: /examples/images/sphx_glr_plot_a_hst_003.png
+   :alt: plot a hst
+   :srcset: /examples/images/sphx_glr_plot_a_hst_003.png
+   :class: sphx-glr-single-img
 
 
 .. rst-class:: sphx-glr-script-out
@@ -306,40 +340,40 @@ create a catalog that we will use to align the other image.
 
     Warning: Setting aperture radius to twice the psf_fwhm (4.000000)
 
-    ### Doing photometry on mastDownload/HST/hst_16264_13_wfc3_ir_f160w_iebc13dy/hst_16264_13_wfc3_ir_f160w_iebc13dy_flt.fits
+    ### Doing photometry on mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits
     NO photometry catalog filename
-    Finding stars --- Detector: None, Filter: F160W
-    FWHM for the filter F160W: 2 px
+    Finding stars --- Detector: None, Filter: F110W
+    FWHM for the filter F110W: 2 px
     /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
     /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
 
-    Number of sources found in the image: 1470
+    Number of sources found in the image: 1065
     -------------------------------------
 
-    F160W
+    F110W
     Performing aperture photometry for radius r = 4 px
     /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1787: RuntimeWarning: invalid value encountered in log10
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
     /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1790: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 1.4625270320000006
-    1180 objects left after removing entries with NaNs in mag or dmag column
-    SNR_min cut: 909 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
-    909 out of 1180 entries remain in photometry table
-    0       273.230439
-    1       712.551753
-    2       868.410843
-    3       961.157547
-    4       269.014126
-               ...    
-    1175    591.381790
-    1176    204.739948
-    1177    759.890143
-    1178    755.868693
-    1179    760.562325
-    Name: x, Length: 1180, dtype: float64
+    Time Elapsed: 0.8522555859999983
+    947 objects left after removing entries with NaNs in mag or dmag column
+    SNR_min cut: 733 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
+    733 out of 947 entries remain in photometry table
+    0      760.533300
+    1      723.807600
+    2      754.520511
+    3      757.049685
+    4      781.571165
+              ...    
+    942    749.749942
+    943    703.933299
+    944    697.050660
+    945    647.708427
+    946    696.459286
+    Name: x, Length: 947, dtype: float64
     /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
     'WFC3' is not one of ['NIRCAM', 'NIRSPEC', 'MIRI', 'TFI', 'FGS', 'NIRISS', 'ANY', 'N/A']
 
@@ -396,60 +430,6 @@ create a catalog that we will use to align the other image.
     On instance:
         'IR'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.filter the following error occurred:
-    'F160W' is not one of ['ANY', 'CLEAR', 'F070LP', 'F070W', 'F090W', 'F1000W', 'F100LP', 'F1065C', 'F110W', 'F1130W', 'F1140C', 'F115W', 'F1280W', 'F140M', 'F140X', 'F1500W', 'F150W', 'F150W2', 'F1550C', 'F170LP', 'F1800W', 'F182M', 'F187N', 'F200W', 'F2100W', 'F210M', 'F212N', 'F2300C', 'F250M', 'F2550W', 'F2550WR', 'F277W', 'F290LP', 'F300M', 'F322W2', 'F335M', 'F356W', 'F360M', 'F380M', 'F410M', 'F430M', 'F444W', 'F460M', 'F480M', 'F560W', 'F770W', 'FLENS', 'FND', 'GR150C', 'GR150R', 'OPAQUE', 'P750L', 'WLP4', 'N/A', 'MULTIPLE']
-
-    Failed validating 'enum' in schema:
-        OrderedDict([('title', 'Name of the filter element used'),
-                     ('type', 'string'),
-                     ('enum',
-                      ['ANY',
-                       'CLEAR',
-                       'F070LP',
-                       'F070W',
-                       'F090W',
-                       'F1000W',
-                       'F100LP',
-                       'F1065C',
-                       'F110W',
-                       'F1130W',
-                       'F1140C',
-                       'F115W',
-                       'F1280W',
-                       'F140M',
-                       'F140X',
-                       'F1500W',
-                       'F150W',
-                       'F150W2',
-                       'F1550C',
-                       'F170LP',
-                       'F1800W',
-                       'F182M',
-                       'F187N',
-                       'F200W',
-                       'F2100W',
-                       'F210M',
-                       'F212N',
-                       'F2300C',
-                       'F250M',
-                       'F2550W',
-                       'F2550WR',
-                       'F277W',
-                       'F290LP',
-                       'F300M',
-                       'F322W2',
-                       'F335M',
-                       'F356W',
-                       'F360M',
-                       'F380M',
-                       'F410M',
-                       'F430M',
-                       'F444W',
-                       'F460M',
-                       'F480M',
-                       'F560W',
-                       ' ...
-      warnings.warn(errmsg, ValidationWarning)
     /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
     False is not of type 'string'
 
@@ -503,25 +483,23 @@ create a catalog that we will use to align the other image.
                       ...
       warnings.warn(errmsg, ValidationWarning)
     RA/Dec columns in reference catalog:  ra dec
-    LOADING refcat mastDownload/HST/hst_16264_14_wfc3_ir_f160w_iebc14qj/hst_16264_14_wfc3_ir_f160w_iebc14qj_flt.phot.txt
-    Matching reference catalog mastDownload/HST/hst_16264_14_wfc3_ir_f160w_iebc14qj/hst_16264_14_wfc3_ir_f160w_iebc14qj_flt.phot.txt
-    image objects are in x_idl=[-76.25,61.43] and y_idl=[-66.54,55.48] range
-    Keeping 623 out of 623 catalog objects within x=-40.0-1054 and y=-40.0-1054
-    Keeping 623  after removing NaNs from ra/dec
-    ########### !!!!!!!!!!  INITIAL CUT: starting with 1180 objects
-    d2d =0.12 CUT:
-    181 left
+    LOADING refcat mastDownload/HST/hst_16264_15_wfc3_ir_f110w_iebc15/hst_16264_15_wfc3_ir_f110w_iebc15_drz.phot.txt
+    Matching reference catalog mastDownload/HST/hst_16264_15_wfc3_ir_f110w_iebc15/hst_16264_15_wfc3_ir_f110w_iebc15_drz.phot.txt
+    image objects are in x_idl=[-67.59,118.37] and y_idl=[-61.98,106.29] range
+    Keeping 769 out of 769 catalog objects within x=-40.0-1499 and y=-40.0-1498
+    Keeping 769  after removing NaNs from ra/dec
+    ########### !!!!!!!!!!  INITIAL CUT: starting with 947 objects
+    d2d =0.5 CUT:
+    534 left
     dmag_max =1.0 CUT:
-    181 left
+    534 left
     SHARPNESS =(0.3, 0.9) CUT:
-    151 left
+    529 left
     roundness1=(-0.7, 0.7) CUT:
-    132 left
+    466 left
     objmag_lim=(14, 24) CUT:
-    116 left
-    # of matched objects that pass initial cuts: 116
-    dx median: -0.10481121152270134
-    dy median: -0.05540941107960862
+    248 left
+    # of matched objects that pass initial cuts: 248
     ### Doing histogram cut for dx, slope_min:-0.004883 slope_max:0.004883 slope_stepsize:0.000049
     Nfwhm=2.5, rough_cut_px_min=0.3, rough_cut_px_max=0.8, Nsigma=3.0
     ########################
@@ -729,242 +707,249 @@ create a catalog that we will use to align the other image.
     iteration 197 out of 200: slope = 0.004736
     iteration 198 out of 200: slope = 0.004785
     iteration 199 out of 200: slope = 0.004834
-            slope     intercept    maxval  index  d_bestguess  fwhm  multimax
-    -4.882812e-03  2.475586e+00 21.271747     17     0.324986   3.6     False
-    -4.833984e-03  2.450830e+00 21.471264     16     0.148614   3.6     False
-    -4.785156e-03  2.426074e+00 22.589985     16     0.172242   3.6     False
-    -4.736328e-03  2.401318e+00 22.104510     16     0.195870   3.6     False
-    -4.687500e-03  2.376563e+00 21.296005     16     0.219498   3.8     False
-    -4.638672e-03  2.351807e+00 22.511758     16     0.243126   3.4     False
-    -4.589844e-03  2.327051e+00 22.658748     16     0.266754   3.4     False
-    -4.541016e-03  2.302295e+00 22.921817     16     0.290382   3.4     False
-    -4.492188e-03  2.277539e+00 22.320263     15     0.114010   3.6     False
-    -4.443359e-03  2.252783e+00 23.212987     15     0.137638   3.6     False
-    -4.394531e-03  2.228027e+00 23.045750     15     0.161266   3.4     False
-    -4.345703e-03  2.203271e+00 24.707265     15     0.184894   3.4     False
-    -4.296875e-03  2.178516e+00 24.368779     15     0.208522   3.4     False
-    -4.248047e-03  2.153760e+00 23.943265     14     0.032150   3.4     False
-    -4.199219e-03  2.129004e+00 24.294563     14     0.055778   3.2     False
-    -4.150391e-03  2.104248e+00 24.943265     14     0.079406   3.2     False
-    -4.101563e-03  2.079492e+00 24.990580     15     0.303034   3.2     False
-    -4.052734e-03  2.054736e+00 25.187287     14     0.126662   3.2     False
-    -4.003906e-03  2.029980e+00 26.633048     14     0.150290   3.0     False
-    -3.955078e-03  2.005225e+00 26.114513     14     0.173918   3.0     False
-    -3.906250e-03  1.980469e+00 25.437542     14     0.197546   3.0     False
-    -3.857422e-03  1.955713e+00 25.697800     13     0.021174   3.0     False
-    -3.808594e-03  1.930957e+00 26.996572     13     0.044802   2.8     False
-    -3.759766e-03  1.906201e+00 27.383573     13     0.068430   2.8     False
-    -3.710938e-03  1.881445e+00 28.684988     13     0.092058   2.6     False
-    -3.662109e-03  1.856689e+00 27.684988     13     0.115686   2.8     False
-    -3.613281e-03  1.831934e+00 27.831978     13     0.139314   2.8     False
-    -3.564453e-03  1.807178e+00 27.666888     12    -0.037058   2.8     False
-    -3.515625e-03  1.782422e+00 29.005374     12    -0.013430   2.6     False
-    -3.466797e-03  1.757666e+00 29.515107     12     0.010198   2.6     False
-    -3.417969e-03  1.732910e+00 29.486838     12     0.033826   2.6     False
-    -3.369141e-03  1.708154e+00 30.159798     12     0.057454   2.6     False
-    -3.320313e-03  1.683398e+00 31.379562     12     0.081082   2.4     False
-    -3.271484e-03  1.658643e+00 31.283731     12     0.104710   2.4     False
-    -3.222656e-03  1.633887e+00 31.789454     12     0.128338   2.4     False
-    -3.173828e-03  1.609131e+00 33.169968     11    -0.048034   2.4     False
-    -3.125000e-03  1.584375e+00 32.950204     11    -0.024406   2.2     False
-    -3.076172e-03  1.559619e+00 34.675690     11    -0.000778   2.2     False
-    -3.027344e-03  1.534863e+00 34.918345     11     0.022850   2.2     False
-    -2.978516e-03  1.510107e+00 33.600106     11     0.046478   2.4     False
-    -2.929688e-03  1.485352e+00 35.452336     11     0.070106   2.4     False
-    -2.880859e-03  1.460596e+00 36.452336     11     0.093734   2.0     False
-    -2.832031e-03  1.435840e+00 36.552958     10    -0.082638   2.0     False
-    -2.783203e-03  1.411084e+00 36.768711     10    -0.059010   2.0     False
-    -2.734375e-03  1.386328e+00 37.637177     10    -0.035382   2.0     False
-    -2.685547e-03  1.361572e+00 38.441671     10    -0.011754   1.8     False
-    -2.636719e-03  1.336816e+00 39.084140     10     0.011874   1.8     False
-    -2.587891e-03  1.312061e+00 42.063893     10     0.035502   1.8     False
-    -2.539063e-03  1.287305e+00 42.048437     10     0.059130   1.8     False
-    -2.490234e-03  1.262549e+00 41.749665     10     0.082758   1.8     False
-    -2.441406e-03  1.237793e+00 41.670237      9    -0.093614   1.8     False
-    -2.392578e-03  1.213037e+00 41.787516      9    -0.071516   1.8     False
-    -2.343750e-03  1.188281e+00 42.317497      9    -0.055326   1.8     False
-    -2.294922e-03  1.163525e+00 42.362002      9    -0.039137   1.8     False
-    -2.246094e-03  1.138770e+00 44.843467      9    -0.022948   1.6     False
-    -2.197266e-03  1.114014e+00 47.970210      9    -0.006759   1.4     False
-    -2.148438e-03  1.089258e+00 48.161705      9     0.009430   1.4     False
-    -2.099609e-03  1.064502e+00 49.806396      9     0.025619   1.4     False
-    -2.050781e-03  1.039746e+00 50.129425      9     0.041809   1.4     False
-    -2.001953e-03  1.014990e+00 50.089711      9     0.057998   1.4     False
-    -1.953125e-03  9.902344e-01 47.997396      8    -0.125813   1.6     False
-    -1.904297e-03  9.654785e-01 50.155831      8    -0.109624   1.4     False
-    -1.855469e-03  9.407227e-01 52.406086      8    -0.093435   1.2     False
-    -1.806641e-03  9.159668e-01 55.186322      8    -0.077245   1.2     False
-    -1.757813e-03  8.912109e-01 55.958957      8    -0.061056   1.2     False
-    -1.708984e-03  8.664551e-01 55.823412      8    -0.044867   1.4     False
-    -1.660156e-03  8.416992e-01 56.823412      8    -0.031596   1.4     False
-    -1.611328e-03  8.169434e-01 58.126194      8    -0.020164   1.4     False
-    -1.562500e-03  7.921875e-01 58.556499      8    -0.008732   1.4     False
-    -1.513672e-03  7.674316e-01 60.850480      8     0.002700   1.2     False
-    -1.464844e-03  7.426758e-01 63.403517      8     0.014132   1.0     False
-    -1.416016e-03  7.179199e-01 62.704436      7    -0.174436   1.2     False
-    -1.367188e-03  6.931641e-01 63.978950      7    -0.163004   1.2     False
-    -1.318359e-03  6.684082e-01 64.783443      7    -0.151572   1.2     False
-    -1.269531e-03  6.436523e-01 66.738938      7    -0.140140   1.2     False
-    -1.220703e-03  6.188965e-01 68.825968      7    -0.128708   1.2     False
-    -1.171875e-03  5.941406e-01 70.100481      7    -0.117276   1.2     False
-    -1.123047e-03  5.693848e-01 75.118747      7    -0.105844   0.8     False
-    -1.074219e-03  5.446289e-01 77.074242      7    -0.094412   0.8     False
-    -1.025391e-03  5.198730e-01 77.205776      7    -0.082980   1.0     False
-    -9.765625e-04  4.951172e-01 78.640092      7    -0.071549   1.0     False
-    -9.277344e-04  4.703613e-01 79.655548      7    -0.060117   1.0     False
-    -8.789063e-04  4.456055e-01 80.089865      7    -0.048685   1.0     False
-    -8.300781e-04  4.208496e-01 82.383845      7    -0.037253   1.0     False
-    -7.812500e-04  3.960938e-01 83.267767      7    -0.025821   1.0     False
-    -7.324219e-04  3.713379e-01 82.590796      7    -0.014389   1.0     False
-    -6.835938e-04  3.465820e-01 82.036391      6    -0.202957   1.0     False
-    -6.347656e-04  3.218262e-01 83.390332      6    -0.191525   1.0     False
-    -5.859375e-04  2.970703e-01 86.022798      6    -0.180093   1.0     False
-    -5.371094e-04  2.723145e-01 87.169788      6    -0.176058   0.8     False
-    -4.882813e-04  2.475586e-01 85.138876      6    -0.191288   1.0     False
-    -4.394531e-04  2.228027e-01 84.686627      7    -0.006518   1.0     False
-    -3.906250e-04  1.980469e-01 86.390499      7    -0.021748   1.0     False
-    -3.417969e-04  1.732910e-01 87.441658      7    -0.036977   0.8     False
-    -2.929688e-04  1.485352e-01 87.648609      7    -0.052207   0.8     False
-    -2.441406e-04  1.237793e-01 87.517075      7    -0.067437   0.8     False
-    -1.953125e-04  9.902344e-02 88.026809      7    -0.082667   0.8     False
-    -1.464844e-04  7.426758e-02 86.708570      7    -0.097897   0.8     False
-    -9.765625e-05  4.951172e-02 85.091561      7    -0.113126   0.8     False
-    -4.882813e-05  2.475586e-02 83.908868      7    -0.128356   0.8     False
-    -1.734723e-17  8.795048e-15 83.701916      7    -0.143586   0.8     False
-     4.882812e-05 -2.475586e-02 81.200985      7    -0.158816   1.0     False
-     9.765625e-05 -4.951172e-02 79.452441      7    -0.174045   1.0     False
-     1.464844e-04 -7.426758e-02 76.194164      7    -0.189275   1.0     False
-     1.953125e-04 -9.902344e-02 74.086888      7    -0.204505   1.0     False
-     2.441406e-04 -1.237793e-01 73.231235      8    -0.019735   1.0     False
-     2.929687e-04 -1.485352e-01 75.055196      8    -0.034965   1.0     False
-     3.417969e-04 -1.732910e-01 73.684851      8    -0.050194   1.0     False
-     3.906250e-04 -1.980469e-01 71.860891      8    -0.065424   1.0     False
-     4.394531e-04 -2.228027e-01 70.415129      8    -0.080654   1.2     False
-     4.882812e-04 -2.475586e-01 66.882339      8    -0.095884   1.2     False
-     5.371094e-04 -2.723145e-01 64.771052      8    -0.111114   1.2     False
-     5.859375e-04 -2.970703e-01 65.508150      8    -0.126343   1.2     False
-     6.347656e-04 -3.218262e-01 63.560677      8    -0.141573   1.0     False
-     6.835937e-04 -3.465820e-01 63.166242      8    -0.156803   1.0     False
-     7.324219e-04 -3.713379e-01 61.999005      8    -0.172033   1.0     False
-     7.812500e-04 -3.960937e-01 58.773007      8    -0.187262   1.4     False
-     8.300781e-04 -4.208496e-01 57.342702      8    -0.202492   1.2     False
-     8.789062e-04 -4.456055e-01 55.915232      9    -0.017722   1.2     False
-     9.277344e-04 -4.703613e-01 56.615259      9    -0.032952   1.2     False
-     9.765625e-04 -4.951172e-01 54.803331      9    -0.048182   1.2     False
-     1.025391e-03 -5.198730e-01 53.656341      9    -0.063411   1.2     False
-     1.074219e-03 -5.446289e-01 51.827590      9    -0.078641   1.2     False
-     1.123047e-03 -5.693848e-01 51.497126      9    -0.093871   1.4     False
-     1.171875e-03 -5.941406e-01 49.648907      9    -0.109101   1.4     False
-     1.220703e-03 -6.188965e-01 46.214591      9    -0.124331   1.4     False
-     1.269531e-03 -6.436523e-01 46.843046      9    -0.139560   1.4     False
-     1.318359e-03 -6.684082e-01 46.373026      9    -0.154790   1.4     False
-     1.367187e-03 -6.931641e-01 45.018305      9    -0.170020   1.4     False
-     1.416016e-03 -7.179199e-01 44.018305      9    -0.185250   1.8     False
-     1.464844e-03 -7.426758e-01 42.742423      9    -0.200479   1.8     False
-     1.513672e-03 -7.674316e-01 40.586631      9    -0.215709   1.8     False
-     1.562500e-03 -7.921875e-01 40.683830     10    -0.030939   1.8     False
-     1.611328e-03 -8.169434e-01 40.046574     10    -0.046169   1.8     False
-     1.660156e-03 -8.416992e-01 40.026327     10    -0.061399   1.8     False
-     1.708984e-03 -8.664551e-01 40.953553     10    -0.076628   1.6     False
-     1.757812e-03 -8.912109e-01 40.064840     10    -0.091858   1.8     False
-     1.806641e-03 -9.159668e-01 38.594820     10    -0.107088   2.0     False
-     1.855469e-03 -9.407227e-01 38.781524     10    -0.122318   1.8     False
-     1.904297e-03 -9.654785e-01 37.781524     10    -0.137548   2.0     False
-     1.953125e-03 -9.902344e-01 35.068684     10    -0.152777   2.0     False
-     2.001953e-03 -1.014990e+00 33.709951     10    -0.168007   2.2     False
-     2.050781e-03 -1.039746e+00 33.371466     10    -0.183237   2.2     False
-     2.099609e-03 -1.064502e+00 32.841486     10    -0.198467   2.2     False
-     2.148437e-03 -1.089258e+00 33.273066     11    -0.013696   2.2     False
-     2.197266e-03 -1.114014e+00 33.070126     11    -0.028926   2.2     False
-     2.246094e-03 -1.138770e+00 32.241374     11    -0.044156   2.4     False
-     2.294922e-03 -1.163525e+00 32.579859     11    -0.063064   2.2     False
-     2.343750e-03 -1.188281e+00 30.628375     11    -0.085899   2.4     False
-     2.392578e-03 -1.213037e+00 29.062525     12     0.091266   2.4     False
-     2.441406e-03 -1.237793e+00 28.811069     12     0.068430   2.4     False
-     2.490234e-03 -1.262549e+00 29.834126     12     0.045595   2.6     False
-     2.539062e-03 -1.287305e+00 28.546799     11    -0.177241   2.6     False
-     2.587891e-03 -1.312061e+00 29.486838     11    -0.200076   2.6     False
-     2.636719e-03 -1.336816e+00 29.701390     11    -0.222911   2.6     False
-     2.685547e-03 -1.361572e+00 28.716847     11    -0.245747   2.6     False
-     2.734375e-03 -1.386328e+00 27.139551     11    -0.268582   2.8     False
-     2.783203e-03 -1.411084e+00 26.359315     11    -0.291417   2.8     False
-     2.832031e-03 -1.435840e+00 27.060544     11    -0.314253   2.8     False
-     2.880859e-03 -1.460596e+00 26.339068     11    -0.337088   2.8     False
-     2.929687e-03 -1.485352e+00 25.833346     11    -0.359924   2.8     False
-     2.978516e-03 -1.510107e+00 24.773385     11    -0.382759   3.0     False
-     3.027344e-03 -1.534863e+00 25.262283     12    -0.205594   3.0     False
-     3.076172e-03 -1.559619e+00 25.565065     12    -0.228430   3.0     False
-     3.125000e-03 -1.584375e+00 23.179265     12    -0.251265   3.0     False
-     3.173828e-03 -1.609131e+00 22.987770     12    -0.274100   3.0     False
-     3.222656e-03 -1.633887e+00 23.883304     12    -0.296936   3.0     False
-     3.271484e-03 -1.658643e+00 23.452998     12    -0.319771   3.2     False
-     3.320312e-03 -1.683398e+00 23.874502     12    -0.342607   3.2     False
-     3.369141e-03 -1.708154e+00 24.814541     12    -0.365442   3.2     False
-     3.417969e-03 -1.732910e+00 24.946075     12    -0.388277   3.2     False
-     3.466797e-03 -1.757666e+00 23.631847     12    -0.411113   3.2     False
-     3.515625e-03 -1.782422e+00 22.583331     12    -0.433948   3.2     False
-     3.564453e-03 -1.807178e+00 22.068807     12    -0.456783   3.4     False
-     3.613281e-03 -1.831934e+00 21.598787     12    -0.479619   3.4     False
-     3.662109e-03 -1.856689e+00 21.937273     12    -0.502454   3.4     False
-     3.710937e-03 -1.881445e+00 21.431550     12    -0.525290   3.4     False
-     3.759766e-03 -1.906201e+00 21.184718     13    -0.348125   3.6     False
-     3.808594e-03 -1.930957e+00 21.821975     13    -0.370960   3.6     False
-     3.857422e-03 -1.955713e+00 22.283192     13    -0.393796   3.4     False
-     3.906250e-03 -1.980469e+00 21.366210     13    -0.416631   3.6     False
-     3.955078e-03 -2.005225e+00 20.526013     13    -0.439466   3.6     False
-     4.003906e-03 -2.029980e+00 20.490310     13    -0.462302   3.8     False
-     4.052734e-03 -2.054736e+00 20.621844     13    -0.485137   3.8     False
-     4.101562e-03 -2.079492e+00 20.514568     13    -0.507973   3.6     False
-     4.150391e-03 -2.104248e+00 20.857065     13    -0.530808   3.6     False
-     4.199219e-03 -2.129004e+00 20.494321     13    -0.553643   3.8     False
-     4.248047e-03 -2.153760e+00 19.727586     14    -0.376479   4.0     False
-     4.296875e-03 -2.178516e+00 19.377655     14    -0.399314   4.0     False
-     4.345703e-03 -2.203271e+00 19.720152     14    -0.422149   3.8     False
-     4.394531e-03 -2.228027e+00 19.007478     14    -0.444985   4.0     False
-     4.443359e-03 -2.252783e+00 18.753212     14    -0.467820   4.0     False
-     4.492187e-03 -2.277539e+00 18.817184     15    -0.290656   4.2     False
-     4.541016e-03 -2.302295e+00 18.550271     14    -0.513491   4.2     False
-     4.589844e-03 -2.327051e+00 18.358776     14    -0.536326   4.0     False
-     4.638672e-03 -2.351807e+00 18.661558     14    -0.559162   4.0     False
-     4.687500e-03 -2.376562e+00 19.107320     14    -0.581997   4.0     False
-     4.736328e-03 -2.401318e+00 18.417369     15    -0.404832   4.2     False
-     4.785156e-03 -2.426074e+00 17.612876     15    -0.427668   4.4     False
-     4.833984e-03 -2.450830e+00 17.421547     14    -0.650503   4.2     False
+            slope     intercept     maxval  index  d_bestguess  fwhm  multimax
+    -4.882812e-03  3.559570e+00  46.022242     32     1.660705   2.2     False
+    -4.833984e-03  3.523975e+00  46.184595     31     1.475513   2.2     False
+    -4.785156e-03  3.488379e+00  45.973633     31     1.490322   2.2     False
+    -4.736328e-03  3.452783e+00  46.782138     31     1.505130   2.2     False
+    -4.687500e-03  3.417188e+00  46.723377     31     1.519938   2.2     False
+    -4.638672e-03  3.381592e+00  47.217655     31     1.534747   2.2     False
+    -4.589844e-03  3.345996e+00  48.230468     31     1.549555   2.2     False
+    -4.541016e-03  3.310400e+00  48.083478     31     1.564364   3.2     False
+    -4.492188e-03  3.274805e+00  48.156252     31     1.579172   2.2     False
+    -4.443359e-03  3.239209e+00  49.925043     31     1.593980   2.0     False
+    -4.394531e-03  3.203613e+00  50.793508     31     1.608789   2.0     False
+    -4.345703e-03  3.168018e+00  51.479281     31     1.623597   2.0     False
+    -4.296875e-03  3.132422e+00  51.488083     31     1.638405   2.0     False
+    -4.248047e-03  3.096826e+00  51.149598     31     1.653214   2.0     False
+    -4.199219e-03  3.061230e+00  51.958103     31     1.668022   3.0     False
+    -4.150391e-03  3.025635e+00  52.452380     31     1.682831   2.8     False
+    -4.101563e-03  2.990039e+00  51.118686     31     1.697639   3.0     False
+    -4.052734e-03  2.954443e+00  51.720239     31     1.712447   3.0     False
+    -4.003906e-03  2.918848e+00  52.827515     31     1.727256   3.0     False
+    -3.955078e-03  2.883252e+00  53.346051     31     1.742064   2.8     False
+    -3.906250e-03  2.847656e+00  54.039258     31     1.756872   2.8     False
+    -3.857422e-03  2.812061e+00  55.015000     31     1.771681   2.8     False
+    -3.808594e-03  2.776465e+00  56.509277     31     1.786489   2.8     False
+    -3.759766e-03  2.740869e+00  56.202484     31     1.801298   2.8     False
+    -3.710938e-03  2.705273e+00  55.692750     31     1.816106   2.8     False
+    -3.662109e-03  2.669678e+00  56.924801     30     1.630914   2.6     False
+    -3.613281e-03  2.634082e+00  57.251842     30     1.645723   2.6     False
+    -3.564453e-03  2.598486e+00  56.561216     31     1.860531   2.8     False
+    -3.515625e-03  2.562891e+00  56.973318     30     1.675339   2.6     False
+    -3.466797e-03  2.527295e+00  57.599129     30     1.690148   2.6     False
+    -3.417969e-03  2.491699e+00  58.416436     30     1.704956   2.6     False
+    -3.369141e-03  2.456104e+00  59.779179     30     1.719765   2.4     False
+    -3.320313e-03  2.420508e+00  61.833928     30     1.734573   2.4     False
+    -3.271484e-03  2.384912e+00  62.662680     30     1.749381   2.4     False
+    -3.222656e-03  2.349316e+00  64.355887     30     1.764190   2.4     False
+    -3.173828e-03  2.313721e+00  64.993144     30     1.778998   2.4     False
+    -3.125000e-03  2.278125e+00  63.648004     30     1.793806   2.4     False
+    -3.076172e-03  2.242529e+00  64.202243     30     1.808615   2.2     False
+    -3.027344e-03  2.206934e+00  64.899460     30     1.823423   2.4     False
+    -2.978516e-03  2.171338e+00  64.716767     30     1.838232   2.4     False
+    -2.929688e-03  2.135742e+00  64.872559     30     1.853040   2.2     False
+    -2.880859e-03  2.100146e+00  64.717547     30     1.867848   2.2     False
+    -2.832031e-03  2.064551e+00  65.948756     30     1.882657   2.2     False
+    -2.783203e-03  2.028955e+00  66.128807     30     1.897465   2.2     False
+    -2.734375e-03  1.993359e+00  67.034839     29     1.712273   2.2     False
+    -2.685547e-03  1.957764e+00  68.947810     29     1.727082   2.2     False
+    -2.636719e-03  1.922168e+00  71.281083     29     1.741890   2.0     False
+    -2.587891e-03  1.886572e+00  72.109835     29     1.756699   2.0     False
+    -2.539063e-03  1.850977e+00  73.932025     30     1.971507   2.0     False
+    -2.490234e-03  1.815381e+00  76.360090     29     1.786315   2.0     False
+    -2.441406e-03  1.779785e+00  77.722833     29     1.801124   2.0     False
+    -2.392578e-03  1.744189e+00  77.934576     29     1.815932   1.8     False
+    -2.343750e-03  1.708594e+00  79.376326     29     1.830740   1.8     False
+    -2.294922e-03  1.672998e+00  80.456534     29     1.845549   1.8     False
+    -2.246094e-03  1.637402e+00  82.001971     29     1.860357   1.8     False
+    -2.197266e-03  1.601807e+00  82.676298     29     1.875166   1.8     False
+    -2.148438e-03  1.566211e+00  82.722171     29     1.889974   1.8     False
+    -2.099609e-03  1.530615e+00  83.755231     29     1.904782   1.6     False
+    -2.050781e-03  1.495020e+00  85.954327     29     1.919591   1.6     False
+    -2.001953e-03  1.459424e+00  87.046148     29     1.934399   1.6     False
+    -1.953125e-03  1.423828e+00  88.839196     29     1.949207   1.6     False
+    -1.904297e-03  1.388232e+00  89.332032     29     1.964016   1.6     False
+    -1.855469e-03  1.352637e+00  92.619358     29     1.978824   1.6     False
+    -1.806641e-03  1.317041e+00  94.253805     29     1.993633   1.4     False
+    -1.757813e-03  1.281445e+00  96.772340     29     2.008441   1.4     False
+    -1.708984e-03  1.245850e+00  96.586837     29     2.023249   1.4     False
+    -1.660156e-03  1.210254e+00  96.941558     29     2.038058   1.4     False
+    -1.611328e-03  1.174658e+00  97.576172     29     2.052866   1.4     False
+    -1.562500e-03  1.139063e+00 101.133834     29     2.067674   1.4     False
+    -1.513672e-03  1.103467e+00 102.063041     29     2.082483   1.4     False
+    -1.464844e-03  1.067871e+00 104.652982     29     2.097291   1.4     False
+    -1.416016e-03  1.032275e+00 108.517604     29     2.112099   1.2     False
+    -1.367188e-03  9.966797e-01 110.329389     28     1.926908   1.2     False
+    -1.318359e-03  9.610840e-01 112.322098     29     2.141716   1.2     False
+    -1.269531e-03  9.254883e-01 115.703887     29     2.156525   1.2     False
+    -1.220703e-03  8.898926e-01 119.978567     29     2.171333   1.2     False
+    -1.171875e-03  8.542969e-01 123.810129     29     2.177563   1.2     False
+    -1.123047e-03  8.187012e-01 126.857444     29     2.179609   1.0     False
+    -1.074219e-03  7.831055e-01 129.784670     29     2.181655   1.0     False
+    -1.025391e-03  7.475098e-01 131.696440     29     2.183701   1.0     False
+    -9.765625e-04  7.119141e-01 136.296793     29     2.185747   1.0     False
+    -9.277344e-04  6.763184e-01 139.359564     29     2.187793   1.0     False
+    -8.789063e-04  6.407227e-01 143.226829     29     2.189839   1.0     False
+    -8.300781e-04  6.051270e-01 147.699658     29     2.191885   1.0     False
+    -7.812500e-04  5.695313e-01 150.933677     29     2.193932   1.0     False
+    -7.324219e-04  5.339355e-01 154.972190     29     2.195978   1.0     False
+    -6.835938e-04  4.983398e-01 157.266171     29     2.198024   1.0     False
+    -6.347656e-04  4.627441e-01 159.404359     29     2.200070   1.0     False
+    -5.859375e-04  4.271484e-01 163.315349     29     2.202116   1.0     False
+    -5.371094e-04  3.915527e-01 167.322170     29     2.204162   1.0     False
+    -4.882813e-04  3.559570e-01 169.747684     29     2.206208   1.0     False
+    -4.394531e-04  3.203613e-01 171.571645     29     2.208254   1.0     False
+    -3.906250e-04  2.847656e-01 173.869469     28     2.010300   1.0     False
+    -3.417969e-04  2.491699e-01 173.395606     29     2.212346   1.0     False
+    -2.929688e-04  2.135742e-01 174.785250     28     2.014392   1.0     False
+    -2.441406e-04  1.779785e-01 175.800706     28     2.016438   1.0     False
+    -1.953125e-04  1.423828e-01 177.453419     28     2.018484   1.0     False
+    -1.464844e-04  1.067871e-01 179.651568     28     2.020530   0.8     False
+    -9.765625e-05  7.119141e-02 183.673678     28     2.022576   0.8     False
+    -4.882813e-05  3.559570e-02 181.304281     28     2.024622   0.8     False
+    -1.734723e-17  1.264613e-14 182.152500     28     2.026668   0.8     False
+     4.882812e-05 -3.559570e-02 182.622519     28     2.028714   0.8     False
+     9.765625e-05 -7.119141e-02 181.945548     28     2.030760   0.8     False
+     1.464844e-04 -1.067871e-01 180.424370     28     2.032806   0.8     False
+     1.953125e-04 -1.423828e-01 177.791904     28     2.034852   0.8     False
+     2.441406e-04 -1.779785e-01 176.231012     28     2.036898   0.8     False
+     2.929687e-04 -2.135742e-01 172.738882     28     2.038945   0.8     False
+     3.417969e-04 -2.491699e-01 169.034843     28     2.040991   0.8     False
+     3.906250e-04 -2.847656e-01 166.609329     28     2.043037   1.0     False
+     4.394531e-04 -3.203613e-01 163.976863     28     2.045083   1.0     False
+     4.882812e-04 -3.559570e-01 160.535893     28     2.047129   1.0     False
+     5.371094e-04 -3.915527e-01 156.600645     28     2.049175   1.0     False
+     5.859375e-04 -4.271484e-01 152.299064     28     2.051221   1.0     False
+     6.347656e-04 -4.627441e-01 148.220837     28     2.053267   1.0     False
+     6.835937e-04 -4.983398e-01 145.795322     28     2.055313   1.0     False
+     7.324219e-04 -5.339355e-01 141.326504     28     2.057359   1.0     False
+     7.812500e-04 -5.695312e-01 138.132199     28     2.059405   1.0     False
+     8.300781e-04 -6.051270e-01 135.073438     28     2.061451   1.2     False
+     8.789062e-04 -6.407227e-01 132.281758     28     2.063497   1.2     False
+     9.277344e-04 -6.763184e-01 128.421927     28     2.065543   1.2     False
+     9.765625e-04 -7.119141e-01 125.835829     28     2.067589   1.2     False
+     1.025391e-03 -7.475098e-01 122.179527     28     2.069635   1.2     False
+     1.074219e-03 -7.831055e-01 118.479499     28     2.071681   1.2     False
+     1.123047e-03 -8.187012e-01 116.456609     28     2.073727   1.2     False
+     1.171875e-03 -8.542969e-01 113.615044     28     2.075773   1.2     False
+     1.220703e-03 -8.898926e-01 109.311785     29     2.277819   1.2     False
+     1.269531e-03 -9.254883e-01 108.070028     28     2.079865   1.2     False
+     1.318359e-03 -9.610840e-01 106.074039     28     2.081912   1.2     False
+     1.367187e-03 -9.966797e-01 104.583773     28     2.083958   1.2     False
+     1.416016e-03 -1.032275e+00 103.113753     28     2.086004   1.2     False
+     1.464844e-03 -1.067871e+00 101.499690     29     2.288050   1.2     False
+     1.513672e-03 -1.103467e+00  98.890702     29     2.290096   1.4     False
+     1.562500e-03 -1.139062e+00  97.012066     29     2.292142   1.4     False
+     1.611328e-03 -1.174658e+00  96.159057     29     2.294188   1.4     False
+     1.660156e-03 -1.210254e+00  93.616263     29     2.296234   1.4     False
+     1.708984e-03 -1.245850e+00  91.859084     29     2.298280   1.4     False
+     1.757812e-03 -1.281445e+00  90.859084     29     2.300326   1.4     False
+     1.806641e-03 -1.317041e+00  91.427578     29     2.302372   1.4     False
+     1.855469e-03 -1.352637e+00  89.741805     29     2.304418   1.4     False
+     1.904297e-03 -1.388232e+00  88.296044     29     2.306464   1.6     False
+     1.953125e-03 -1.423828e+00  86.745816     29     2.308510   1.6     False
+     2.001953e-03 -1.459424e+00  85.734371     29     2.310556   1.6     False
+     2.050781e-03 -1.495020e+00  84.578579     29     2.312602   1.6     False
+     2.099609e-03 -1.530615e+00  82.328324     29     2.314648   1.6     False
+     2.148437e-03 -1.566211e+00  81.774085     29     2.316694   1.8     False
+     2.197266e-03 -1.601807e+00  80.917064     29     2.318740   1.8     False
+     2.246094e-03 -1.637402e+00  80.677053     29     2.320786   1.8     False
+     2.294922e-03 -1.672998e+00  79.050041     29     2.322832   1.8     False
+     2.343750e-03 -1.708594e+00  77.711555     29     2.324878   1.8     False
+     2.392578e-03 -1.744189e+00  74.652795     29     2.326925   1.8     False
+     2.441406e-03 -1.779785e+00  75.089755     29     2.328971   1.8     False
+     2.490234e-03 -1.815381e+00  75.065497     29     2.331017   1.8     False
+     2.539062e-03 -1.850977e+00  74.368279     29     2.333063   1.8     False
+     2.587891e-03 -1.886572e+00  73.535516     29     2.335109   1.8     False
+     2.636719e-03 -1.922168e+00  73.462742     29     2.337155   1.8     False
+     2.685547e-03 -1.957764e+00  73.124257     29     2.339201   1.8     False
+     2.734375e-03 -1.993359e+00  73.246989     29     2.341247   1.8     False
+     2.783203e-03 -2.028955e+00  72.354265     29     2.343293   1.8     False
+     2.832031e-03 -2.064551e+00  70.748700     29     2.345339   1.8     False
+     2.880859e-03 -2.100146e+00  70.027225     29     2.347385   2.0     False
+     2.929687e-03 -2.135742e+00  69.835729     29     2.349431   1.8     False
+     2.978516e-03 -2.171338e+00  69.330007     29     2.351477   1.8     False
+     3.027344e-03 -2.206934e+00  68.619976     29     2.353523   2.0     False
+     3.076172e-03 -2.242529e+00  68.595718     29     2.355569   2.0     False
+     3.125000e-03 -2.278125e+00  67.909946     29     2.357615   2.0     False
+     3.173828e-03 -2.313721e+00  67.909946     29     2.359661   2.0     False
+     3.222656e-03 -2.349316e+00  67.188470     29     2.361707   2.0     False
+     3.271484e-03 -2.384912e+00  65.707005     29     2.363753   2.0     False
+     3.320312e-03 -2.420508e+00  65.682747     29     2.365799   2.0     False
+     3.369141e-03 -2.456104e+00  64.081194     29     2.367845   2.0     False
+     3.417969e-03 -2.491699e+00  63.746719     29     2.369891   2.0     False
+     3.466797e-03 -2.527295e+00  63.746719     29     2.371938   2.0     False
+     3.515625e-03 -2.562891e+00  63.408234     29     2.373984   2.0     False
+     3.564453e-03 -2.598486e+00  63.662500     29     2.376030   2.0     False
+     3.613281e-03 -2.634082e+00  62.519521     29     2.378076   2.0     False
+     3.662109e-03 -2.669678e+00  61.711016     29     2.380122   2.0     False
+     3.710937e-03 -2.705273e+00  59.193682     29     2.382168   2.4     False
+     3.759766e-03 -2.740869e+00  58.013632     29     2.384214   2.4     False
+     3.808594e-03 -2.776465e+00  57.013632     29     2.386260   2.4     False
+     3.857422e-03 -2.812061e+00  56.543612     29     2.388306   2.4     False
+     3.906250e-03 -2.847656e+00  56.073593     29     2.390352   2.4     False
+     3.955078e-03 -2.883252e+00  56.073593     29     2.392398   1.6     False
+     4.003906e-03 -2.918848e+00  55.710849     29     2.394444   1.6     False
+     4.052734e-03 -2.954443e+00  55.543612     29     2.396490   1.6     False
+     4.101562e-03 -2.990039e+00  55.180869     29     2.398536   1.6     False
+     4.150391e-03 -3.025635e+00  54.348106     29     2.396743   1.6     False
+     4.199219e-03 -3.061230e+00  54.216572     29     2.381241   1.6     False
+     4.248047e-03 -3.096826e+00  55.354147     30     2.565738   1.6     False
+     4.296875e-03 -3.132422e+00  55.509939     30     2.550236   1.6     False
+     4.345703e-03 -3.168018e+00  53.793254     30     2.534733   1.6     False
+     4.394531e-03 -3.203613e+00  51.407454     30     2.519230   1.6     False
+     4.443359e-03 -3.239209e+00  50.331870     30     2.503728   1.6     False
+     4.492187e-03 -3.274805e+00  50.307612     30     2.488225   1.8     False
+     4.541016e-03 -3.310400e+00  52.542832     30     2.472723   1.6     False
+     4.589844e-03 -3.345996e+00  51.538821     30     2.457220   1.6     False
+     4.638672e-03 -3.381592e+00  50.371584     30     2.441718   1.6     False
+     4.687500e-03 -3.417187e+00  51.490305     30     2.426215   1.6     False
+     4.736328e-03 -3.452783e+00  50.296829     31     2.610713   1.6     False
+     4.785156e-03 -3.488379e+00  48.704077     31     2.595210   1.6     False
+     4.833984e-03 -3.523975e+00  48.688621     31     2.579708   1.6     False
     ####BEST:
-        slope  intercept    maxval  index  d_bestguess  fwhm  multimax
-    -0.000195   0.099023 88.026809      7    -0.082667   0.8     False
-    Setting rough_cut_px=1.9999999999999996. limits: (0.3-0.8)
+        slope  intercept     maxval  index  d_bestguess  fwhm  multimax
+    -0.000098   0.071191 183.673678     28     2.022576   0.8     False
+    Setting rough_cut_px=2.0000000000000018. limits: (0.3-0.8)
     Setting rough_cut_px=0.8
 
     ####################
     ### d_rotated cut (Nsigma=3.0)
-    Keeping 115 out of 115, skippin 0 because of null values in columns d_rot_tmp
-    median: -0.096566
-    75.000000 percentile cut: max residual for cut: 0.178949
-    median: -0.096278
-    i:00 mean:-0.096278(0.009905) stdev:0.091317(0.006963) X2norm:0.99 Nchanged:0 Ngood:86 Nclip:29
+    Keeping 222 out of 222, skippin 0 because of null values in columns d_rot_tmp
+    median: 2.110833
+    75.000000 percentile cut: max residual for cut: 0.076543
+    median: 2.112779
+    i:00 mean:2.112779(0.002520) stdev:0.032375(0.001777) X2norm:1.00 Nchanged:0 Ngood:166 Nclip:56
 
-    mean: -0.102585
-    i:01 mean:-0.102585(0.011283) stdev:0.109973(0.007937) X2norm:1.00 Nchanged:10 Ngood:96 Nclip:19
+    mean: 2.114075
+    i:01 mean:2.114075(0.002887) stdev:0.038415(0.002036) X2norm:1.00 Nchanged:12 Ngood:178 Nclip:44
 
-    mean: -0.099534
-    i:02 mean:-0.099534(0.012630) stdev:0.126301(0.008887) X2norm:1.00 Nchanged:5 Ngood:101 Nclip:14
+    mean: 2.113588
+    i:02 mean:2.113588(0.003081) stdev:0.041561(0.002172) X2norm:1.00 Nchanged:5 Ngood:183 Nclip:39
 
-    mean: -0.096082
-    i:03 mean:-0.096082(0.013588) stdev:0.137905(0.009562) X2norm:1.00 Nchanged:3 Ngood:104 Nclip:11
+    mean: 2.113580
+    i:03 mean:2.113580(0.003189) stdev:0.043262(0.002249) X2norm:1.00 Nchanged:2 Ngood:185 Nclip:37
 
-    mean: -0.099736
-    i:04 mean:-0.099736(0.014760) stdev:0.151959(0.010388) X2norm:1.00 Nchanged:3 Ngood:107 Nclip:8
+    mean: 2.110885
+    i:04 mean:2.110885(0.003397) stdev:0.046577(0.002396) X2norm:1.00 Nchanged:4 Ngood:189 Nclip:33
 
-    mean: -0.103411
-    i:05 mean:-0.103411(0.015905) stdev:0.166049(0.011195) X2norm:1.00 Nchanged:3 Ngood:110 Nclip:5
+    mean: 2.111600
+    i:05 mean:2.111600(0.003454) stdev:0.047488(0.002436) X2norm:1.00 Nchanged:1 Ngood:190 Nclip:32
 
-    mean: -0.107782
-    i:06 mean:-0.107782(0.016360) stdev:0.171589(0.011516) X2norm:1.00 Nchanged:1 Ngood:111 Nclip:4
+    mean: 2.112334
+    i:06 mean:2.112334(0.003631) stdev:0.050314(0.002561) X2norm:1.00 Nchanged:3 Ngood:193 Nclip:29
 
-    mean: -0.107782
-    i:07 mean:-0.107782(0.016360) stdev:0.171589(0.011516) X2norm:1.00 Nchanged:0 Ngood:111 Nclip:4
-    i:07 mean:-0.107782(0.016360) stdev:0.171589(0.011516) X2norm:1.00 Nchanged:0 Ngood:111 Nclip:4
+    mean: 2.110830
+    i:07 mean:2.110830(0.003748) stdev:0.052203(0.002643) X2norm:1.00 Nchanged:2 Ngood:195 Nclip:27
+
+    mean: 2.109305
+    i:08 mean:2.109305(0.003863) stdev:0.054084(0.002725) X2norm:1.00 Nchanged:2 Ngood:197 Nclip:25
+
+    mean: 2.108492
+    i:09 mean:2.108492(0.003929) stdev:0.055147(0.002771) X2norm:1.00 Nchanged:1 Ngood:198 Nclip:24
+
+    i:10 mean:2.108492(0.003929) stdev:0.055147(0.002771) X2norm:1.00 Nchanged:1 Ngood:198 Nclip:24
     ### Doing histogram cut for dy, slope_min:-0.004883 slope_max:0.004883 slope_stepsize:0.000049
     Nfwhm=2.5, rough_cut_px_min=0.3, rough_cut_px_max=0.8, Nsigma=3.0
     ########################
@@ -1172,236 +1157,245 @@ create a catalog that we will use to align the other image.
     iteration 197 out of 200: slope = 0.004736
     iteration 198 out of 200: slope = 0.004785
     iteration 199 out of 200: slope = 0.004834
-            slope     intercept    maxval  index  d_bestguess  fwhm  multimax
-    -4.882812e-03  2.475586e+00 14.532667     19     0.109116   5.0     False
-    -4.833984e-03  2.450830e+00 15.655400     19     0.131059   3.2     False
-    -4.785156e-03  2.426074e+00 15.655400     19     0.153002   3.0     False
-    -4.736328e-03  2.401318e+00 15.798379     23     0.974945   2.8     False
-    -4.687500e-03  2.376563e+00 15.484151     23     0.996887   3.0     False
-    -4.638672e-03  2.351807e+00 15.075461     22     0.818830   4.8     False
-    -4.589844e-03  2.327051e+00 15.496964     22     0.840773   4.8     False
-    -4.541016e-03  2.302295e+00 15.581183     18     0.062716   4.2     False
-    -4.492188e-03  2.277539e+00 15.581183     18     0.084659   4.8     False
-    -4.443359e-03  2.252783e+00 16.185380     22     0.906602   4.6     False
-    -4.394531e-03  2.228027e+00 16.413946     18     0.128544   4.2     False
-    -4.345703e-03  2.203271e+00 17.099719     21     0.750487   4.0     False
-    -4.296875e-03  2.178516e+00 16.413946     18     0.172430   4.2     False
-    -4.248047e-03  2.153760e+00 16.621678     20     0.594373   4.4     False
-    -4.199219e-03  2.129004e+00 16.214429     21     0.816316   4.4     False
-    -4.150391e-03  2.104248e+00 17.242698     17     0.038259   4.4     False
-    -4.101563e-03  2.079492e+00 17.266956     17     0.060202   4.0     False
-    -4.052734e-03  2.054736e+00 17.291214     20     0.682144   4.0     False
-    -4.003906e-03  2.029980e+00 18.206995     20     0.704087   4.0     False
-    -3.955078e-03  2.005225e+00 17.904213     20     0.726030   4.2     False
-    -3.906250e-03  1.980469e+00 17.757223     20     0.747973   4.2     False
-    -3.857422e-03  1.955713e+00 18.594776     19     0.569916   3.6     False
-    -3.808594e-03  1.930957e+00 17.961531     19     0.591859   4.0     False
-    -3.759766e-03  1.906201e+00 18.638501     16     0.013802   4.0     False
-    -3.710938e-03  1.881445e+00 18.834008     16     0.035744   4.0     False
-    -3.662109e-03  1.856689e+00 18.666770     16     0.057687   3.8     False
-    -3.613281e-03  1.831934e+00 19.324274     16     0.079630   3.6     False
-    -3.564453e-03  1.807178e+00 19.821195     19     0.701573   3.6     False
-    -3.515625e-03  1.782422e+00 19.821195     19     0.723516   3.6     False
-    -3.466797e-03  1.757666e+00 18.654738     18     0.545459   3.8     False
-    -3.417969e-03  1.732910e+00 20.777470     18     0.567401   3.4     False
-    -3.369141e-03  1.708154e+00 20.745778     18     0.589344   3.4     False
-    -3.320313e-03  1.683398e+00 20.241256     15     0.011287   3.4     False
-    -3.271484e-03  1.658643e+00 20.285761     15     0.033230   3.6     False
-    -3.222656e-03  1.633887e+00 20.531225     18     0.655173   3.4     False
-    -3.173828e-03  1.609131e+00 20.661317     15     0.077116   3.4     False
-    -3.125000e-03  1.584375e+00 22.496302     17     0.499059   3.2     False
-    -3.076172e-03  1.559619e+00 22.532005     17     0.521001   3.2     False
-    -3.027344e-03  1.534863e+00 22.380224     17     0.542944   3.2     False
-    -2.978516e-03  1.510107e+00 21.707265     17     0.564887   3.2     False
-    -2.929688e-03  1.485352e+00 21.550030     14    -0.013170   3.2     False
-    -2.880859e-03  1.460596e+00 22.579741     17     0.608773   3.0     False
-    -2.832031e-03  1.435840e+00 23.178064     16     0.430716   3.2     False
-    -2.783203e-03  1.411084e+00 24.046530     16     0.452659   3.0     False
-    -2.734375e-03  1.386328e+00 24.747759     16     0.474601   3.0     False
-    -2.685547e-03  1.361572e+00 24.329845     15     0.296544   3.0     False
-    -2.636719e-03  1.336816e+00 25.799865     15     0.318487   2.8     False
-    -2.587891e-03  1.312061e+00 25.186866     15     0.340430   2.8     False
-    -2.539063e-03  1.287305e+00 24.280308     13    -0.037627   2.8     False
-    -2.490234e-03  1.262549e+00 24.829335     15     0.384316   2.8     False
-    -2.441406e-03  1.237793e+00 25.179265     15     0.406258   2.8     False
-    -2.392578e-03  1.213037e+00 26.155007     15     0.428201   2.8     False
-    -2.343750e-03  1.188281e+00 27.219926     14     0.250144   2.6     False
-    -2.294922e-03  1.163525e+00 28.821480     14     0.272087   2.6     False
-    -2.246094e-03  1.138770e+00 29.821480     14     0.294030   2.2     False
-    -2.197266e-03  1.114014e+00 28.291332     14     0.315973   2.6     False
-    -2.148438e-03  1.089258e+00 28.495640     13     0.137916   2.6     False
-    -2.099609e-03  1.064502e+00 28.115293     14     0.359858   2.4     False
-    -2.050781e-03  1.039746e+00 28.858384     13     0.181801   2.4     False
-    -2.001953e-03  1.014990e+00 30.818670     13     0.203744   2.4     False
-    -1.953125e-03  9.902344e-01 31.758708     13     0.225687   2.0     False
-    -1.904297e-03  9.654785e-01 32.387163     13     0.247630   2.0     False
-    -1.855469e-03  9.407227e-01 32.857183     13     0.269573   2.0     False
-    -1.806641e-03  9.159668e-01 32.458569     13     0.291516   2.0     False
-    -1.757813e-03  8.912109e-01 32.650064     13     0.313458   2.0     False
-    -1.708984e-03  8.664551e-01 33.417413     12     0.135401   2.0     False
-    -1.660156e-03  8.416992e-01 34.656223     12     0.157344   1.8     False
-    -1.611328e-03  8.169434e-01 33.994709     12     0.179287   1.8     False
-    -1.562500e-03  7.921875e-01 35.269222     12     0.201230   1.8     False
-    -1.513672e-03  7.674316e-01 36.014956     12     0.223173   1.8     False
-    -1.464844e-03  7.426758e-01 38.141699     12     0.245115   1.8     False
-    -1.416016e-03  7.179199e-01 38.123433     11     0.067058   1.8     False
-    -1.367188e-03  6.931641e-01 39.242154     11     0.089001   1.6     False
-    -1.318359e-03  6.684082e-01 40.652212     11     0.110944   1.6     False
-    -1.269531e-03  6.436523e-01 39.310917     11     0.132887   1.8     False
-    -1.220703e-03  6.188965e-01 39.310917     11     0.154830   1.8     False
-    -1.171875e-03  5.941406e-01 42.295461     10    -0.023227   1.8     False
-    -1.123047e-03  5.693848e-01 42.629935     10    -0.001285   1.6     False
-    -1.074219e-03  5.446289e-01 45.124213     10     0.020658   1.4     False
-    -1.025391e-03  5.198730e-01 46.716964     10     0.042601   1.4     False
-    -9.765625e-04  4.951172e-01 45.255747     10     0.064544   1.6     False
-    -9.277344e-04  4.703613e-01 46.391292     10     0.086487   1.6     False
-    -8.789063e-04  4.456055e-01 47.852510     10     0.108430   1.6     False
-    -8.300781e-04  4.208496e-01 48.864660      9    -0.069627   1.4     False
-    -7.812500e-04  3.960938e-01 49.971937      9    -0.047685   1.4     False
-    -7.324219e-04  3.713379e-01 52.118927      9    -0.025742   1.4     False
-    -6.835938e-04  3.465820e-01 53.760194      9    -0.003799   1.4     False
-    -6.347656e-04  3.218262e-01 54.831767      9     0.018144   1.4     False
-    -5.859375e-04  2.970703e-01 54.664530      9     0.040087   1.4     False
-    -5.371094e-04  2.723145e-01 57.464233      9     0.062030   1.2     False
-    -4.882813e-04  2.475586e-01 59.208011      8    -0.116028   1.2     False
-    -4.394531e-04  2.228027e-01 61.888993      8    -0.094085   1.2     False
-    -3.906250e-04  1.980469e-01 64.346199      8    -0.072142   1.2     False
-    -3.417969e-04  1.732910e-01 65.114990      8    -0.050199   1.2     False
-    -2.929688e-04  1.485352e-01 64.736791      8    -0.028256   1.2     False
-    -2.441406e-04  1.237793e-01 66.039573      8    -0.006313   1.0     False
-    -1.953125e-04  9.902344e-02 67.716543      8     0.015630   1.0     False
-    -1.464844e-04  7.426758e-02 69.162472      7    -0.162428   1.0     False
-    -9.765625e-05  4.951172e-02 72.260946      7    -0.140485   1.0     False
-    -4.882813e-05  2.475586e-02 73.368222      7    -0.118542   1.0     False
-    -1.734723e-17  8.795048e-15 75.176727      7    -0.096599   0.8     False
-     4.882812e-05 -2.475586e-02 77.662202      7    -0.074656   0.8     False
-     9.765625e-05 -4.951172e-02 78.000688      7    -0.052713   0.8     False
-     1.464844e-04 -7.426758e-02 79.510421      7    -0.030770   0.8     False
-     1.953125e-04 -9.902344e-02 79.510421      7    -0.008828   0.8     False
-     2.441406e-04 -1.237793e-01 78.024946      7     0.013115   1.0     False
-     2.929687e-04 -1.485352e-01 79.000688      7     0.035058   1.0     False
-     3.417969e-04 -1.732910e-01 80.354629      6    -0.142999   1.0     False
-     3.906250e-04 -1.980469e-01 82.513064      6    -0.121056   1.0     False
-     4.394531e-04 -2.228027e-01 83.867006      6    -0.119131   0.8     False
-     4.882812e-04 -2.475586e-01 82.684312      6    -0.138177   1.0     False
-     5.371094e-04 -2.723145e-01 79.677658      6    -0.157222   1.0     False
-     5.859375e-04 -2.970703e-01 79.901013      7     0.023732   1.0     False
-     6.347656e-04 -3.218262e-01 81.537322      7     0.004686   0.8     False
-     6.835937e-04 -3.465820e-01 82.043045      7    -0.014360   0.8     False
-     7.324219e-04 -3.713379e-01 84.468559      7    -0.033406   0.8     False
-     7.812500e-04 -3.960937e-01 81.573025      7    -0.052451   0.8     False
-     8.300781e-04 -4.208496e-01 80.728818      7    -0.071497   0.8     False
-     8.789062e-04 -4.456055e-01 78.701916      7    -0.090543   1.0     False
-     9.277344e-04 -4.703613e-01 76.710718      7    -0.109589   1.0     False
-     9.765625e-04 -4.951172e-01 75.093709      7    -0.128635   1.0     False
-     1.025391e-03 -5.198730e-01 73.516413      7    -0.147680   1.0     False
-     1.074219e-03 -5.446289e-01 71.771880      7    -0.166726   1.0     False
-     1.123047e-03 -5.693848e-01 68.557854      8     0.014228   1.0     False
-     1.171875e-03 -5.941406e-01 68.052132      8    -0.004818   1.0     False
-     1.220703e-03 -6.188965e-01 67.546409      8    -0.023864   1.2     False
-     1.269531e-03 -6.436523e-01 66.777618      8    -0.042909   1.2     False
-     1.318359e-03 -6.684082e-01 66.215779      8    -0.061955   1.2     False
-     1.367187e-03 -6.931641e-01 65.266938      8    -0.081001   1.0     False
-     1.416016e-03 -7.179199e-01 61.773862      8    -0.100047   1.0     False
-     1.464844e-03 -7.426758e-01 59.172308      8    -0.119093   1.0     False
-     1.513672e-03 -7.674316e-01 57.100735      8    -0.138138   1.2     False
-     1.562500e-03 -7.921875e-01 56.089290      8    -0.157184   1.2     False
-     1.611328e-03 -8.169434e-01 53.946311      8    -0.176230   1.2     False
-     1.660156e-03 -8.416992e-01 52.202558      9     0.004724   1.2     False
-     1.708984e-03 -8.664551e-01 51.949542      8    -0.214322   1.2     False
-     1.757812e-03 -8.912109e-01 50.626512      8    -0.233367   1.2     False
-     1.806641e-03 -9.159668e-01 49.100543      8    -0.252413   1.4     False
-     1.855469e-03 -9.407227e-01 47.645979      8    -0.271459   1.4     False
-     1.904297e-03 -9.654785e-01 46.609026      9    -0.090505   1.4     False
-     1.953125e-03 -9.902344e-01 45.564403      8    -0.309551   1.4     False
-     2.001953e-03 -1.014990e+00 43.688621      9    -0.128596   1.6     False
-     2.050781e-03 -1.039746e+00 43.158641      9    -0.147642   1.6     False
-     2.099609e-03 -1.064502e+00 43.272571      9    -0.166688   1.6     False
-     2.148437e-03 -1.089258e+00 41.515225      9    -0.185734   1.6     False
-     2.197266e-03 -1.114014e+00 41.314928      9    -0.204780   1.6     False
-     2.246094e-03 -1.138770e+00 41.556381      9    -0.223825   1.8     False
-     2.294922e-03 -1.163525e+00 40.329016      9    -0.242871   1.8     False
-     2.343750e-03 -1.188281e+00 40.089005      9    -0.261917   1.8     False
-     2.392578e-03 -1.213037e+00 39.598738      9    -0.280963   1.8     False
-     2.441406e-03 -1.237793e+00 38.455759      9    -0.300009   1.8     False
-     2.490234e-03 -1.262549e+00 36.320214      9    -0.319054   2.0     False
-     2.539062e-03 -1.287305e+00 35.128719      9    -0.338100   2.0     False
-     2.587891e-03 -1.312061e+00 34.264264      9    -0.357146   2.0     False
-     2.636719e-03 -1.336816e+00 33.758542      9    -0.376192   2.0     False
-     2.685547e-03 -1.361572e+00 33.081571      9    -0.395238   2.0     False
-     2.734375e-03 -1.386328e+00 32.217116      9    -0.414283   2.2     False
-     2.783203e-03 -1.411084e+00 31.190048     10    -0.233329   2.2     False
-     2.832031e-03 -1.435840e+00 31.009998     10    -0.252375   2.2     False
-     2.880859e-03 -1.460596e+00 30.352494     10    -0.271421   2.2     False
-     2.929687e-03 -1.485352e+00 30.328236     10    -0.290467   2.4     False
-     2.978516e-03 -1.510107e+00 29.523742     10    -0.309512   2.4     False
-     3.027344e-03 -1.534863e+00 28.846772     10    -0.328558   2.4     False
-     3.076172e-03 -1.559619e+00 28.643831     10    -0.347604   2.4     False
-     3.125000e-03 -1.584375e+00 28.285099     10    -0.366650   2.4     False
-     3.173828e-03 -1.609131e+00 28.587881     10    -0.385696   2.6     False
-     3.222656e-03 -1.633887e+00 28.877851     10    -0.404741   2.6     False
-     3.271484e-03 -1.658643e+00 27.902109     10    -0.423787   2.6     False
-     3.320312e-03 -1.683398e+00 27.037654     10    -0.442833   2.6     False
-     3.369141e-03 -1.708154e+00 26.316178     10    -0.461879   2.8     False
-     3.417969e-03 -1.732910e+00 25.678921     10    -0.480925   2.8     False
-     3.466797e-03 -1.757666e+00 24.738882     10    -0.499970   2.8     False
-     3.515625e-03 -1.782422e+00 24.233160     10    -0.519016   2.8     False
-     3.564453e-03 -1.807178e+00 24.215135     12    -0.138062   2.8     False
-     3.613281e-03 -1.831934e+00 24.529362     12    -0.157108   3.0     False
-     3.662109e-03 -1.856689e+00 23.903551     12    -0.177882   3.0     False
-     3.710937e-03 -1.881445e+00 22.927809     12    -0.199920   3.0     False
-     3.759766e-03 -1.906201e+00 23.123315     12    -0.221958   3.0     False
-     3.808594e-03 -1.930957e+00 22.053184      9    -0.843995   3.2     False
-     3.857422e-03 -1.955713e+00 22.307450      9    -0.866033   3.2     False
-     3.906250e-03 -1.980469e+00 22.603578     13    -0.088070   3.2     False
-     3.955078e-03 -2.005225e+00 21.639281     13    -0.110108   3.2     False
-     4.003906e-03 -2.029980e+00 21.938053     13    -0.132146   3.2     False
-     4.052734e-03 -2.054736e+00 20.848802     11    -0.554183   3.4     False
-     4.101562e-03 -2.079492e+00 20.800286     12    -0.376221   3.4     False
-     4.150391e-03 -2.104248e+00 21.881936     13    -0.198259   3.4     False
-     4.199219e-03 -2.129004e+00 19.946075     14    -0.020296   3.6     False
-     4.248047e-03 -2.153760e+00 21.100499     14    -0.042334   3.4     False
-     4.296875e-03 -2.178516e+00 21.243478     14    -0.064372   3.6     False
-     4.345703e-03 -2.203271e+00 21.243478     14    -0.086409   2.4     False
-     4.394531e-03 -2.228027e+00 20.713498     14    -0.108447   2.4     False
-     4.443359e-03 -2.252783e+00 19.928471     15     0.069516   3.6     False
-     4.492187e-03 -2.277539e+00 18.781481     15     0.047478   3.8     False
-     4.541016e-03 -2.302295e+00 19.920449     14    -0.174560   2.6     False
-     4.589844e-03 -2.327051e+00 18.550271     15     0.003403   3.8     False
-     4.638672e-03 -2.351807e+00 19.490310     15    -0.018635   2.6     False
-     4.687500e-03 -2.376562e+00 19.668993     15    -0.040673   2.6     False
-     4.736328e-03 -2.401318e+00 19.864499     15    -0.062710   2.2     False
-     4.785156e-03 -2.426074e+00 19.238687     15    -0.084748   2.4     False
-     4.833984e-03 -2.450830e+00 18.621678     15    -0.106786   2.8     False
+            slope     intercept     maxval  index  d_bestguess  fwhm  multimax
+    -4.882812e-03  3.562012e+00  31.806983     18     1.967347   4.0     False
+    -4.833984e-03  3.526392e+00  31.448251     18     1.994824   3.8     False
+    -4.785156e-03  3.490771e+00  31.855741     16     1.622301   3.8     False
+    -4.736328e-03  3.455151e+00  32.656056     19     2.249779   3.8     False
+    -4.687500e-03  3.419531e+00  34.586439     18     2.077256   3.8     False
+    -4.638672e-03  3.383911e+00  33.303904     18     2.104733   3.8     False
+    -4.589844e-03  3.348291e+00  33.548780     16     1.732211   3.6     False
+    -4.541016e-03  3.312671e+00  33.575774     17     1.959688   3.6     False
+    -4.492188e-03  3.277051e+00  33.202787     17     1.987165   3.6     False
+    -4.443359e-03  3.241431e+00  33.944584     18     2.214643   3.6     False
+    -4.394531e-03  3.205811e+00  36.521025     17     2.042120   3.4     False
+    -4.345703e-03  3.170190e+00  36.086709     17     2.069598   3.4     False
+    -4.296875e-03  3.134570e+00  35.338165     17     2.097075   3.4     False
+    -4.248047e-03  3.098950e+00  34.749078     15     1.724552   3.4     False
+    -4.199219e-03  3.063330e+00  36.689116     15     1.752030   3.4     False
+    -4.150391e-03  3.027710e+00  35.761891     15     1.779507   3.4     False
+    -4.101563e-03  2.992090e+00  36.223034     16     2.006984   3.2     False
+    -4.052734e-03  2.956470e+00  38.370024     16     2.034462   3.2     False
+    -4.003906e-03  2.920850e+00  38.959966     16     2.061939   3.2     False
+    -3.955078e-03  2.885229e+00  38.334154     16     2.089416   3.2     False
+    -3.906250e-03  2.849609e+00  38.602254     14     1.716894   3.0     False
+    -3.857422e-03  2.813989e+00  39.630523     14     1.744371   3.0     False
+    -3.808594e-03  2.778369e+00  38.889414     14     1.771848   3.0     False
+    -3.759766e-03  2.742749e+00  41.318277     15     1.999326   3.0     False
+    -3.710938e-03  2.707129e+00  40.637716     15     2.026803   3.0     False
+    -3.662109e-03  2.671509e+00  41.840657     15     2.054280   2.8     False
+    -3.613281e-03  2.635889e+00  41.227658     15     2.081758   3.0     False
+    -3.564453e-03  2.600269e+00  40.772674     14     1.909235   3.0     False
+    -3.515625e-03  2.564648e+00  40.663583     13     1.736713   3.0     False
+    -3.466797e-03  2.529028e+00  43.273772     13     1.764190   3.0     False
+    -3.417969e-03  2.493408e+00  43.234058     13     1.791667   3.0     False
+    -3.369141e-03  2.457788e+00  45.107148     14     2.019145   2.8     False
+    -3.320313e-03  2.422168e+00  44.295387     13     1.846622   2.8     False
+    -3.271484e-03  2.386548e+00  45.657963     14     2.074099   2.8     False
+    -3.222656e-03  2.350928e+00  45.112527     13     1.901577   2.8     False
+    -3.173828e-03  2.315308e+00  45.212369     12     1.729054   2.8     False
+    -3.125000e-03  2.279688e+00  45.954092     12     1.756531   2.6     False
+    -3.076172e-03  2.244067e+00  46.496885     12     1.784009   2.6     False
+    -3.027344e-03  2.208447e+00  49.018231     12     1.811486   2.6     False
+    -2.978516e-03  2.172827e+00  49.950247     12     1.838963   2.6     False
+    -2.929688e-03  2.137207e+00  49.989962     12     1.866441   2.6     False
+    -2.880859e-03  2.101587e+00  50.538821     12     1.893918   2.4     False
+    -2.832031e-03  2.065967e+00  52.076236     12     1.921396   2.4     False
+    -2.783203e-03  2.030347e+00  50.300791     12     1.948873   2.4     False
+    -2.734375e-03  1.994727e+00  51.533956     11     1.776350   2.4     False
+    -2.685547e-03  1.959106e+00  51.587950     12     2.003828   2.4     False
+    -2.636719e-03  1.923486e+00  52.625776     11     1.831305   2.4     False
+    -2.587891e-03  1.887866e+00  54.461962     11     1.858782   2.2     False
+    -2.539063e-03  1.852246e+00  57.743909     11     1.886260   2.2     False
+    -2.490234e-03  1.816626e+00  58.290714     11     1.913737   2.2     False
+    -2.441406e-03  1.781006e+00  57.355466     11     1.941214   2.2     False
+    -2.392578e-03  1.745386e+00  56.225133     11     1.968692   2.2     False
+    -2.343750e-03  1.709766e+00  57.356667     11     1.996169   2.0     False
+    -2.294922e-03  1.674146e+00  58.475388     11     2.023646   2.0     False
+    -2.246094e-03  1.638525e+00  61.054052     10     1.851124   2.0     False
+    -2.197266e-03  1.602905e+00  61.365469     10     1.878601   2.0     False
+    -2.148438e-03  1.567285e+00  64.246748     10     1.906078   1.8     False
+    -2.099609e-03  1.531665e+00  64.346590     10     1.933556   1.8     False
+    -2.050781e-03  1.496045e+00  65.314310     10     1.961033   1.8     False
+    -2.001953e-03  1.460425e+00  66.720357     10     1.988511   1.8     False
+    -1.953125e-03  1.424805e+00  67.609070     10     2.015988   1.8     False
+    -1.904297e-03  1.389185e+00  69.086524     10     2.043465   1.6     False
+    -1.855469e-03  1.353564e+00  69.540066      9     1.870943   1.8     False
+    -1.806641e-03  1.317944e+00  70.687056      9     1.898420   1.8     False
+    -1.757813e-03  1.282324e+00  71.790321      9     1.925897   1.8     False
+    -1.708984e-03  1.246704e+00  76.327903      9     1.953375   1.8     False
+    -1.660156e-03  1.211084e+00  77.432536      9     1.980852   1.6     False
+    -1.611328e-03  1.175464e+00  77.456794      9     2.008329   1.6     False
+    -1.562500e-03  1.139844e+00  76.381390      8     1.835807   1.6     False
+    -1.513672e-03  1.104224e+00  78.520358      8     1.863284   1.6     False
+    -1.464844e-03  1.068604e+00  84.142159      8     1.890761   1.6     False
+    -1.416016e-03  1.032983e+00  87.207078      8     1.918239   1.4     False
+    -1.367188e-03  9.973633e-01  88.060087      8     1.945716   1.4     False
+    -1.318359e-03  9.617432e-01  88.315555      8     1.973193   1.4     False
+    -1.269531e-03  9.261230e-01  89.068209      7     1.800671   1.4     False
+    -1.220703e-03  8.905029e-01  93.889006      8     2.028148   1.4     False
+    -1.171875e-03  8.548828e-01  97.543019      7     1.855626   1.4     False
+    -1.123047e-03  8.192627e-01 101.487069      7     1.883103   1.2     False
+    -1.074219e-03  7.836426e-01 101.862204      7     1.910580   1.2     False
+    -1.025391e-03  7.480225e-01 101.201891      7     1.938058   1.2     False
+    -9.765625e-04  7.124023e-01 106.316768      7     1.965535   1.2     False
+    -9.277344e-04  6.767822e-01 110.048488      7     1.993012   1.2     False
+    -8.789063e-04  6.411621e-01 112.995514      6     1.820490   1.0     False
+    -8.300781e-04  6.055420e-01 114.882859      6     1.847967   1.0     False
+    -7.812500e-04  5.699219e-01 118.217334      6     1.875444   1.0     False
+    -7.324219e-04  5.343018e-01 124.374568      6     1.902922   1.0     False
+    -6.835938e-04  4.986816e-01 125.840576      6     1.930399   1.2     False
+    -6.347656e-04  4.630615e-01 129.202119      6     1.957876   1.0     False
+    -5.859375e-04  4.274414e-01 134.088851      6     1.985354   1.0     False
+    -5.371094e-04  3.918213e-01 136.777433      6     2.012831   1.0     False
+    -4.882813e-04  3.562012e-01 137.236175      5     1.840308   1.0     False
+    -4.394531e-04  3.205811e-01 142.927400      5     1.867786   1.0     False
+    -3.906250e-04  2.849609e-01 152.119725      5     1.895263   0.8     False
+    -3.417969e-04  2.493408e-01 159.471685      5     1.922741   0.8     False
+    -2.929688e-04  2.137207e-01 160.240476      5     1.950218   0.8     False
+    -2.441406e-04  1.781006e-01 161.048980      5     1.968538   0.8     False
+    -1.953125e-04  1.424805e-01 163.079893      5     1.984160   0.8     False
+    -1.464844e-04  1.068604e-01 167.066300      5     1.994325   0.8     False
+    -9.765625e-05  7.124023e-02 171.466609      5     1.989343   0.8     False
+    -4.882813e-05  3.562012e-02 174.512977      5     1.984362   0.8     False
+    -1.734723e-17  1.265481e-14 177.897831      5     1.979380   0.8     False
+     4.882812e-05 -3.562012e-02 181.282684      5     1.974399   0.8     False
+     9.765625e-05 -7.124023e-02 184.065984      5     1.969417   0.8     False
+     1.464844e-04 -1.068604e-01 185.081440      5     1.964436   0.8     False
+     1.953125e-04 -1.424805e-01 185.081440      5     1.959454   0.8     False
+     2.441406e-04 -1.781006e-01 184.742955      5     1.954473   0.8     False
+     2.929687e-04 -2.137207e-01 184.742955      5     1.949491   0.8     False
+     3.417969e-04 -2.493408e-01 183.727499      5     1.944510   0.8     False
+     3.906250e-04 -2.849609e-01 180.342645      5     1.939528   0.8     False
+     4.394531e-04 -3.205811e-01 175.942336      5     1.934547   0.8     False
+     4.882812e-04 -3.562012e-01 169.586531      5     1.929565   0.8     False
+     5.371094e-04 -3.918213e-01 165.735669      5     1.924584   0.8     False
+     5.859375e-04 -4.274414e-01 163.537520      5     1.919602   0.8     False
+     6.347656e-04 -4.630615e-01 160.359618      5     1.913895   0.8     False
+     6.835937e-04 -4.986816e-01 155.226221      5     1.886899   0.8     False
+     7.324219e-04 -5.343018e-01 145.396640      5     1.859903   1.0     False
+     7.812500e-04 -5.699219e-01 138.223195      6     2.032907   1.0     False
+     8.300781e-04 -6.055420e-01 140.218404      6     2.005911   1.0     False
+     8.789062e-04 -6.411621e-01 139.489327      6     1.978915   0.8     False
+     9.277344e-04 -6.767822e-01 137.876328      6     1.951919   0.8     False
+     9.765625e-04 -7.124023e-01 131.352173      6     1.924923   1.0     False
+     1.025391e-03 -7.480225e-01 126.592017      6     1.897927   1.0     False
+     1.074219e-03 -7.836426e-01 122.254733      6     1.870931   1.0     False
+     1.123047e-03 -8.192627e-01 119.520871      7     2.043935   1.0     False
+     1.171875e-03 -8.548828e-01 116.999525      7     2.016939   1.0     False
+     1.220703e-03 -8.905029e-01 113.577855      7     1.989943   1.2     False
+     1.269531e-03 -9.261230e-01 111.784639      7     1.962947   1.2     False
+     1.318359e-03 -9.617432e-01 110.537027      7     1.935952   1.2     False
+     1.367187e-03 -9.973633e-01 107.059574      7     1.908956   1.2     False
+     1.416016e-03 -1.032983e+00 102.379013      7     1.881960   1.2     False
+     1.464844e-03 -1.068604e+00  98.395837      7     1.854806   1.4     False
+     1.513672e-03 -1.104224e+00  93.178221      8     2.025045   1.4     False
+     1.562500e-03 -1.139844e+00  94.273272      8     1.995283   1.2     False
+     1.611328e-03 -1.175464e+00  95.359521      8     1.965522   1.2     False
+     1.660156e-03 -1.211084e+00  90.712020      8     1.935761   1.4     False
+     1.708984e-03 -1.246704e+00  90.018033      8     1.905999   1.4     False
+     1.757812e-03 -1.282324e+00  86.408625      8     1.876238   1.4     False
+     1.806641e-03 -1.317944e+00  83.578505      8     1.846477   1.4     False
+     1.855469e-03 -1.353564e+00  80.891723      9     2.016715   1.6     False
+     1.904297e-03 -1.389185e+00  79.397867      9     1.986954   1.6     False
+     1.953125e-03 -1.424805e+00  79.504363      9     1.957192   1.6     False
+     2.001953e-03 -1.460425e+00  81.315678      9     1.927431   1.4     False
+     2.050781e-03 -1.496045e+00  78.131617      9     1.897670   1.6     False
+     2.099609e-03 -1.531665e+00  75.171331      9     1.867908   1.6     False
+     2.148437e-03 -1.567285e+00  72.548329      9     1.838147   1.6     False
+     2.197266e-03 -1.602905e+00  72.949585      9     1.808386   1.8     False
+     2.246094e-03 -1.638525e+00  72.671841     10     1.978624   1.8     False
+     2.294922e-03 -1.674146e+00  71.988712     10     1.948863   1.8     False
+     2.343750e-03 -1.709766e+00  70.151158     10     1.919102   1.8     False
+     2.392578e-03 -1.745386e+00  67.756722     10     1.889340   2.0     False
+     2.441406e-03 -1.781006e+00  66.393979     10     1.859579   2.0     False
+     2.490234e-03 -1.816626e+00  65.719651     10     1.829818   1.8     False
+     2.539062e-03 -1.852246e+00  64.341452     10     1.800056   1.8     False
+     2.587891e-03 -1.887866e+00  63.298148     11     1.970295   2.0     False
+     2.636719e-03 -1.923486e+00  62.943427     11     1.940534   2.0     False
+     2.685547e-03 -1.959106e+00  62.616386     11     1.910772   2.0     False
+     2.734375e-03 -1.994727e+00  61.623820     11     1.881011   2.0     False
+     2.783203e-03 -2.030347e+00  60.174048     11     1.851250   2.0     False
+     2.832031e-03 -2.065967e+00  58.766799     11     1.821488   2.2     False
+     2.880859e-03 -2.101587e+00  57.495096     11     1.791727   2.2     False
+     2.929687e-03 -2.137207e+00  56.375174     11     1.761965   2.0     False
+     2.978516e-03 -2.172827e+00  57.137565     12     1.932204   2.0     False
+     3.027344e-03 -2.208447e+00  57.280544     12     1.902443   2.2     False
+     3.076172e-03 -2.244067e+00  56.232028     12     1.872681   2.2     False
+     3.125000e-03 -2.279687e+00  54.036522     12     1.842920   2.2     False
+     3.173828e-03 -2.315308e+00  52.486294     12     1.813159   2.4     False
+     3.222656e-03 -2.350928e+00  51.702047     12     1.783397   2.4     False
+     3.271484e-03 -2.386548e+00  51.397043     13     1.953636   2.2     False
+     3.320312e-03 -2.422168e+00  51.674199     13     1.923875   2.2     False
+     3.369141e-03 -2.457788e+00  52.430177     13     1.894113   2.2     False
+     3.417969e-03 -2.493408e+00  51.530019     13     1.864352   2.4     False
+     3.466797e-03 -2.529028e+00  49.685811     13     1.834591   2.4     False
+     3.515625e-03 -2.564648e+00  48.873296     13     1.804829   2.4     False
+     3.564453e-03 -2.600269e+00  48.371584     13     1.775068   2.6     False
+     3.613281e-03 -2.635889e+00  48.099714     14     1.945307   2.6     False
+     3.662109e-03 -2.671509e+00  48.211001     14     1.915545   2.6     False
+     3.710937e-03 -2.707129e+00  46.744992     14     1.885784   2.6     False
+     3.759766e-03 -2.742749e+00  45.451012     14     1.856023   2.6     False
+     3.808594e-03 -2.778369e+00  46.088269     14     1.826261   2.6     False
+     3.857422e-03 -2.813989e+00  45.208358     14     1.796500   2.6     False
+     3.906250e-03 -2.849609e+00  44.012852     14     1.766738   2.6     False
+     3.955078e-03 -2.885229e+00  45.046407     15     1.936977   2.8     False
+     4.003906e-03 -2.920850e+00  43.749003     15     1.907216   2.8     False
+     4.052734e-03 -2.956470e+00  43.617469     15     1.877454   2.8     False
+     4.101562e-03 -2.992090e+00  42.131994     15     1.847693   2.8     False
+     4.150391e-03 -3.027710e+00  42.606024     15     1.817932   3.0     False
+     4.199219e-03 -3.063330e+00  40.374815     15     1.788170   3.0     False
+     4.248047e-03 -3.098950e+00  40.414108     15     1.758409   2.8     False
+     4.296875e-03 -3.134570e+00  40.110379     16     1.928648   2.8     False
+     4.345703e-03 -3.170190e+00  41.050418     16     1.898886   2.8     False
+     4.394531e-03 -3.205811e+00  40.764459     16     1.869125   3.0     False
+     4.443359e-03 -3.241431e+00  40.537261     16     1.839364   3.0     False
+     4.492187e-03 -3.277051e+00  39.394282     16     1.809602   3.0     False
+     4.541016e-03 -3.312671e+00  38.484734     16     1.779841   3.2     False
+     4.589844e-03 -3.348291e+00  37.212864     17     1.950080   3.2     False
+     4.638672e-03 -3.383911e+00  36.233111     17     1.920318   3.2     False
+     4.687500e-03 -3.419531e+00  37.428617     17     1.890557   3.0     False
+     4.736328e-03 -3.455151e+00  38.141458     17     1.860796   2.0     False
+     4.785156e-03 -3.490771e+00  38.782725     17     1.831034   2.0     False
+     4.833984e-03 -3.526392e+00  37.395724     17     1.801273   3.2     False
     ####BEST:
        slope  intercept    maxval  index  d_bestguess  fwhm  multimax
-    0.000732  -0.371338 84.468559      7    -0.033406   0.8     False
+    0.000146   -0.10686 185.08144      5     1.964436   0.8     False
     Setting rough_cut_px=1.9999999999999996. limits: (0.3-0.8)
     Setting rough_cut_px=0.8
 
     ####################
     ### d_rotated cut (Nsigma=3.0)
-    Keeping 110 out of 110, skippin 0 because of null values in columns d_rot_tmp
-    median: -0.052837
-    75.000000 percentile cut: max residual for cut: 0.204754
-    median: -0.060039
-    i:00 mean:-0.060039(0.010786) stdev:0.097070(0.007580) X2norm:0.99 Nchanged:0 Ngood:82 Nclip:28
+    Keeping 198 out of 198, skippin 0 because of null values in columns d_rot_tmp
+    median: 1.946136
+    75.000000 percentile cut: max residual for cut: 0.064640
+    median: 1.947841
+    i:00 mean:1.947841(0.002509) stdev:0.030420(0.001768) X2norm:1.00 Nchanged:0 Ngood:148 Nclip:50
 
-    mean: -0.065110
-    i:01 mean:-0.065110(0.012994) stdev:0.124637(0.009139) X2norm:1.00 Nchanged:11 Ngood:93 Nclip:17
+    mean: 1.939984
+    i:01 mean:1.939984(0.002941) stdev:0.037665(0.002073) X2norm:1.00 Nchanged:17 Ngood:165 Nclip:33
 
-    mean: -0.062685
-    i:02 mean:-0.062685(0.015074) stdev:0.149989(0.010606) X2norm:1.00 Nchanged:7 Ngood:100 Nclip:10
+    mean: 1.938798
+    i:02 mean:1.938798(0.003106) stdev:0.040264(0.002190) X2norm:1.00 Nchanged:4 Ngood:169 Nclip:29
 
-    mean: -0.047384
-    i:03 mean:-0.047384(0.017005) stdev:0.174250(0.011968) X2norm:1.00 Nchanged:6 Ngood:106 Nclip:4
+    mean: 1.937518
+    i:03 mean:1.937518(0.003415) stdev:0.045050(0.002408) X2norm:1.00 Nchanged:6 Ngood:175 Nclip:23
 
-    mean: -0.043773
-    i:04 mean:-0.043773(0.018173) stdev:0.188857(0.012791) X2norm:1.00 Nchanged:3 Ngood:109 Nclip:1
+    mean: 1.938289
+    i:04 mean:1.938289(0.003692) stdev:0.049402(0.002604) X2norm:1.00 Nchanged:5 Ngood:180 Nclip:18
 
-    mean: -0.043773
-    i:05 mean:-0.043773(0.018173) stdev:0.188857(0.012791) X2norm:1.00 Nchanged:0 Ngood:109 Nclip:1
-    i:05 mean:-0.043773(0.018173) stdev:0.188857(0.012791) X2norm:1.00 Nchanged:0 Ngood:109 Nclip:1
+    mean: 1.939838
+    i:05 mean:1.939838(0.004048) stdev:0.055060(0.002855) X2norm:1.00 Nchanged:6 Ngood:186 Nclip:12
+
+    mean: 1.939851
+    i:06 mean:1.939851(0.004173) stdev:0.057063(0.002943) X2norm:1.00 Nchanged:2 Ngood:188 Nclip:10
+
+    mean: 1.940734
+    i:07 mean:1.940734(0.004244) stdev:0.058191(0.002993) X2norm:1.00 Nchanged:1 Ngood:189 Nclip:9
+
+    mean: 1.940734
+    i:08 mean:1.940734(0.004244) stdev:0.058191(0.002993) X2norm:1.00 Nchanged:0 Ngood:189 Nclip:9
+    i:08 mean:1.940734(0.004244) stdev:0.058191(0.002993) X2norm:1.00 Nchanged:0 Ngood:189 Nclip:9
     /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
     'WFC3' is not one of ['NIRCAM', 'NIRSPEC', 'MIRI', 'TFI', 'FGS', 'NIRISS', 'ANY', 'N/A']
 
@@ -1458,60 +1452,6 @@ create a catalog that we will use to align the other image.
     On instance:
         'IR'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.filter the following error occurred:
-    'F160W' is not one of ['ANY', 'CLEAR', 'F070LP', 'F070W', 'F090W', 'F1000W', 'F100LP', 'F1065C', 'F110W', 'F1130W', 'F1140C', 'F115W', 'F1280W', 'F140M', 'F140X', 'F1500W', 'F150W', 'F150W2', 'F1550C', 'F170LP', 'F1800W', 'F182M', 'F187N', 'F200W', 'F2100W', 'F210M', 'F212N', 'F2300C', 'F250M', 'F2550W', 'F2550WR', 'F277W', 'F290LP', 'F300M', 'F322W2', 'F335M', 'F356W', 'F360M', 'F380M', 'F410M', 'F430M', 'F444W', 'F460M', 'F480M', 'F560W', 'F770W', 'FLENS', 'FND', 'GR150C', 'GR150R', 'OPAQUE', 'P750L', 'WLP4', 'N/A', 'MULTIPLE']
-
-    Failed validating 'enum' in schema:
-        OrderedDict([('title', 'Name of the filter element used'),
-                     ('type', 'string'),
-                     ('enum',
-                      ['ANY',
-                       'CLEAR',
-                       'F070LP',
-                       'F070W',
-                       'F090W',
-                       'F1000W',
-                       'F100LP',
-                       'F1065C',
-                       'F110W',
-                       'F1130W',
-                       'F1140C',
-                       'F115W',
-                       'F1280W',
-                       'F140M',
-                       'F140X',
-                       'F1500W',
-                       'F150W',
-                       'F150W2',
-                       'F1550C',
-                       'F170LP',
-                       'F1800W',
-                       'F182M',
-                       'F187N',
-                       'F200W',
-                       'F2100W',
-                       'F210M',
-                       'F212N',
-                       'F2300C',
-                       'F250M',
-                       'F2550W',
-                       'F2550WR',
-                       'F277W',
-                       'F290LP',
-                       'F300M',
-                       'F322W2',
-                       'F335M',
-                       'F356W',
-                       'F360M',
-                       'F380M',
-                       'F410M',
-                       'F430M',
-                       'F444W',
-                       'F460M',
-                       'F480M',
-                       'F560W',
-                       ' ...
-      warnings.warn(errmsg, ValidationWarning)
     /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
     False is not of type 'string'
 
@@ -1564,21 +1504,65 @@ create a catalog that we will use to align the other image.
                                  'SUB320B430R',
                       ...
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/jwst/datamodels/util.py:234: NoTypeWarning: model_type not found. Opening mastDownload/HST/hst_16264_13_wfc3_ir_f160w_iebc13dy/hst_16264_13_wfc3_ir_f160w_iebc13dy_flt.fits as a ImageModel
+    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/jwst/datamodels/util.py:234: NoTypeWarning: model_type not found. Opening mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits as a ImageModel
       warnings.warn(f"model_type not found. Opening {file_name} as a {class_name}",
-    mastDownload/hst_16264_13_wfc3_ir_f160w_iebc13dy_tweakregstep.fits
+    mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_tweakregstep.fits
     Setting output directory for tweakregstep.fits file to mastDownload
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/astropy/wcs/wcs.py:2733: AstropyWarning: Some non-standard WCS keywords were excluded: A_ORDER, A_0_2, A_0_3, A_0_4, A_1_1, A_1_2, A_1_3, A_2_0, A_2_1, A_2_2, A_3_0, A_3_1, A_4_0, B_ORDER, B_0_2, B_0_3, B_0_4, B_1_1, B_1_2, B_1_3, B_2_0, B_2_1, B_2_2, B_3_0, B_3_1, B_4_0 Use the ``relax`` kwarg to control this.
-      warnings.warn(
 
     0
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 146-151
+
+**Check the Output**
+
+The reference image has not changed, but let's read in the newly
+aligned image and compare with the original. 
+subsequent correction needed for optimal alignment.
+
+.. GENERATED FROM PYTHON SOURCE LINES 151-173
+
+.. code-block:: default
+
+
+    aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('drz.fits','tweakregstep.fits'))
+    aligned_fits = fits.open(aligned_image)
+    aligned_data = fits.open(aligned_image)['SCI',1].data
+    aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))
+    aligned_cutout = extract_array(aligned_data,(11,11),(aligned_x,aligned_y))
+
+    norm3 = simple_norm(aligned_cutout,stretch='log',min_cut=-1,max_cut=200)
+    fig,axes = plt.subplots(1,3)
+    axes[0].imshow(ref_cutout, origin='lower',
+                          norm=norm1,cmap='gray')
+    axes[1].imshow(align_cutout, origin='lower',
+                          norm=norm2,cmap='gray')
+    axes[2].imshow(aligned_cutout, origin='lower',
+                          norm=norm3,cmap='gray')
+    axes[0].set_title('Reference')
+    axes[1].set_title('To Align')
+    axes[2].set_title('Aligned')
+    for i in range(3):
+    	axes[i].tick_params(labelcolor='none',axis='both',color='none')
+
+
+    plt.show()
+
+
+.. image-sg:: /examples/images/sphx_glr_plot_a_hst_004.png
+   :alt: Reference, To Align, Aligned
+   :srcset: /examples/images/sphx_glr_plot_a_hst_004.png
+   :class: sphx-glr-single-img
+
+
 
 
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  12.494 seconds)
+   **Total running time of the script:** ( 0 minutes  19.560 seconds)
 
 
 .. _sphx_glr_download_examples_plot_a_hst.py:
