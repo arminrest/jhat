@@ -62,6 +62,7 @@ ax = fig.gca()
 ax.imshow(ref_data, origin='lower',
                        #interval=MinMaxInterval(),
                        norm=norm1,cmap='gray')
+plt.show()
 
 hst_phot = hst_photclass(psf_fwhm=1.8,aperture_radius=5)
 hst_phot.run_phot(imagename=ref_image,photfilename='auto',overwrite=True)
