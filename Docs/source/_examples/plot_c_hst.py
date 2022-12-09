@@ -24,7 +24,8 @@ from astropy import wcs
 from astropy.wcs.utils import skycoord_to_pixel
 import matplotlib.pyplot as plt
 from astroquery.mast import Observations
-
+from astropy.visualization import (simple_norm, MinMaxInterval,
+                                   LinearStretch)
 import jhat
 from jhat import hst_photclass,st_wcs_align
 
@@ -44,24 +45,18 @@ data_products_by_obs = Observations.get_product_list(obs_table2)
 data_products_by_obs = data_products_by_obs[data_products_by_obs['calib_level']==2]
 data_products_by_obs = data_products_by_obs[data_products_by_obs['productSubGroupDescription']=='FLT'][0]
 Observations.download_products(data_products_by_obs,extension='fits')
-from astropy.visualization import (simple_norm, MinMaxInterval,
-                                   LinearStretch)
+
 files = glob.glob('mastDownload/HST/*/*flt.fits')
 ref_image = files[0]
 align_image = files[1]
 ref_data = fits.open(ref_image)['SCI',1].data
-align_data = fits.open(align_image)['SCI',1].data
 norm1 = simple_norm(ref_data,stretch='log',min_cut=-1,max_cut=15)
-norm2 = simple_norm(align_data,stretch='log',min_cut=-1,max_cut=15)
 
-fig,axes = plt.subplots(1,2)
-axes[0].imshow(ref_data, origin='lower',
+fig = plt.figure()
+ax = fig.gca()
+ax.imshow(ref_data, origin='lower',
                        #interval=MinMaxInterval(),
                        norm=norm1,cmap='gray')
-
-axes[1].imshow(align_data, origin='lower',
-                       #interval=MinMaxInterval(),
-                       norm=norm2,cmap='gray')
 plt.show()
 
 hst_phot = hst_photclass(psf_fwhm=1.8,aperture_radius=5)
