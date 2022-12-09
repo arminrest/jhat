@@ -1,13 +1,13 @@
 """
-======
-Hubble
-======
+=========
+JWST MIRI
+=========
 
-Aligning HST images with JHAT.
+Aligning JWST MIRI images with JHAT.
 """
 		
 ###############################################################
-# An example HST Dataset is downloaded, and then a series of
+# An example MIRI Dataset is downloaded, and then a series of
 # alignment methods are used.
    
 

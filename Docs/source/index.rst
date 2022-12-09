@@ -12,10 +12,12 @@ Welcome to the JWST/HST Alignment Tool (JHAT)
    :titlesonly:
 
    install
+   params
+   batch
 
 .. include:: examples/index.rst
    :start-after: :orphan:
-   
+
 .. toctree::
    :hidden:
    :titlesonly:
