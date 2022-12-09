@@ -1582,7 +1582,7 @@ class hst_photclass(jwst_photclass):
         self.scihdr = self.im['SCI'].header
         self.instrument = self.primaryhdr['INSTRUME']
         self.filtername = self.primaryhdr['FILTER']
-        self.aperture = 'I'+self.primaryhdr['APERTURE']
+        self.aperture = 'I'+self.primaryhdr['APERTURE'].replace('-','')
         self.filters = {self.instrument:[self.primaryhdr['FILTER']]}
         self.psf_fwhm = {self.instrument : [self.psf_fwhm]}
         self.dict_utils = {}
