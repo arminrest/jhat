@@ -3,7 +3,8 @@ Installation
 ************
 
 jhat works on Python 3+ and requires the
-following Python packages:
+following Python packages (these should install
+automatically when you install jhat):
 
 - `numpy <http://www.numpy.org/>`_
 - `matplotlib <https://matplotlib.org/>`_
