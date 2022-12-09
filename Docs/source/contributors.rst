@@ -9,4 +9,14 @@ Primary Contributors
     :alt: alternate text
     :figclass: align-left
 
-    `Your git website here <https://github.com/mygithandle>`_
+    `Armin Rest <https://github.com/arminrest>`_
+
+
+.. figure:: _static/jp_git.png
+    :width: 200px
+    :align: center
+    :height: 200px
+    :alt: alternate text
+    :figclass: align-left
+
+    `Armin Rest <https://github.com/jpierel14>`_
