@@ -56,9 +56,15 @@ align_image = files[1]
 ref_data = fits.open(ref_image)['SCI',1].data
 norm1 = simple_norm(ref_data,stretch='log',min_cut=-1,max_cut=15)
 
-plt.imshow(ref_data, origin='lower',
-                       #interval=MinMaxInterval(),
-                       norm=norm1,cmap='gray')
+#plt.imshow(ref_data, origin='lower',
+#                       #interval=MinMaxInterval(),
+#                       norm=norm1,cmap='gray')
+x = np.linspace(0, 2 * np.pi, 100)
+y = np.sin(x)
+
+plt.plot(x, y)
+plt.xlabel(r'$x$')
+plt.ylabel(r'$\sin(x)$')
 plt.show()
 
 ####################################################################
