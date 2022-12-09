@@ -18,7 +18,7 @@ class jhattest(TestCommand):
 
 AUTHOR = 'Armin Rest & Justin Pierel'
 AUTHOR_EMAIL = 'arest@stsci.edu'
-VERSION = '0.0.3'
+VERSION = '0.0.4'
 LICENSE = ''
 URL = ''
 
@@ -49,9 +49,7 @@ setup(
     setup_requires=['numpy'],
     install_requires=['argparse', 'numpy', 'matplotlib', 'astropy', 'jwst', 'scipy', 
                         'photutils', 'pysiaf', 'astroquery', 'pandas', 'stsci.skypac',
-                         'tweakreg_hack','tweakwcs==0.8','pytest-astropy',
-                        'jwcf @ git+https://git@github.com/spacetelescope/jwst-calibration-field.git',
-],
+                         'tweakreg_hack','tweakwcs>=0.8','pytest-astropy'],
     packages=[PACKAGENAME],
     version=VERSION,
     author=AUTHOR,
@@ -61,3 +59,4 @@ setup(
     package_data={PACKAGENAME:data_files},
     include_package_data=True
 )
+

@@ -40,7 +40,6 @@ from astroquery.mast import Catalogs
 from astropy.time import Time
 import pandas as pd
 
-from jwcf import hawki, hst
 from astropy.coordinates import SkyCoord
 
 from astropy.coordinates import SkyCoord, match_coordinates_sky
@@ -154,7 +153,12 @@ def get_refcat_file(refcatfilename,racol=None,deccol=None):
 
 def get_hawki_cat(ra0,dec0,radius_deg,radius_factor=1.1,
                   columns=['ID','ra','dec','ra_error_mas','dec_error_mas','J2mag','K2mag','J2_K2','q_Jmag','gdr2_source_id','sep_arcmin']):
-
+    
+    try:    
+        from jwcf import hawki
+    except:
+        raise RuntimeError('To use hawki alignment, please install JWCF via the command:'+\
+                           ' pip install git+https://git@github.com/spacetelescope/jwst-calibration-field.git')
     cat = hawki.hawki_catalog()
     cat.rename_column('ra_deg', 'ra')
     cat.rename_column('dec_deg', 'dec')
@@ -202,6 +206,13 @@ def get_hst_cat(ra0,dec0,radius_deg,radius_factor=1.1,
                 columns=['ID','ra','dec','ra_error_mas','dec_error_mas','pmra','epmra','pmdec','epmdec',
                         'h_mag_vega','j_mag_vega','k_mag_vega','j_k',
                         'sep_arcmin']):
+
+    try:    
+        from jwcf import hst
+    except:
+        raise RuntimeError('To use hst catalog alignment, please install JWCF via the command:'+\
+                           ' pip install git+https://git@github.com/spacetelescope/jwst-calibration-field.git')
+
     if mjd is not None:
         time_obs = Time(mjd, format ='mjd')
         decimal_year_of_observation = time_obs.decimalyear
