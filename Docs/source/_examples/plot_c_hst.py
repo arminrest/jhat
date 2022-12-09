@@ -73,11 +73,11 @@ plt.show()
 # We choose one of the images to be the reference image, and then
 # create a catalog that we will use to align the other image. 
 
-hst_phot = hst_photclass(psf_fwhm=1.8,aperture_radius=5)
-hst_phot.run_phot(imagename=ref_image,photfilename='auto',overwrite=True)
-ref_catname = ref_image.replace('.fits','.phot.txt') # the default
-refcat = Table.read(ref_catname,format='ascii')
-print(refcat)
+# hst_phot = hst_photclass(psf_fwhm=1.8,aperture_radius=5)
+# hst_phot.run_phot(imagename=ref_image,photfilename='auto',overwrite=True)
+# ref_catname = ref_image.replace('.fits','.phot.txt') # the default
+# refcat = Table.read(ref_catname,format='ascii')
+# print(refcat)
 
 # ####################################################################
 # # **Align the second image**
