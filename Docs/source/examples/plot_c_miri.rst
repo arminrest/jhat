@@ -91,15 +91,15 @@ the code will also work for drizzled images.
 
  .. code-block:: none
 
-    Downloading URL https://mast.stsci.edu/api/v0.1/Download/file?uri=mast:HST/product/hst_16264_13_wfc3_ir_f160w_iebc13dy_flt.fits to ./mastDownload/HST/hst_16264_13_wfc3_ir_f160w_iebc13dy/hst_16264_13_wfc3_ir_f160w_iebc13dy_flt.fits ... [Done]
-    Downloading URL https://mast.stsci.edu/api/v0.1/Download/file?uri=mast:HST/product/hst_16264_14_wfc3_ir_f160w_iebc14qj_flt.fits to ./mastDownload/HST/hst_16264_14_wfc3_ir_f160w_iebc14qj/hst_16264_14_wfc3_ir_f160w_iebc14qj_flt.fits ... [Done]
+    INFO: Found cached file ./mastDownload/HST/hst_16264_13_wfc3_ir_f160w_iebc13dy/hst_16264_13_wfc3_ir_f160w_iebc13dy_flt.fits with expected size 16580160. [astroquery.query]
+    INFO: Found cached file ./mastDownload/HST/hst_16264_14_wfc3_ir_f160w_iebc14qj/hst_16264_14_wfc3_ir_f160w_iebc14qj_flt.fits with expected size 16580160. [astroquery.query]
 
 
 .. raw:: html
 
     <div class="output_subarea output_html rendered_html output_result">
     <div><i>Table length=1</i>
-    <table id="table140324511317104" class="table-striped table-bordered table-condensed">
+    <table id="table140342504461984" class="table-striped table-bordered table-condensed">
     <thead><tr><th>Local Path</th><th>Status</th><th>Message</th><th>URL</th></tr></thead>
     <thead><tr><th>str99</th><th>str8</th><th>object</th><th>object</th></tr></thead>
     <tr><td>./mastDownload/HST/hst_16264_14_wfc3_ir_f160w_iebc14qj/hst_16264_14_wfc3_ir_f160w_iebc14qj_flt.fits</td><td>COMPLETE</td><td>None</td><td>None</td></tr>
@@ -148,7 +148,7 @@ the code will also work for drizzled images.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  6.094 seconds)
+   **Total running time of the script:** ( 0 minutes  1.331 seconds)
 
 
 .. _sphx_glr_download_examples_plot_c_miri.py:

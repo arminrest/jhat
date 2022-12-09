@@ -99,7 +99,7 @@ the code will also work for drizzled images.
 
     <div class="output_subarea output_html rendered_html output_result">
     <div><i>Table length=1</i>
-    <table id="table140515389329472" class="table-striped table-bordered table-condensed">
+    <table id="table140341424215520" class="table-striped table-bordered table-condensed">
     <thead><tr><th>Local Path</th><th>Status</th><th>Message</th><th>URL</th></tr></thead>
     <thead><tr><th>str99</th><th>str8</th><th>object</th><th>object</th></tr></thead>
     <tr><td>./mastDownload/HST/hst_16264_14_wfc3_ir_f160w_iebc14qj/hst_16264_14_wfc3_ir_f160w_iebc14qj_flt.fits</td><td>COMPLETE</td><td>None</td><td>None</td></tr>
@@ -171,6 +171,7 @@ create a catalog that we will use to align the other image.
 
     ### Doing photometry on mastDownload/HST/hst_16264_14_wfc3_ir_f160w_iebc14qj/hst_16264_14_wfc3_ir_f160w_iebc14qj_flt.fits
     photometry catalog filename: mastDownload/HST/hst_16264_14_wfc3_ir_f160w_iebc14qj/hst_16264_14_wfc3_ir_f160w_iebc14qj_flt.phot.txt
+    photcat mastDownload/HST/hst_16264_14_wfc3_ir_f160w_iebc14qj/hst_16264_14_wfc3_ir_f160w_iebc14qj_flt.phot.txt already exists, but recreating it since overwrite=True
     Finding stars --- Detector: None, Filter: F160W
     FWHM for the filter F160W: 1.8 px
     /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
@@ -187,7 +188,7 @@ create a catalog that we will use to align the other image.
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
     /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1790: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 1.309940114999999
+    Time Elapsed: 1.3351416289999998
     938 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 623 objects left after removing entries dmag>0.36200000000000004 (SNR<3.0)
     623 out of 938 entries remain in photometry table
@@ -323,7 +324,7 @@ create a catalog that we will use to align the other image.
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
     /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1790: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 1.424138385000001
+    Time Elapsed: 1.4625270320000006
     1180 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 909 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     909 out of 1180 entries remain in photometry table
@@ -1577,7 +1578,7 @@ create a catalog that we will use to align the other image.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  13.578 seconds)
+   **Total running time of the script:** ( 0 minutes  12.494 seconds)
 
 
 .. _sphx_glr_download_examples_plot_a_hst.py:
