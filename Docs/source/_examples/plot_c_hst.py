@@ -59,13 +59,13 @@ align_image = files[1]
 # #plt.imshow(ref_data, origin='lower',
 #                       #interval=MinMaxInterval(),
 #                       norm=norm1,cmap='gray')
-# x = np.linspace(0, 2 * np.pi, 100)
-# y = np.sin(x)
+x = np.linspace(0, 2 * np.pi, 100)
+y = np.sin(x)
 # fig = plt.figure()
-# plt.plot(x, y)
-# plt.xlabel(r'$x$')
-# plt.ylabel(r'$\sin(x)$')
-# plt.show()
+plt.plot(x, y)
+plt.xlabel(r'$x$')
+plt.ylabel(r'$\sin(x)$')
+plt.show()
 
 ####################################################################
 # **Create a Photometric Catalog for Relative Alignment**
