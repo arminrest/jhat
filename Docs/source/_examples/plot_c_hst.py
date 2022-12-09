@@ -30,6 +30,11 @@ import jhat
 from jhat import hst_photclass,st_wcs_align
 
 
+####################################################################
+# **Download some Data**
+#
+# For this example we j
+
 obs_table = Observations.query_criteria(obs_id='hst_16264_13_wfc3_ir_f160w_iebc13')
 obs_table1 = obs_table[obs_table['filters']=='F160W']
 
@@ -57,7 +62,10 @@ ax = fig.gca()
 ax.imshow(ref_data, origin='lower',
                        #interval=MinMaxInterval(),
                        norm=norm1,cmap='gray')
-plt.show()
+#plt.show()
+
+
+
 
 hst_phot = hst_photclass(psf_fwhm=1.8,aperture_radius=5)
 hst_phot.run_phot(imagename=ref_image,photfilename='auto',overwrite=True)
@@ -91,4 +99,4 @@ wcs_align.run_all(align_image,
                       dmag_max=1.0,
                       objmag_lim =(14,24))
 
-plt.show()
+#plt.show()
