@@ -18,7 +18,7 @@ class jhattest(TestCommand):
 
 AUTHOR = 'Armin Rest & Justin Pierel'
 AUTHOR_EMAIL = 'arest@stsci.edu'
-VERSION = '0.0.4'
+VERSION = '0.0.5'
 LICENSE = ''
 URL = ''
 
@@ -46,11 +46,12 @@ data_files = [f[len(PACKAGENAME)+1:] for f in data_files]
 setup(
     name=PACKAGENAME,
     cmdclass={'test': jhattest},
+    packages=['bin',PACKAGENAME],
+    scripts=['bin/st_wcs_align','bin/st_wcs_align_batch'],
     setup_requires=['numpy'],
     install_requires=['argparse', 'numpy', 'matplotlib', 'astropy', 'jwst', 'scipy', 
                         'photutils', 'pysiaf', 'astroquery', 'pandas', 'stsci.skypac',
                          'tweakreg_hack','tweakwcs>=0.8','pytest-astropy'],
-    packages=[PACKAGENAME],
     version=VERSION,
     author=AUTHOR,
     author_email=AUTHOR_EMAIL,
