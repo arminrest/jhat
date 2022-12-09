@@ -59,6 +59,7 @@ norm1 = simple_norm(ref_data,stretch='log',min_cut=-1,max_cut=15)
 plt.imshow(ref_data, origin='lower',
                        #interval=MinMaxInterval(),
                        norm=norm1,cmap='gray')
+plt.show()
 
 ####################################################################
 # **Create a Photometric Catalog for Relative Alignment**
