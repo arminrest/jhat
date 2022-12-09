@@ -81,3 +81,5 @@ wcs_align.run_all(align_image,
                       SNR_min= 3,
                       dmag_max=1.0,
                       objmag_lim =(14,24))
+
+plt.show()
