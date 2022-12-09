@@ -56,9 +56,7 @@ align_image = files[1]
 ref_data = fits.open(ref_image)['SCI',1].data
 norm1 = simple_norm(ref_data,stretch='log',min_cut=-1,max_cut=15)
 
-fig = plt.figure()
-ax = fig.gca()
-ax.imshow(ref_data, origin='lower',
+plt.imshow(ref_data, origin='lower',
                        #interval=MinMaxInterval(),
                        norm=norm1,cmap='gray')
 
