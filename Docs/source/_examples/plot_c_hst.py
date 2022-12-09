@@ -44,16 +44,30 @@ data_products_by_obs = Observations.get_product_list(obs_table2)
 data_products_by_obs = data_products_by_obs[data_products_by_obs['calib_level']==2]
 data_products_by_obs = data_products_by_obs[data_products_by_obs['productSubGroupDescription']=='FLT'][0]
 Observations.download_products(data_products_by_obs,extension='fits')
-
+from astropy.visualization import (simple_norm, MinMaxInterval,
+                                   LinearStretch)
 files = glob.glob('mastDownload/HST/*/*flt.fits')
 ref_image = files[0]
 align_image = files[1]
+ref_data = fits.open(ref_image)['SCI',1].data
+align_data = fits.open(align_image)['SCI',1].data
+norm1 = simple_norm(ref_data,stretch='log',min_cut=-1,max_cut=15)
+norm2 = simple_norm(align_data,stretch='log',min_cut=-1,max_cut=15)
+
+fig,axes = plt.subplots(1,2)
+axes[0].imshow(ref_data, origin='lower',
+                       #interval=MinMaxInterval(),
+                       norm=norm1,cmap='gray')
+
+axes[1].imshow(align_data, origin='lower',
+                       #interval=MinMaxInterval(),
+                       norm=norm2,cmap='gray')
+plt.show()
 
 hst_phot = hst_photclass(psf_fwhm=1.8,aperture_radius=5)
 hst_phot.run_phot(imagename=ref_image,photfilename='auto',overwrite=True)
 
 wcs_align = st_wcs_align()
-wcs_align.showplots = 1
 wcs_align.outdir = 'mastDownload'
 
 ref_catname = ref_image.replace('.fits','.phot.txt')
@@ -68,7 +82,7 @@ wcs_align.run_all(align_image,
           #Nbright=1000,
           #Nbright4match=1000,
           d2d_max=.12,
-          
+          showplots=1,
           #xshift=xshift,
           #yshift=yshift,
           #refcat_maincolor='gaia_g_rp',
