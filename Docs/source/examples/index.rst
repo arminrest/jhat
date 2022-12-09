@@ -12,40 +12,6 @@ Examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="Aligning HST images with JHAT.">
-
-.. only:: html
-
-  .. image:: /examples/images/thumb/sphx_glr_plot_c_hst_thumb.png
-    :alt: Hubble
-
-  :ref:`sphx_glr_examples_plot_c_hst.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Hubble</div>
-    </div>
-
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="Aligning JWST MIRI images with JHAT.">
-
-.. only:: html
-
-  .. image:: /examples/images/thumb/sphx_glr_plot_a_miri_thumb.png
-    :alt: JWST MIRI
-
-  :ref:`sphx_glr_examples_plot_a_miri.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">JWST MIRI</div>
-    </div>
-
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="Aligning JWST NIRCam images with JHAT.">
 
 .. only:: html
@@ -63,15 +29,49 @@ Examples
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="Aligning JWST MIRI images with JHAT.">
+
+.. only:: html
+
+  .. image:: /examples/images/thumb/sphx_glr_plot_c_miri_thumb.png
+    :alt: JWST MIRI
+
+  :ref:`sphx_glr_examples_plot_c_miri.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">JWST MIRI</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Aligning HST images with JHAT.">
+
+.. only:: html
+
+  .. image:: /examples/images/thumb/sphx_glr_plot_a_hst_thumb.png
+    :alt: Hubble
+
+  :ref:`sphx_glr_examples_plot_a_hst.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Hubble</div>
+    </div>
+
+
+.. raw:: html
+
     </div>
 
 
 .. toctree::
    :hidden:
 
-   /examples/plot_c_hst
-   /examples/plot_a_miri
    /examples/plot_b_nircam
+   /examples/plot_c_miri
+   /examples/plot_a_hst
 
 
 .. only:: html
