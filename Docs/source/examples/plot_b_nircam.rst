@@ -18,24 +18,82 @@
 .. _sphx_glr_examples_plot_b_nircam.py:
 
 
-===========
-JWST NIRCam
-===========
+=========
+JWST MIRI
+=========
 
-Aligning JWST NIRCam images with JHAT.
+Aligning JWST/MIRI images with JHAT.
 
-.. GENERATED FROM PYTHON SOURCE LINES 10-11
+.. GENERATED FROM PYTHON SOURCE LINES 10-14
 
-Explain here what this example does
+An example MIRI Dataset is downloaded, and then a series of
+alignment methods are used. For more information on the
+key parameters used for alignment see 
+:ref:`params:Useful Parameters`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 11-14
+.. GENERATED FROM PYTHON SOURCE LINES 14-33
 
 .. code-block:: default
 
    
-    import jhat
 
-    print('Hello World!')
+    import sys,os,glob
+    from astropy.io import fits
+    from astropy.table import Table
+    from astropy.nddata import extract_array
+    from astropy.coordinates import SkyCoord
+    from astropy import wcs
+    from astropy.wcs.utils import skycoord_to_pixel
+    from astropy import units as u
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from astroquery.mast import Observations
+    from astropy.visualization import (simple_norm,LinearStretch)
+
+    import jhat
+    from jhat import jwst_photclass,st_wcs_align
+
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 34-47
+
+------------------
+Relative Alignment
+------------------
+
+**Download some Data**
+
+For this example we download 2 HST DRZ images from MAST. They're
+the same filter and same field, just separated in time. Note that 
+the code will also work for drizzled images.
+obs_table1 = Observations.query_object('23:09:44.0809 -43:26:05.613')
+obs_table1 = obs_table1[obs_table1['instrument_name']=='NIRCAM']
+print(list(zip(obs_table1['filters'],obs_table1['obs_id'])))
+sys.exit()
+
+.. GENERATED FROM PYTHON SOURCE LINES 48-60
+
+.. code-block:: default
+
+    obs_table1 = Observations.query_criteria(obs_id='jw02107-o041_t019_nircam_clear-f200w')
+    data_products_by_obs = Observations.get_product_list(obs_table1)
+    data_products_by_obs = data_products_by_obs[data_products_by_obs['calib_level']==2]
+    data_products_by_obs = data_products_by_obs[data_products_by_obs['productSubGroupDescription']=='CAL'][0]
+    Observations.download_products(data_products_by_obs,extension='fits')
+
+    obs_table2 = Observations.query_criteria(obs_id='jw02107-o041_t019_nircam_clear-f360m')
+    data_products_by_obs = Observations.get_product_list(obs_table2)
+    data_products_by_obs = data_products_by_obs[data_products_by_obs['calib_level']==2]
+    data_products_by_obs = data_products_by_obs[data_products_by_obs['productSubGroupDescription']=='CAL'][0]
+    Observations.download_products(data_products_by_obs,extension='fits')
+
+
 
 
 
@@ -43,7 +101,2389 @@ Explain here what this example does
 
  .. code-block:: none
 
-    Hello World!
+    Downloading URL https://mast.stsci.edu/api/v0.1/Download/file?uri=mast:JWST/product/jw02107041001_02101_00001_nrcb1_cal.fits to ./mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.fits ... [Done]
+    Downloading URL https://mast.stsci.edu/api/v0.1/Download/file?uri=mast:JWST/product/jw02107041001_02101_00001_nrcblong_cal.fits to ./mastDownload/JWST/jw02107041001_02101_00001_nrcblong/jw02107041001_02101_00001_nrcblong_cal.fits ... [Done]
+
+
+.. raw:: html
+
+    <div class="output_subarea output_html rendered_html output_result">
+    <div><i>Table length=1</i>
+    <table id="table140389066550688" class="table-striped table-bordered table-condensed">
+    <thead><tr><th>Local Path</th><th>Status</th><th>Message</th><th>URL</th></tr></thead>
+    <thead><tr><th>str98</th><th>str8</th><th>object</th><th>object</th></tr></thead>
+    <tr><td>./mastDownload/JWST/jw02107041001_02101_00001_nrcblong/jw02107041001_02101_00001_nrcblong_cal.fits</td><td>COMPLETE</td><td>None</td><td>None</td></tr>
+    </table></div>
+    </div>
+    <br />
+    <br />
+
+.. GENERATED FROM PYTHON SOURCE LINES 61-63
+
+**Examine the Reference Image**
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 63-74
+
+.. code-block:: default
+
+
+    ref_image = glob.glob('mastDownload/JWST/*nrcb1*/*cal.fits')[0]
+
+    ref_fits = fits.open(ref_image)
+    ref_data = fits.open(ref_image)['SCI',1].data
+    norm1 = simple_norm(ref_data,stretch='log',min_cut=5,max_cut=25)
+
+    plt.imshow(ref_data, origin='lower',
+                          norm=norm1,cmap='gray')
+    plt.show()
+
+
+
+
+.. image-sg:: /examples/images/sphx_glr_plot_b_nircam_001.png
+   :alt: plot b nircam
+   :srcset: /examples/images/sphx_glr_plot_b_nircam_001.png
+   :class: sphx-glr-single-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 75-81
+
+**Zoom in to see the offset**
+
+Here add an artificial offset to the wcs, and then we see the 
+same star in both images at the same ra/dec
+location, demonstrating a large offset between
+the images.  
+
+.. GENERATED FROM PYTHON SOURCE LINES 81-108
+
+.. code-block:: default
+
+    star_location = SkyCoord('23:09:41.0532','-43:26:41.128',unit=(u.hourangle,u.deg))
+    align_image = glob.glob('mastDownload/JWST/*long*/*cal.fits')[0]
+    align_fits = fits.open(align_image)
+    #align_fits['SCI',1].header['CRPIX1']+=2
+    #align_fits['SCI',1].header['CRPIX2']+=2
+    align_fits.writeto(align_image,overwrite=True)
+
+    align_data = fits.open(align_image)['SCI',1].data
+    ref_y,ref_x = skycoord_to_pixel(star_location,wcs.WCS(ref_fits['SCI',1],ref_fits))
+    align_y,align_x = skycoord_to_pixel(star_location,wcs.WCS(align_fits['SCI',1],align_fits))
+
+    ref_cutout = extract_array(ref_data,(11,11),(ref_x,ref_y))
+    align_cutout = extract_array(align_data,(11,11),(align_x,align_y))
+    norm1 = simple_norm(ref_cutout,stretch='log',min_cut=-1,max_cut=200)
+    norm2 = simple_norm(align_cutout,stretch='log',min_cut=-1,max_cut=200)
+    fig,axes = plt.subplots(1,2)
+    axes[0].imshow(ref_cutout, origin='lower',
+                          norm=norm1,cmap='gray')
+    axes[1].imshow(align_cutout, origin='lower',
+                          norm=norm2,cmap='gray')
+    axes[0].set_title('Reference')
+    axes[1].set_title('To Align')
+    axes[0].tick_params(labelcolor='none',axis='both',color='none')
+    axes[1].tick_params(labelcolor='none',axis='both',color='none')
+
+    plt.show()
+
+
+
+
+.. image-sg:: /examples/images/sphx_glr_plot_b_nircam_002.png
+   :alt: Reference, To Align
+   :srcset: /examples/images/sphx_glr_plot_b_nircam_002.png
+   :class: sphx-glr-single-img
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/wcs/wcs.py:725: FITSFixedWarning: 'datfix' made the change 'Set DATE-BEG to '2022-07-06T19:16:42.721' from MJD-BEG.
+    Set DATE-AVG to '2022-07-06T19:17:14.932' from MJD-AVG.
+    Set DATE-END to '2022-07-06T19:17:47.142' from MJD-END'.
+      warnings.warn(
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/wcs/wcs.py:725: FITSFixedWarning: 'obsfix' made the change 'Set OBSGEO-L to   -72.164999 from OBSGEO-[XYZ].
+    Set OBSGEO-B to   -38.353872 from OBSGEO-[XYZ].
+    Set OBSGEO-H to 1740894174.999 from OBSGEO-[XYZ]'.
+      warnings.warn(
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/wcs/wcs.py:725: FITSFixedWarning: 'datfix' made the change 'Set DATE-BEG to '2022-07-06T19:16:42.721' from MJD-BEG.
+    Set DATE-AVG to '2022-07-06T19:17:14.932' from MJD-AVG.
+    Set DATE-END to '2022-07-06T19:17:47.142' from MJD-END'.
+      warnings.warn(
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/wcs/wcs.py:725: FITSFixedWarning: 'obsfix' made the change 'Set OBSGEO-L to   -72.164999 from OBSGEO-[XYZ].
+    Set OBSGEO-B to   -38.353872 from OBSGEO-[XYZ].
+    Set OBSGEO-H to 1740894174.999 from OBSGEO-[XYZ]'.
+      warnings.warn(
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 109-113
+
+**Create a Photometric Catalog for Relative Alignment**
+
+We choose one of the images to be the reference image, and then 
+create a catalog that we will use to align the other image.
+
+.. GENERATED FROM PYTHON SOURCE LINES 113-120
+
+.. code-block:: default
+
+
+    hst_phot = jwst_photclass()
+    hst_phot.run_phot(imagename=ref_image,photfilename='auto',overwrite=True)
+    ref_catname = ref_image.replace('.fits','.phot.txt') # the default
+    refcat = Table.read(ref_catname,format='ascii')
+    print(refcat)
+
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+
+    ### Doing photometry on mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.fits
+    photometry catalog filename: mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.phot.txt
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/wcs/wcs.py:725: FITSFixedWarning: 'datfix' made the change 'Set DATE-BEG to '2022-07-06T19:16:42.721' from MJD-BEG.
+    Set DATE-AVG to '2022-07-06T19:17:14.932' from MJD-AVG.
+    Set DATE-END to '2022-07-06T19:17:47.142' from MJD-END'.
+      warnings.warn(
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/wcs/wcs.py:725: FITSFixedWarning: 'obsfix' made the change 'Set OBSGEO-L to   -72.164999 from OBSGEO-[XYZ].
+    Set OBSGEO-B to   -38.353872 from OBSGEO-[XYZ].
+    Set OBSGEO-H to 1740894174.999 from OBSGEO-[XYZ]'.
+      warnings.warn(
+    Filename: mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.fits
+    No.    Name      Ver    Type      Cards   Dimensions   Format
+      0  PRIMARY       1 PrimaryHDU     346   ()      
+      1  SCI           1 ImageHDU       112   (2048, 2048)   float32   
+      2  ERR           1 ImageHDU        10   (2048, 2048)   float32   
+      3  DQ            1 ImageHDU        11   (2048, 2048)   int32 (rescales to uint32)   
+      4  AREA          1 ImageHDU         9   (2048, 2048)   float32   
+      5  VAR_POISSON    1 ImageHDU         9   (2048, 2048)   float32   
+      6  VAR_RNOISE    1 ImageHDU         9   (2048, 2048)   float32   
+      7  VAR_FLAT      1 ImageHDU         9   (2048, 2048)   float32   
+      8  ASDF          1 BinTableHDU     11   1R x 1C   [24755B]   
+    None
+    NIRCAM NRCB1 F200W CLEAR FULL NRCB1_FULL
+    Finding stars --- Detector: NRCB1, Filter: F200W
+    FWHM for the filter F200W: 2.141 px
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
+      warnings.warn('Input data contains invalid values (NaNs or '
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
+      warnings.warn('Input data contains invalid values (NaNs or '
+
+    Number of sources found in the image: 4789
+    -------------------------------------
+
+    Performing aperture photometry for radius r = 3.746999979019165 px
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:912: RuntimeWarning: invalid value encountered in log10
+      phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/units/function/logarithmic.py:47: RuntimeWarning: invalid value encountered in log10
+      return dex.to(self._function_unit, np.log10(x))
+    Time Elapsed: 2.4236966529861093
+    4363 objects left after removing entries with NaNs in mag or dmag column
+    SNR_min cut: 1697 objects left after removing entries dmag>0.36200000000000004 (SNR<3.0)
+    1697 out of 4363 entries remain in photometry table
+    0        462.442383
+    1        643.024846
+    2        936.505817
+    3       1067.341194
+    4       1438.193638
+               ...     
+    4358    1893.188953
+    4359     528.113531
+    4360     696.976467
+    4361    1302.093134
+    4362    1453.752426
+    Name: x, Length: 4363, dtype: float64
+    Saving mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.phot.txt
+    aper_sum_3.7px annulus_median_3.7px aper_bkg_3.7px ...   x_idl      y_idl   
+    -------------- -------------------- -------------- ... ---------- ----------
+         32.269805             0.475609      20.978135 ...     1.3907 -31.375588
+         16.500895             0.223778       9.870378 ...  17.584427 -31.308569
+         31.735898             0.392856      17.328069 ... -18.547599 -31.350329
+         25.304713             0.370134       16.32586 ... -13.204696 -31.346782
+         22.958721             0.338181      14.916502 ...  11.290295  -31.30206
+           27.7318             0.418198      18.445875 ...  -0.181089 -31.287797
+         28.366078             0.415848      18.342214 ...   6.266776 -31.255011
+         27.260302             0.422207      18.622692 ...  10.634555 -31.259936
+         16.893226             0.196794       8.680198 ...   27.80494 -31.175293
+          27.77056             0.372249      16.419135 ... -21.522837    -31.269
+               ...                  ...            ... ...        ...        ...
+         11.820976             0.106271       4.687384 ...  26.767531  27.475599
+         15.728902             0.144374       6.368047 ...  29.003698  27.509524
+         10.445102             0.010857       0.478901 ...   5.093287  27.929723
+          0.777412               -99.99   -4410.357784 ...   2.462919  28.199697
+          4.618647               -99.99   -4410.357784 ...  20.375472  28.617125
+         15.276202             0.135039       5.956308 ...  27.465447  28.964546
+         55.771023             0.242861      10.712126 ...  -1.899645  28.952451
+          0.249052               -99.99   -4410.357784 ...  -2.733332  29.759634
+          7.417778               -99.99   -4410.357784 ...  20.030256   29.87687
+        160.159922             0.132727       5.854341 ...  -9.937287  31.082626
+         13.863423             0.154423       6.811294 ...   8.547068   31.13673
+    Length = 1697 rows
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 121-126
+
+**Align the second image**
+
+The plots outputted here show the various steps used by jhat to
+determine the true matching sources in the image, and the
+subsequent correction needed for optimal alignment.
+
+.. GENERATED FROM PYTHON SOURCE LINES 126-149
+
+.. code-block:: default
+
+
+    wcs_align = st_wcs_align()
+    wcs_align.outdir = 'mastDownload'
+
+
+    wcs_align.run_all(align_image,
+    		  telescope='jwst',
+              refcat_racol='ra',
+              refcat_deccol='dec',
+              refcat_magcol='mag',
+              refcat_magerrcol='dmag',
+              overwrite=True,
+              d2d_max=1,
+              showplots=2,
+              refcatname=ref_catname,
+              histocut_order='dxdy',
+                  sharpness_lim=(0.3,0.9),
+                  roundness1_lim=(-0.7, 0.7),
+                  SNR_min= 3,
+                  dmag_max=1.0,
+                  objmag_lim =(14,24))
+
+
+
+
+
+.. rst-class:: sphx-glr-horizontal
+
+
+    *
+
+      .. image-sg:: /examples/images/sphx_glr_plot_b_nircam_003.png
+         :alt: Initial cut: d2d_max=1, dmag_max=1.0, Nbright=None, delta_mag_lim=(None, None)
+         :srcset: /examples/images/sphx_glr_plot_b_nircam_003.png
+         :class: sphx-glr-multi-img
+
+    *
+
+      .. image-sg:: /examples/images/sphx_glr_plot_b_nircam_004.png
+         :alt: dx, dx, dx, slope:0.00024414062499998179, 3-sigma cut: 124 out of 124 left mean = -0.554 px, stdev = 0.197 px
+         :srcset: /examples/images/sphx_glr_plot_b_nircam_004.png
+         :class: sphx-glr-multi-img
+
+    *
+
+      .. image-sg:: /examples/images/sphx_glr_plot_b_nircam_005.png
+         :alt: dy, dy, dy, slope:-0.0002441406250000165, 3-sigma cut: 116 out of 119 left mean = -0.452 px, stdev = 0.160 px
+         :srcset: /examples/images/sphx_glr_plot_b_nircam_005.png
+         :class: sphx-glr-multi-img
+
+    *
+
+      .. image-sg:: /examples/images/sphx_glr_plot_b_nircam_006.png
+         :alt: pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction
+         :srcset: /examples/images/sphx_glr_plot_b_nircam_006.png
+         :class: sphx-glr-multi-img
+
+    *
+
+      .. image-sg:: /examples/images/sphx_glr_plot_b_nircam_007.png
+         :alt: after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction
+         :srcset: /examples/images/sphx_glr_plot_b_nircam_007.png
+         :class: sphx-glr-multi-img
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+
+    ### Doing photometry on mastDownload/JWST/jw02107041001_02101_00001_nrcblong/jw02107041001_02101_00001_nrcblong_cal.fits
+    NO photometry catalog filename
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/wcs/wcs.py:725: FITSFixedWarning: 'datfix' made the change 'Set DATE-BEG to '2022-07-06T19:16:42.721' from MJD-BEG.
+    Set DATE-AVG to '2022-07-06T19:17:14.932' from MJD-AVG.
+    Set DATE-END to '2022-07-06T19:17:47.142' from MJD-END'.
+      warnings.warn(
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/wcs/wcs.py:725: FITSFixedWarning: 'obsfix' made the change 'Set OBSGEO-L to   -72.164999 from OBSGEO-[XYZ].
+    Set OBSGEO-B to   -38.353872 from OBSGEO-[XYZ].
+    Set OBSGEO-H to 1740894174.999 from OBSGEO-[XYZ]'.
+      warnings.warn(
+    Filename: mastDownload/JWST/jw02107041001_02101_00001_nrcblong/jw02107041001_02101_00001_nrcblong_cal.fits
+    No.    Name      Ver    Type      Cards   Dimensions   Format
+      0  PRIMARY       1 PrimaryHDU     346   ()      
+      1  SCI           1 ImageHDU       112   (2048, 2048)   float32   
+      2  ERR           1 ImageHDU        10   (2048, 2048)   float32   
+      3  DQ            1 ImageHDU        11   (2048, 2048)   int32 (rescales to uint32)   
+      4  AREA          1 ImageHDU         9   (2048, 2048)   float32   
+      5  VAR_POISSON    1 ImageHDU         9   (2048, 2048)   float32   
+      6  VAR_RNOISE    1 ImageHDU         9   (2048, 2048)   float32   
+      7  VAR_FLAT      1 ImageHDU         9   (2048, 2048)   float32   
+      8  ASDF          1 BinTableHDU     11   1R x 1C   [24762B]   
+    None
+    NIRCAM NRCBLONG F360M CLEAR FULL NRCB5_FULL
+    Finding stars --- Detector: NRCBLONG, Filter: F360M
+    FWHM for the filter F360M: 1.901 px
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
+      warnings.warn('Input data contains invalid values (NaNs or '
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
+      warnings.warn('Input data contains invalid values (NaNs or '
+
+    Number of sources found in the image: 4439
+    -------------------------------------
+
+    Performing aperture photometry for radius r = 2.9230000972747803 px
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:912: RuntimeWarning: invalid value encountered in log10
+      phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/units/function/logarithmic.py:47: RuntimeWarning: invalid value encountered in log10
+      return dex.to(self._function_unit, np.log10(x))
+    Time Elapsed: 2.556265685998369
+    4081 objects left after removing entries with NaNs in mag or dmag column
+    SNR_min cut: 3488 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
+    3488 out of 4081 entries remain in photometry table
+    0        772.450062
+    1        103.009572
+    2        534.976834
+    3       1656.493827
+    4        411.542888
+               ...     
+    4076     687.800123
+    4077    1896.908457
+    4078    1154.119188
+    4079    1168.525250
+    4080     926.912297
+    Name: x, Length: 4081, dtype: float64
+    bbbbbbb [0.025662132311264907, 0.025280356017559603, 0.025537133892918302, 0.025226197069312405]
+    347.44397520687136 -43.43020560976671 0.025662132311264907
+    RA/Dec columns in reference catalog:  ra dec
+    LOADING refcat mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.phot.txt
+    Matching reference catalog mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.phot.txt
+    image objects are in x_idl=[-64.09,64.06] and y_idl=[-64.46,63.74] range
+    Keeping 1697 out of 1697 catalog objects within x=-40.0-2088 and y=-40.0-2088
+    Keeping 1697  after removing NaNs from ra/dec
+    ########### !!!!!!!!!!  INITIAL CUT: starting with 4081 objects
+    d2d =1 CUT:
+    335 left
+    dmag_max =1.0 CUT:
+    335 left
+    SHARPNESS =(0.3, 0.9) CUT:
+    314 left
+    roundness1=(-0.7, 0.7) CUT:
+    279 left
+    objmag_lim=(14, 24) CUT:
+    169 left
+    # of matched objects that pass initial cuts: 169
+    dx median: -0.5238764991015614
+    dy median: -0.5424415336224229
+    ### Doing histogram cut for dx, slope_min:-0.004883 slope_max:0.004883 slope_stepsize:0.000049
+    Nfwhm=2.5, rough_cut_px_min=0.3, rough_cut_px_max=0.8, Nsigma=3.0
+    ########################
+    ### rotate dx versus y
+    Applying rolling gaussian:
+    gaussian_sigma_px=0.22, binsize=0.2, gaussian_sigma(bins)=1.0999999999999999, windowsize(bins)=7 halfwindowsize(bins)=4
+    slope min: -0.0048828125, slope max: 0.0048828125, slope stepsize: slope_stepsize
+    iteration 0 out of 200: slope = -0.004883
+    iteration 1 out of 200: slope = -0.004834
+    iteration 2 out of 200: slope = -0.004785
+    iteration 3 out of 200: slope = -0.004736
+    iteration 4 out of 200: slope = -0.004688
+    iteration 5 out of 200: slope = -0.004639
+    iteration 6 out of 200: slope = -0.004590
+    iteration 7 out of 200: slope = -0.004541
+    iteration 8 out of 200: slope = -0.004492
+    iteration 9 out of 200: slope = -0.004443
+    iteration 10 out of 200: slope = -0.004395
+    iteration 11 out of 200: slope = -0.004346
+    iteration 12 out of 200: slope = -0.004297
+    iteration 13 out of 200: slope = -0.004248
+    iteration 14 out of 200: slope = -0.004199
+    iteration 15 out of 200: slope = -0.004150
+    iteration 16 out of 200: slope = -0.004102
+    iteration 17 out of 200: slope = -0.004053
+    iteration 18 out of 200: slope = -0.004004
+    iteration 19 out of 200: slope = -0.003955
+    iteration 20 out of 200: slope = -0.003906
+    iteration 21 out of 200: slope = -0.003857
+    iteration 22 out of 200: slope = -0.003809
+    iteration 23 out of 200: slope = -0.003760
+    iteration 24 out of 200: slope = -0.003711
+    iteration 25 out of 200: slope = -0.003662
+    iteration 26 out of 200: slope = -0.003613
+    iteration 27 out of 200: slope = -0.003564
+    iteration 28 out of 200: slope = -0.003516
+    iteration 29 out of 200: slope = -0.003467
+    iteration 30 out of 200: slope = -0.003418
+    iteration 31 out of 200: slope = -0.003369
+    iteration 32 out of 200: slope = -0.003320
+    iteration 33 out of 200: slope = -0.003271
+    iteration 34 out of 200: slope = -0.003223
+    iteration 35 out of 200: slope = -0.003174
+    iteration 36 out of 200: slope = -0.003125
+    iteration 37 out of 200: slope = -0.003076
+    iteration 38 out of 200: slope = -0.003027
+    iteration 39 out of 200: slope = -0.002979
+    iteration 40 out of 200: slope = -0.002930
+    iteration 41 out of 200: slope = -0.002881
+    iteration 42 out of 200: slope = -0.002832
+    iteration 43 out of 200: slope = -0.002783
+    iteration 44 out of 200: slope = -0.002734
+    iteration 45 out of 200: slope = -0.002686
+    iteration 46 out of 200: slope = -0.002637
+    iteration 47 out of 200: slope = -0.002588
+    iteration 48 out of 200: slope = -0.002539
+    iteration 49 out of 200: slope = -0.002490
+    iteration 50 out of 200: slope = -0.002441
+    iteration 51 out of 200: slope = -0.002393
+    iteration 52 out of 200: slope = -0.002344
+    iteration 53 out of 200: slope = -0.002295
+    iteration 54 out of 200: slope = -0.002246
+    iteration 55 out of 200: slope = -0.002197
+    iteration 56 out of 200: slope = -0.002148
+    iteration 57 out of 200: slope = -0.002100
+    iteration 58 out of 200: slope = -0.002051
+    iteration 59 out of 200: slope = -0.002002
+    iteration 60 out of 200: slope = -0.001953
+    iteration 61 out of 200: slope = -0.001904
+    iteration 62 out of 200: slope = -0.001855
+    iteration 63 out of 200: slope = -0.001807
+    iteration 64 out of 200: slope = -0.001758
+    iteration 65 out of 200: slope = -0.001709
+    iteration 66 out of 200: slope = -0.001660
+    iteration 67 out of 200: slope = -0.001611
+    iteration 68 out of 200: slope = -0.001563
+    iteration 69 out of 200: slope = -0.001514
+    iteration 70 out of 200: slope = -0.001465
+    iteration 71 out of 200: slope = -0.001416
+    iteration 72 out of 200: slope = -0.001367
+    iteration 73 out of 200: slope = -0.001318
+    iteration 74 out of 200: slope = -0.001270
+    iteration 75 out of 200: slope = -0.001221
+    iteration 76 out of 200: slope = -0.001172
+    iteration 77 out of 200: slope = -0.001123
+    iteration 78 out of 200: slope = -0.001074
+    iteration 79 out of 200: slope = -0.001025
+    iteration 80 out of 200: slope = -0.000977
+    iteration 81 out of 200: slope = -0.000928
+    iteration 82 out of 200: slope = -0.000879
+    iteration 83 out of 200: slope = -0.000830
+    iteration 84 out of 200: slope = -0.000781
+    iteration 85 out of 200: slope = -0.000732
+    iteration 86 out of 200: slope = -0.000684
+    iteration 87 out of 200: slope = -0.000635
+    iteration 88 out of 200: slope = -0.000586
+    iteration 89 out of 200: slope = -0.000537
+    iteration 90 out of 200: slope = -0.000488
+    iteration 91 out of 200: slope = -0.000439
+    iteration 92 out of 200: slope = -0.000391
+    iteration 93 out of 200: slope = -0.000342
+    iteration 94 out of 200: slope = -0.000293
+    iteration 95 out of 200: slope = -0.000244
+    iteration 96 out of 200: slope = -0.000195
+    iteration 97 out of 200: slope = -0.000146
+    iteration 98 out of 200: slope = -0.000098
+    iteration 99 out of 200: slope = -0.000049
+    iteration 100 out of 200: slope = -0.000000
+    iteration 101 out of 200: slope = 0.000049
+    iteration 102 out of 200: slope = 0.000098
+    iteration 103 out of 200: slope = 0.000146
+    iteration 104 out of 200: slope = 0.000195
+    iteration 105 out of 200: slope = 0.000244
+    iteration 106 out of 200: slope = 0.000293
+    iteration 107 out of 200: slope = 0.000342
+    iteration 108 out of 200: slope = 0.000391
+    iteration 109 out of 200: slope = 0.000439
+    iteration 110 out of 200: slope = 0.000488
+    iteration 111 out of 200: slope = 0.000537
+    iteration 112 out of 200: slope = 0.000586
+    iteration 113 out of 200: slope = 0.000635
+    iteration 114 out of 200: slope = 0.000684
+    iteration 115 out of 200: slope = 0.000732
+    iteration 116 out of 200: slope = 0.000781
+    iteration 117 out of 200: slope = 0.000830
+    iteration 118 out of 200: slope = 0.000879
+    iteration 119 out of 200: slope = 0.000928
+    iteration 120 out of 200: slope = 0.000977
+    iteration 121 out of 200: slope = 0.001025
+    iteration 122 out of 200: slope = 0.001074
+    iteration 123 out of 200: slope = 0.001123
+    iteration 124 out of 200: slope = 0.001172
+    iteration 125 out of 200: slope = 0.001221
+    iteration 126 out of 200: slope = 0.001270
+    iteration 127 out of 200: slope = 0.001318
+    iteration 128 out of 200: slope = 0.001367
+    iteration 129 out of 200: slope = 0.001416
+    iteration 130 out of 200: slope = 0.001465
+    iteration 131 out of 200: slope = 0.001514
+    iteration 132 out of 200: slope = 0.001562
+    iteration 133 out of 200: slope = 0.001611
+    iteration 134 out of 200: slope = 0.001660
+    iteration 135 out of 200: slope = 0.001709
+    iteration 136 out of 200: slope = 0.001758
+    iteration 137 out of 200: slope = 0.001807
+    iteration 138 out of 200: slope = 0.001855
+    iteration 139 out of 200: slope = 0.001904
+    iteration 140 out of 200: slope = 0.001953
+    iteration 141 out of 200: slope = 0.002002
+    iteration 142 out of 200: slope = 0.002051
+    iteration 143 out of 200: slope = 0.002100
+    iteration 144 out of 200: slope = 0.002148
+    iteration 145 out of 200: slope = 0.002197
+    iteration 146 out of 200: slope = 0.002246
+    iteration 147 out of 200: slope = 0.002295
+    iteration 148 out of 200: slope = 0.002344
+    iteration 149 out of 200: slope = 0.002393
+    iteration 150 out of 200: slope = 0.002441
+    iteration 151 out of 200: slope = 0.002490
+    iteration 152 out of 200: slope = 0.002539
+    iteration 153 out of 200: slope = 0.002588
+    iteration 154 out of 200: slope = 0.002637
+    iteration 155 out of 200: slope = 0.002686
+    iteration 156 out of 200: slope = 0.002734
+    iteration 157 out of 200: slope = 0.002783
+    iteration 158 out of 200: slope = 0.002832
+    iteration 159 out of 200: slope = 0.002881
+    iteration 160 out of 200: slope = 0.002930
+    iteration 161 out of 200: slope = 0.002979
+    iteration 162 out of 200: slope = 0.003027
+    iteration 163 out of 200: slope = 0.003076
+    iteration 164 out of 200: slope = 0.003125
+    iteration 165 out of 200: slope = 0.003174
+    iteration 166 out of 200: slope = 0.003223
+    iteration 167 out of 200: slope = 0.003271
+    iteration 168 out of 200: slope = 0.003320
+    iteration 169 out of 200: slope = 0.003369
+    iteration 170 out of 200: slope = 0.003418
+    iteration 171 out of 200: slope = 0.003467
+    iteration 172 out of 200: slope = 0.003516
+    iteration 173 out of 200: slope = 0.003564
+    iteration 174 out of 200: slope = 0.003613
+    iteration 175 out of 200: slope = 0.003662
+    iteration 176 out of 200: slope = 0.003711
+    iteration 177 out of 200: slope = 0.003760
+    iteration 178 out of 200: slope = 0.003809
+    iteration 179 out of 200: slope = 0.003857
+    iteration 180 out of 200: slope = 0.003906
+    iteration 181 out of 200: slope = 0.003955
+    iteration 182 out of 200: slope = 0.004004
+    iteration 183 out of 200: slope = 0.004053
+    iteration 184 out of 200: slope = 0.004102
+    iteration 185 out of 200: slope = 0.004150
+    iteration 186 out of 200: slope = 0.004199
+    iteration 187 out of 200: slope = 0.004248
+    iteration 188 out of 200: slope = 0.004297
+    iteration 189 out of 200: slope = 0.004346
+    iteration 190 out of 200: slope = 0.004395
+    iteration 191 out of 200: slope = 0.004443
+    iteration 192 out of 200: slope = 0.004492
+    iteration 193 out of 200: slope = 0.004541
+    iteration 194 out of 200: slope = 0.004590
+    iteration 195 out of 200: slope = 0.004639
+    iteration 196 out of 200: slope = 0.004687
+    iteration 197 out of 200: slope = 0.004736
+    iteration 198 out of 200: slope = 0.004785
+    iteration 199 out of 200: slope = 0.004834
+            slope     intercept    maxval  index  d_bestguess  fwhm  multimax
+    -4.882812e-03  5.000000e+00 35.691926     72     0.312407   2.2     False
+    -4.833984e-03  4.950000e+00 35.716184     72     0.296685   2.2     False
+    -4.785156e-03  4.900000e+00 36.221907     72     0.280963   2.2     False
+    -4.736328e-03  4.850000e+00 37.014956     72     0.265241   2.2     False
+    -4.687500e-03  4.800000e+00 37.484975     72     0.249519   2.2     False
+    -4.638672e-03  4.750000e+00 37.509233     72     0.233797   2.2     False
+    -4.589844e-03  4.700000e+00 37.195006     72     0.218075   2.2     False
+    -4.541016e-03  4.650000e+00 37.362243     72     0.202352   2.2     False
+    -4.492188e-03  4.600000e+00 38.772301     72     0.186630   2.2     False
+    -4.443359e-03  4.550000e+00 38.808005     72     0.170908   2.0     False
+    -4.394531e-03  4.500000e+00 39.627954     72     0.155186   2.0     False
+    -4.345703e-03  4.450000e+00 39.966440     72     0.139464   2.0     False
+    -4.296875e-03  4.400000e+00 41.089172     72     0.123742   2.0     False
+    -4.248047e-03  4.350000e+00 40.750687     72     0.108020   2.0     False
+    -4.199219e-03  4.300000e+00 40.921935     72     0.092298   2.0     False
+    -4.150391e-03  4.250000e+00 41.077727     72     0.076576   2.0     False
+    -4.101563e-03  4.200000e+00 41.547746     72     0.060854   2.0     False
+    -4.052734e-03  4.150000e+00 41.126243     72     0.045132   2.0     False
+    -4.003906e-03  4.100000e+00 41.460717     72     0.029410   2.0     False
+    -3.955078e-03  4.050000e+00 41.730198     73     0.213688   2.0     False
+    -3.906250e-03  4.000000e+00 41.778714     73     0.197965   2.0     False
+    -3.857422e-03  3.950000e+00 42.921694     73     0.182243   2.0     False
+    -3.808594e-03  3.900000e+00 43.113189     73     0.166521   2.0     False
+    -3.759766e-03  3.850000e+00 43.280426     73     0.150799   2.0     False
+    -3.710938e-03  3.800000e+00 43.411960     73     0.135077   1.8     False
+    -3.662109e-03  3.750000e+00 43.870776     72    -0.080645   1.8     False
+    -3.613281e-03  3.700000e+00 44.216454     73     0.103633   1.8     False
+    -3.564453e-03  3.650000e+00 45.024959     73     0.087911   1.8     False
+    -3.515625e-03  3.600000e+00 45.833464     73     0.072189   1.6     False
+    -3.466797e-03  3.550000e+00 46.000701     73     0.056467   1.6     False
+    -3.417969e-03  3.500000e+00 46.470720     73     0.040745   1.6     False
+    -3.369141e-03  3.450000e+00 48.052027     73     0.025023   1.6     False
+    -3.320313e-03  3.400000e+00 48.399314     73     0.009301   1.6     False
+    -3.271484e-03  3.350000e+00 47.383858     73    -0.006422   1.6     False
+    -3.222656e-03  3.300000e+00 48.228066     73    -0.022144   1.6     False
+    -3.173828e-03  3.250000e+00 49.386501     73    -0.037866   1.6     False
+    -3.125000e-03  3.200000e+00 49.048016     73    -0.053588   1.6     False
+    -3.076172e-03  3.150000e+00 49.179550     73    -0.069310   1.6     False
+    -3.027344e-03  3.100000e+00 50.322529     73    -0.085032   1.4     False
+    -2.978516e-03  3.050000e+00 50.322529     73    -0.100754   1.4     False
+    -2.929688e-03  3.000000e+00 50.652751     74     0.083524   1.4     False
+    -2.880859e-03  2.950000e+00 50.915820     74     0.067802   1.4     False
+    -2.832031e-03  2.900000e+00 51.254305     74     0.052080   1.4     False
+    -2.783203e-03  2.850000e+00 51.278563     74     0.036358   1.4     False
+    -2.734375e-03  2.800000e+00 52.724324     74     0.020636   1.4     False
+    -2.685547e-03  2.750000e+00 53.230047     74     0.004914   1.4     False
+    -2.636719e-03  2.700000e+00 53.735769     74    -0.010809   1.4     False
+    -2.587891e-03  2.650000e+00 53.397284     74    -0.026531   1.4     False
+    -2.539063e-03  2.600000e+00 53.577334     74    -0.042253   1.4     False
+    -2.490234e-03  2.550000e+00 54.724324     74    -0.057975   1.4     False
+    -2.441406e-03  2.500000e+00 56.269761     74    -0.073697   1.4     False
+    -2.392578e-03  2.450000e+00 55.966979     74    -0.089419   1.4     False
+    -2.343750e-03  2.400000e+00 56.592790     74    -0.105141   1.4     False
+    -2.294922e-03  2.350000e+00 58.544274     74    -0.120863   1.4     False
+    -2.246094e-03  2.300000e+00 59.990036     74    -0.136585   1.2     False
+    -2.197266e-03  2.250000e+00 60.798540     74    -0.152307   1.2     False
+    -2.148438e-03  2.200000e+00 61.375836     74    -0.168029   1.2     False
+    -2.099609e-03  2.150000e+00 61.415550     74    -0.183751   1.2     False
+    -2.050781e-03  2.100000e+00 62.391292     74    -0.199473   1.2     False
+    -2.001953e-03  2.050000e+00 63.092521     74    -0.215196   1.2     False
+    -1.953125e-03  2.000000e+00 63.224055     74    -0.230918   1.2     False
+    -1.904297e-03  1.950000e+00 64.032560     74    -0.246640   1.2     False
+    -1.855469e-03  1.900000e+00 63.861312     74    -0.262362   1.2     False
+    -1.806641e-03  1.850000e+00 64.028549     74    -0.278084   1.2     False
+    -1.757813e-03  1.800000e+00 62.777210     75    -0.093806   1.2     False
+    -1.708984e-03  1.750000e+00 63.788655     75    -0.109528   1.2     False
+    -1.660156e-03  1.700000e+00 64.597160     75    -0.125250   1.2     False
+    -1.611328e-03  1.650000e+00 66.421121     75    -0.140972   1.2     False
+    -1.562500e-03  1.600000e+00 66.588358     75    -0.156694   1.2     False
+    -1.513672e-03  1.550000e+00 68.069823     75    -0.172416   1.2     False
+    -1.464844e-03  1.500000e+00 69.818367     75    -0.188138   1.2     False
+    -1.416016e-03  1.450000e+00 70.626871     75    -0.203860   1.2     False
+    -1.367188e-03  1.400000e+00 72.319298     75    -0.219583   1.0     False
+    -1.318359e-03  1.350000e+00 75.214832     75    -0.235305   1.0     False
+    -1.269531e-03  1.300000e+00 76.023337     75    -0.251027   1.0     False
+    -1.220703e-03  1.250000e+00 76.517614     75    -0.266749   1.0     False
+    -1.171875e-03  1.200000e+00 76.334921     75    -0.282471   1.0     False
+    -1.123047e-03  1.150000e+00 75.056397     75    -0.298193   1.0     False
+    -1.074219e-03  1.100000e+00 75.562119     75    -0.313915   1.0     False
+    -1.025391e-03  1.050000e+00 75.597822     75    -0.329637   1.0     False
+    -9.765625e-04  1.000000e+00 76.450832     75    -0.345359   1.0     False
+    -9.277344e-04  9.500000e-01 76.920852     75    -0.361081   1.0     False
+    -8.789063e-04  9.000000e-01 77.259337     75    -0.376803   1.0     False
+    -8.300781e-04  8.500000e-01 77.283595     75    -0.392525   1.0     False
+    -7.812500e-04  8.000000e-01 78.466288     75    -0.408247   1.0     False
+    -7.324219e-04  7.500000e-01 80.239090     75    -0.423970   1.0     False
+    -6.835938e-04  7.000000e-01 80.203387     75    -0.445660   1.0     False
+    -6.347656e-04  6.500000e-01 81.000806     76    -0.293152   1.0     False
+    -5.859375e-04  6.000000e-01 82.525995     76    -0.340645   0.8     False
+    -5.371094e-04  5.500000e-01 84.891382     76    -0.388137   0.8     False
+    -4.882813e-04  5.000000e-01 86.038372     76    -0.435629   1.0     False
+    -4.394531e-04  4.500000e-01 84.122591     76    -0.483122   1.0     False
+    -3.906250e-04  4.000000e-01 85.473635     77    -0.330614   1.0     False
+    -3.417969e-04  3.500000e-01 85.979358     77    -0.378106   1.0     False
+    -2.929688e-04  3.000000e-01 86.186309     77    -0.425598   0.8     False
+    -2.441406e-04  2.500000e-01 89.666993     77    -0.473091   0.8     False
+    -1.953125e-04  2.000000e-01 90.682449     77    -0.520583   1.0     False
+    -1.464844e-04  1.500000e-01 86.604222     77    -0.568075   1.0     False
+    -9.765625e-05  1.000000e-01 88.333299     78    -0.415567   1.0     False
+    -4.882813e-05  5.000000e-02 90.965765     78    -0.463060   0.8     False
+    -1.734723e-17  1.776357e-14 91.682449     78    -0.510552   0.8     False
+     4.882812e-05 -5.000000e-02 91.515212     78    -0.558044   0.8     False
+     9.765625e-05 -1.000000e-01 91.009490     78    -0.605537   1.0     False
+     1.464844e-04 -1.500000e-01 87.647947     78    -0.653029   1.0     False
+     1.953125e-04 -2.000000e-01 88.046920     79    -0.500521   1.0     False
+     2.441406e-04 -2.500000e-01 91.977210     79    -0.548013   0.8     False
+     2.929687e-04 -3.000000e-01 91.642735     79    -0.595506   0.8     False
+     3.417969e-04 -3.500000e-01 88.899150     79    -0.642998   1.0     False
+     3.906250e-04 -4.000000e-01 85.951510     79    -0.690490   1.0     False
+     4.394531e-04 -4.500000e-01 85.226803     80    -0.537982   1.0     False
+     4.882812e-04 -5.000000e-01 85.565288     80    -0.585475   1.0     False
+     5.371094e-04 -5.500000e-01 87.393260     80    -0.632967   0.8     False
+     5.859375e-04 -6.000000e-01 87.186309     80    -0.680459   1.0     False
+     6.347656e-04 -6.500000e-01 84.764805     80    -0.727952   1.0     False
+     6.835937e-04 -7.000000e-01 83.358758     80    -0.775444   1.0     False
+     7.324219e-04 -7.500000e-01 83.824767     81    -0.622936   1.0     False
+     7.812500e-04 -8.000000e-01 83.956301     81    -0.670428   1.0     False
+     8.300781e-04 -8.500000e-01 82.566656     81    -0.717921   1.0     False
+     8.789062e-04 -9.000000e-01 83.283341     81    -0.765413   1.0     False
+     9.277344e-04 -9.500000e-01 83.964323     81    -0.812905   1.0     False
+     9.765625e-04 -1.000000e+00 81.824767     82    -0.660397   1.0     False
+     1.025391e-03 -1.050000e+00 81.279330     82    -0.707890   1.0     False
+     1.074219e-03 -1.100000e+00 78.650875     82    -0.755382   1.2     False
+     1.123047e-03 -1.150000e+00 79.666331     82    -0.802874   1.0     False
+     1.171875e-03 -1.200000e+00 80.960312     82    -0.850367   1.0     False
+     1.220703e-03 -1.250000e+00 80.138994     83    -0.697859   1.0     False
+     1.269531e-03 -1.300000e+00 79.668974     83    -0.745351   1.0     False
+     1.318359e-03 -1.350000e+00 76.925389     83    -0.792843   1.2     False
+     1.367187e-03 -1.400000e+00 76.495083     83    -0.840336   1.0     False
+     1.416016e-03 -1.450000e+00 78.466034     83    -0.887828   1.0     False
+     1.464844e-03 -1.500000e+00 75.367560     83    -0.935320   1.0     False
+     1.513672e-03 -1.550000e+00 75.606203     84    -0.782813   1.0     False
+     1.562500e-03 -1.600000e+00 75.702034     84    -0.830305   1.0     False
+     1.611328e-03 -1.650000e+00 75.530786     84    -0.877797   1.2     False
+     1.660156e-03 -1.700000e+00 75.403263     84    -0.925289   1.0     False
+     1.708984e-03 -1.750000e+00 72.380206     84    -0.972782   1.0     False
+     1.757812e-03 -1.800000e+00 69.779433     85    -0.820274   1.0     False
+     1.806641e-03 -1.850000e+00 72.077424     85    -0.867766   1.0     False
+     1.855469e-03 -1.900000e+00 72.447768     85    -0.915258   1.2     False
+     1.904297e-03 -1.950000e+00 72.734147     85    -0.962751   1.0     False
+     1.953125e-03 -2.000000e+00 67.962547     85    -1.010243   1.0     False
+     2.001953e-03 -2.050000e+00 66.871674     86    -0.857735   1.0     False
+     2.050781e-03 -2.100000e+00 67.974939     86    -0.905228   1.0     False
+     2.099609e-03 -2.150000e+00 68.317435     86    -0.952720   1.2     False
+     2.148437e-03 -2.200000e+00 68.225615     86    -1.000212   1.2     False
+     2.197266e-03 -2.250000e+00 67.265329     86    -1.047704   1.0     False
+     2.246094e-03 -2.300000e+00 64.481082     86    -1.095197   1.0     False
+     2.294922e-03 -2.350000e+00 63.780020     87    -0.942689   1.2     False
+     2.343750e-03 -2.400000e+00 65.042922     87    -0.990181   1.2     False
+     2.392578e-03 -2.450000e+00 64.437357     87    -1.037673   1.2     False
+     2.441406e-03 -2.500000e+00 62.561290     87    -1.085166   1.2     False
+     2.490234e-03 -2.550000e+00 62.747995     87    -1.132658   1.2     False
+     2.539062e-03 -2.600000e+00 62.509518     88    -0.980150   1.0     False
+     2.587891e-03 -2.650000e+00 61.529765     88    -1.027643   1.2     False
+     2.636719e-03 -2.700000e+00 60.338103     88    -1.075135   1.2     False
+     2.685547e-03 -2.750000e+00 59.218794     88    -1.122627   1.2     False
+     2.734375e-03 -2.800000e+00 59.613204     89    -0.970119   1.2     False
+     2.783203e-03 -2.850000e+00 58.824946     89    -1.017612   1.4     False
+     2.832031e-03 -2.900000e+00 59.147976     89    -1.065104   1.2     False
+     2.880859e-03 -2.950000e+00 56.530966     89    -1.112596   1.2     False
+     2.929687e-03 -3.000000e+00 56.239629     89    -1.160089   1.2     False
+     2.978516e-03 -3.050000e+00 56.145828     90    -1.007581   1.4     False
+     3.027344e-03 -3.100000e+00 55.561878     90    -1.055073   1.4     False
+     3.076172e-03 -3.150000e+00 55.824946     90    -1.102565   1.4     False
+     3.125000e-03 -3.200000e+00 55.606383     90    -1.150058   1.4     False
+     3.173828e-03 -3.250000e+00 53.853995     90    -1.197550   1.4     False
+     3.222656e-03 -3.300000e+00 53.495758     91    -1.045042   1.4     False
+     3.271484e-03 -3.350000e+00 52.034541     91    -1.092534   1.4     False
+     3.320312e-03 -3.400000e+00 53.489104     91    -1.140027   1.4     False
+     3.369141e-03 -3.450000e+00 51.960325     91    -1.187519   1.4     False
+     3.417969e-03 -3.500000e+00 50.873462     91    -1.235011   1.6     False
+     3.466797e-03 -3.550000e+00 50.271909     91    -1.282504   1.6     False
+     3.515625e-03 -3.600000e+00 49.747140     91    -1.329996   1.6     False
+     3.564453e-03 -3.650000e+00 49.588779     92    -1.177488   1.6     False
+     3.613281e-03 -3.700000e+00 48.756016     92    -1.224980   1.6     False
+     3.662109e-03 -3.750000e+00 49.011651     92    -1.272473   1.6     False
+     3.710937e-03 -3.800000e+00 48.383196     92    -1.319965   1.6     False
+     3.759766e-03 -3.850000e+00 49.399853     92    -1.367457   1.6     False
+     3.808594e-03 -3.900000e+00 46.648740     93    -1.214949   1.6     False
+     3.857422e-03 -3.950000e+00 45.768829     93    -1.262442   1.8     False
+     3.906250e-03 -4.000000e+00 45.748582     93    -1.309934   1.8     False
+     3.955078e-03 -4.050000e+00 46.569900     93    -1.357426   1.6     False
+     4.003906e-03 -4.100000e+00 45.359359     93    -1.404919   1.6     False
+     4.052734e-03 -4.150000e+00 44.488937     94    -1.252411   1.8     False
+     4.101562e-03 -4.200000e+00 44.011484     94    -1.299903   1.8     False
+     4.150391e-03 -4.250000e+00 44.519236     95    -1.147395   1.8     False
+     4.199219e-03 -4.300000e+00 44.276415     95    -1.194888   1.8     False
+     4.248047e-03 -4.350000e+00 42.341167     95    -1.242380   1.8     False
+     4.296875e-03 -4.400000e+00 41.756016     95    -1.289872   1.8     False
+     4.345703e-03 -4.450000e+00 42.788296     95    -1.337364   1.8     False
+     4.394531e-03 -4.500000e+00 43.617048     95    -1.384857   1.8     False
+     4.443359e-03 -4.550000e+00 42.447663     96    -1.232349   1.8     False
+     4.492187e-03 -4.600000e+00 40.770692     96    -1.279841   2.0     False
+     4.541016e-03 -4.650000e+00 39.730978     96    -1.327334   2.0     False
+     4.589844e-03 -4.700000e+00 41.862513     96    -1.374826   1.8     False
+     4.638672e-03 -4.750000e+00 42.124634     97    -1.222318   1.8     False
+     4.687500e-03 -4.800000e+00 41.554939     97    -1.269810   1.8     False
+     4.736328e-03 -4.850000e+00 40.137447     97    -1.317303   2.0     False
+     4.785156e-03 -4.900000e+00 37.824662     98    -1.164795   2.0     False
+     4.833984e-03 -4.950000e+00 39.824662     98    -1.212287   2.0     False
+    ####BEST:
+       slope  intercept   maxval  index  d_bestguess  fwhm  multimax
+    0.000244      -0.25 91.97721     79    -0.548013   0.8     False
+    Setting rough_cut_px=1.999999999999993. limits: (0.3-0.8)
+    Setting rough_cut_px=0.8
+
+    ####################
+    ### d_rotated cut (Nsigma=3.0)
+    Keeping 124 out of 124, skippin 0 because of null values in columns d_rot_tmp
+    median: -0.591708
+    75.000000 percentile cut: max residual for cut: 0.214666
+    median: -0.613571
+    i:00 mean:-0.613571(0.011661) stdev:0.111852(0.008201) X2norm:0.99 Nchanged:0 Ngood:93 Nclip:31
+
+    mean: -0.593383
+    i:01 mean:-0.593383(0.014244) stdev:0.149393(0.010027) X2norm:1.00 Nchanged:18 Ngood:111 Nclip:13
+
+    mean: -0.574064
+    i:02 mean:-0.574064(0.016037) stdev:0.174208(0.011292) X2norm:1.00 Nchanged:8 Ngood:119 Nclip:5
+
+    mean: -0.558283
+    i:03 mean:-0.558283(0.017376) stdev:0.191926(0.012237) X2norm:1.00 Nchanged:4 Ngood:123 Nclip:1
+
+    mean: -0.554180
+    i:04 mean:-0.554180(0.017720) stdev:0.196530(0.012480) X2norm:1.00 Nchanged:1 Ngood:124 Nclip:0
+
+    mean: -0.554180
+    i:05 mean:-0.554180(0.017720) stdev:0.196530(0.012480) X2norm:1.00 Nchanged:0 Ngood:124 Nclip:0
+    i:05 mean:-0.554180(0.017720) stdev:0.196530(0.012480) X2norm:1.00 Nchanged:0 Ngood:124 Nclip:0
+    ### Doing histogram cut for dy, slope_min:-0.004883 slope_max:0.004883 slope_stepsize:0.000049
+    Nfwhm=2.5, rough_cut_px_min=0.3, rough_cut_px_max=0.8, Nsigma=3.0
+    ########################
+    ### rotate dy versus x
+    Applying rolling gaussian:
+    gaussian_sigma_px=0.22, binsize=0.2, gaussian_sigma(bins)=1.0999999999999999, windowsize(bins)=7 halfwindowsize(bins)=4
+    slope min: -0.0048828125, slope max: 0.0048828125, slope stepsize: slope_stepsize
+    iteration 0 out of 200: slope = -0.004883
+    iteration 1 out of 200: slope = -0.004834
+    iteration 2 out of 200: slope = -0.004785
+    iteration 3 out of 200: slope = -0.004736
+    iteration 4 out of 200: slope = -0.004688
+    iteration 5 out of 200: slope = -0.004639
+    iteration 6 out of 200: slope = -0.004590
+    iteration 7 out of 200: slope = -0.004541
+    iteration 8 out of 200: slope = -0.004492
+    iteration 9 out of 200: slope = -0.004443
+    iteration 10 out of 200: slope = -0.004395
+    iteration 11 out of 200: slope = -0.004346
+    iteration 12 out of 200: slope = -0.004297
+    iteration 13 out of 200: slope = -0.004248
+    iteration 14 out of 200: slope = -0.004199
+    iteration 15 out of 200: slope = -0.004150
+    iteration 16 out of 200: slope = -0.004102
+    iteration 17 out of 200: slope = -0.004053
+    iteration 18 out of 200: slope = -0.004004
+    iteration 19 out of 200: slope = -0.003955
+    iteration 20 out of 200: slope = -0.003906
+    iteration 21 out of 200: slope = -0.003857
+    iteration 22 out of 200: slope = -0.003809
+    iteration 23 out of 200: slope = -0.003760
+    iteration 24 out of 200: slope = -0.003711
+    iteration 25 out of 200: slope = -0.003662
+    iteration 26 out of 200: slope = -0.003613
+    iteration 27 out of 200: slope = -0.003564
+    iteration 28 out of 200: slope = -0.003516
+    iteration 29 out of 200: slope = -0.003467
+    iteration 30 out of 200: slope = -0.003418
+    iteration 31 out of 200: slope = -0.003369
+    iteration 32 out of 200: slope = -0.003320
+    iteration 33 out of 200: slope = -0.003271
+    iteration 34 out of 200: slope = -0.003223
+    iteration 35 out of 200: slope = -0.003174
+    iteration 36 out of 200: slope = -0.003125
+    iteration 37 out of 200: slope = -0.003076
+    iteration 38 out of 200: slope = -0.003027
+    iteration 39 out of 200: slope = -0.002979
+    iteration 40 out of 200: slope = -0.002930
+    iteration 41 out of 200: slope = -0.002881
+    iteration 42 out of 200: slope = -0.002832
+    iteration 43 out of 200: slope = -0.002783
+    iteration 44 out of 200: slope = -0.002734
+    iteration 45 out of 200: slope = -0.002686
+    iteration 46 out of 200: slope = -0.002637
+    iteration 47 out of 200: slope = -0.002588
+    iteration 48 out of 200: slope = -0.002539
+    iteration 49 out of 200: slope = -0.002490
+    iteration 50 out of 200: slope = -0.002441
+    iteration 51 out of 200: slope = -0.002393
+    iteration 52 out of 200: slope = -0.002344
+    iteration 53 out of 200: slope = -0.002295
+    iteration 54 out of 200: slope = -0.002246
+    iteration 55 out of 200: slope = -0.002197
+    iteration 56 out of 200: slope = -0.002148
+    iteration 57 out of 200: slope = -0.002100
+    iteration 58 out of 200: slope = -0.002051
+    iteration 59 out of 200: slope = -0.002002
+    iteration 60 out of 200: slope = -0.001953
+    iteration 61 out of 200: slope = -0.001904
+    iteration 62 out of 200: slope = -0.001855
+    iteration 63 out of 200: slope = -0.001807
+    iteration 64 out of 200: slope = -0.001758
+    iteration 65 out of 200: slope = -0.001709
+    iteration 66 out of 200: slope = -0.001660
+    iteration 67 out of 200: slope = -0.001611
+    iteration 68 out of 200: slope = -0.001563
+    iteration 69 out of 200: slope = -0.001514
+    iteration 70 out of 200: slope = -0.001465
+    iteration 71 out of 200: slope = -0.001416
+    iteration 72 out of 200: slope = -0.001367
+    iteration 73 out of 200: slope = -0.001318
+    iteration 74 out of 200: slope = -0.001270
+    iteration 75 out of 200: slope = -0.001221
+    iteration 76 out of 200: slope = -0.001172
+    iteration 77 out of 200: slope = -0.001123
+    iteration 78 out of 200: slope = -0.001074
+    iteration 79 out of 200: slope = -0.001025
+    iteration 80 out of 200: slope = -0.000977
+    iteration 81 out of 200: slope = -0.000928
+    iteration 82 out of 200: slope = -0.000879
+    iteration 83 out of 200: slope = -0.000830
+    iteration 84 out of 200: slope = -0.000781
+    iteration 85 out of 200: slope = -0.000732
+    iteration 86 out of 200: slope = -0.000684
+    iteration 87 out of 200: slope = -0.000635
+    iteration 88 out of 200: slope = -0.000586
+    iteration 89 out of 200: slope = -0.000537
+    iteration 90 out of 200: slope = -0.000488
+    iteration 91 out of 200: slope = -0.000439
+    iteration 92 out of 200: slope = -0.000391
+    iteration 93 out of 200: slope = -0.000342
+    iteration 94 out of 200: slope = -0.000293
+    iteration 95 out of 200: slope = -0.000244
+    iteration 96 out of 200: slope = -0.000195
+    iteration 97 out of 200: slope = -0.000146
+    iteration 98 out of 200: slope = -0.000098
+    iteration 99 out of 200: slope = -0.000049
+    iteration 100 out of 200: slope = -0.000000
+    iteration 101 out of 200: slope = 0.000049
+    iteration 102 out of 200: slope = 0.000098
+    iteration 103 out of 200: slope = 0.000146
+    iteration 104 out of 200: slope = 0.000195
+    iteration 105 out of 200: slope = 0.000244
+    iteration 106 out of 200: slope = 0.000293
+    iteration 107 out of 200: slope = 0.000342
+    iteration 108 out of 200: slope = 0.000391
+    iteration 109 out of 200: slope = 0.000439
+    iteration 110 out of 200: slope = 0.000488
+    iteration 111 out of 200: slope = 0.000537
+    iteration 112 out of 200: slope = 0.000586
+    iteration 113 out of 200: slope = 0.000635
+    iteration 114 out of 200: slope = 0.000684
+    iteration 115 out of 200: slope = 0.000732
+    iteration 116 out of 200: slope = 0.000781
+    iteration 117 out of 200: slope = 0.000830
+    iteration 118 out of 200: slope = 0.000879
+    iteration 119 out of 200: slope = 0.000928
+    iteration 120 out of 200: slope = 0.000977
+    iteration 121 out of 200: slope = 0.001025
+    iteration 122 out of 200: slope = 0.001074
+    iteration 123 out of 200: slope = 0.001123
+    iteration 124 out of 200: slope = 0.001172
+    iteration 125 out of 200: slope = 0.001221
+    iteration 126 out of 200: slope = 0.001270
+    iteration 127 out of 200: slope = 0.001318
+    iteration 128 out of 200: slope = 0.001367
+    iteration 129 out of 200: slope = 0.001416
+    iteration 130 out of 200: slope = 0.001465
+    iteration 131 out of 200: slope = 0.001514
+    iteration 132 out of 200: slope = 0.001562
+    iteration 133 out of 200: slope = 0.001611
+    iteration 134 out of 200: slope = 0.001660
+    iteration 135 out of 200: slope = 0.001709
+    iteration 136 out of 200: slope = 0.001758
+    iteration 137 out of 200: slope = 0.001807
+    iteration 138 out of 200: slope = 0.001855
+    iteration 139 out of 200: slope = 0.001904
+    iteration 140 out of 200: slope = 0.001953
+    iteration 141 out of 200: slope = 0.002002
+    iteration 142 out of 200: slope = 0.002051
+    iteration 143 out of 200: slope = 0.002100
+    iteration 144 out of 200: slope = 0.002148
+    iteration 145 out of 200: slope = 0.002197
+    iteration 146 out of 200: slope = 0.002246
+    iteration 147 out of 200: slope = 0.002295
+    iteration 148 out of 200: slope = 0.002344
+    iteration 149 out of 200: slope = 0.002393
+    iteration 150 out of 200: slope = 0.002441
+    iteration 151 out of 200: slope = 0.002490
+    iteration 152 out of 200: slope = 0.002539
+    iteration 153 out of 200: slope = 0.002588
+    iteration 154 out of 200: slope = 0.002637
+    iteration 155 out of 200: slope = 0.002686
+    iteration 156 out of 200: slope = 0.002734
+    iteration 157 out of 200: slope = 0.002783
+    iteration 158 out of 200: slope = 0.002832
+    iteration 159 out of 200: slope = 0.002881
+    iteration 160 out of 200: slope = 0.002930
+    iteration 161 out of 200: slope = 0.002979
+    iteration 162 out of 200: slope = 0.003027
+    iteration 163 out of 200: slope = 0.003076
+    iteration 164 out of 200: slope = 0.003125
+    iteration 165 out of 200: slope = 0.003174
+    iteration 166 out of 200: slope = 0.003223
+    iteration 167 out of 200: slope = 0.003271
+    iteration 168 out of 200: slope = 0.003320
+    iteration 169 out of 200: slope = 0.003369
+    iteration 170 out of 200: slope = 0.003418
+    iteration 171 out of 200: slope = 0.003467
+    iteration 172 out of 200: slope = 0.003516
+    iteration 173 out of 200: slope = 0.003564
+    iteration 174 out of 200: slope = 0.003613
+    iteration 175 out of 200: slope = 0.003662
+    iteration 176 out of 200: slope = 0.003711
+    iteration 177 out of 200: slope = 0.003760
+    iteration 178 out of 200: slope = 0.003809
+    iteration 179 out of 200: slope = 0.003857
+    iteration 180 out of 200: slope = 0.003906
+    iteration 181 out of 200: slope = 0.003955
+    iteration 182 out of 200: slope = 0.004004
+    iteration 183 out of 200: slope = 0.004053
+    iteration 184 out of 200: slope = 0.004102
+    iteration 185 out of 200: slope = 0.004150
+    iteration 186 out of 200: slope = 0.004199
+    iteration 187 out of 200: slope = 0.004248
+    iteration 188 out of 200: slope = 0.004297
+    iteration 189 out of 200: slope = 0.004346
+    iteration 190 out of 200: slope = 0.004395
+    iteration 191 out of 200: slope = 0.004443
+    iteration 192 out of 200: slope = 0.004492
+    iteration 193 out of 200: slope = 0.004541
+    iteration 194 out of 200: slope = 0.004590
+    iteration 195 out of 200: slope = 0.004639
+    iteration 196 out of 200: slope = 0.004687
+    iteration 197 out of 200: slope = 0.004736
+    iteration 198 out of 200: slope = 0.004785
+    iteration 199 out of 200: slope = 0.004834
+            slope     intercept    maxval  index  d_bestguess  fwhm  multimax
+    -4.882812e-03  5.000000e+00 25.304807     23     2.153974   1.6     False
+    -4.833984e-03  4.950000e+00 25.810530     23     2.149597   1.6     False
+    -4.785156e-03  4.900000e+00 26.619034     23     2.145221   1.6     False
+    -4.736328e-03  4.850000e+00 27.926608     24     2.340844   1.4     False
+    -4.687500e-03  4.800000e+00 27.468033     23     2.136468   1.4     False
+    -4.638672e-03  4.750000e+00 28.889537     23     2.132091   1.4     False
+    -4.589844e-03  4.700000e+00 29.045329     23     2.127715   1.4     False
+    -4.541016e-03  4.650000e+00 27.595556     23     2.123338   1.4     False
+    -4.492188e-03  4.600000e+00 26.619814     23     2.118962   1.6     False
+    -4.443359e-03  4.550000e+00 26.967102     23     2.114585   1.6     False
+    -4.394531e-03  4.500000e+00 27.806519     22     1.910209   1.4     False
+    -4.345703e-03  4.450000e+00 28.305587     23     2.105832   1.4     False
+    -4.296875e-03  4.400000e+00 28.527994     22     1.901456   1.4     False
+    -4.248047e-03  4.350000e+00 28.659529     22     1.897080   1.4     False
+    -4.199219e-03  4.300000e+00 29.648083     22     1.892703   1.4     False
+    -4.150391e-03  4.250000e+00 29.318400     22     1.888327   1.4     False
+    -4.101563e-03  4.200000e+00 30.294142     22     1.883950   1.4     False
+    -4.052734e-03  4.150000e+00 30.568655     22     1.879574   1.2     False
+    -4.003906e-03  4.100000e+00 29.663539     21     1.675197   1.4     False
+    -3.955078e-03  4.050000e+00 29.648083     21     1.670821   1.4     False
+    -3.906250e-03  4.000000e+00 29.540807     21     1.666444   1.4     False
+    -3.857422e-03  3.950000e+00 29.632627     22     1.862068   1.6     False
+    -3.808594e-03  3.900000e+00 31.114092     21     1.657691   1.6     False
+    -3.759766e-03  3.850000e+00 31.485637     21     1.653315   1.6     False
+    -3.710938e-03  3.800000e+00 31.955657     21     1.648938   1.4     False
+    -3.662109e-03  3.750000e+00 30.939254     20     1.444562   1.6     False
+    -3.613281e-03  3.700000e+00 31.636471     20     1.440186   1.4     False
+    -3.564453e-03  3.650000e+00 31.719490     20     1.435809   1.4     False
+    -3.515625e-03  3.600000e+00 31.923377     21     1.631433   1.4     False
+    -3.466797e-03  3.550000e+00 33.318400     20     1.427056   1.4     False
+    -3.417969e-03  3.500000e+00 33.354103     20     1.422680   1.4     False
+    -3.369141e-03  3.450000e+00 33.028431     20     1.418303   1.4     False
+    -3.320313e-03  3.400000e+00 31.725648     20     1.413927   2.8     False
+    -3.271484e-03  3.350000e+00 32.362905     20     1.409550   1.6     False
+    -3.222656e-03  3.300000e+00 32.610771     19     1.205174   1.6     False
+    -3.173828e-03  3.250000e+00 33.377940     20     1.400797   1.6     False
+    -3.125000e-03  3.200000e+00 33.838137     19     1.196421   1.6     False
+    -3.076172e-03  3.150000e+00 36.729659     19     1.192044   1.2     False
+    -3.027344e-03  3.100000e+00 35.076947     19     1.187668   1.6     False
+    -2.978516e-03  3.050000e+00 35.749907     19     1.183292   1.4     False
+    -2.929688e-03  3.000000e+00 35.033222     19     1.178915   2.4     False
+    -2.880859e-03  2.950000e+00 35.730439     19     1.174539   2.4     False
+    -2.832031e-03  2.900000e+00 35.861974     19     1.170162   2.4     False
+    -2.783203e-03  2.850000e+00 35.591304     18     0.965786   2.4     False
+    -2.734375e-03  2.800000e+00 37.467371     18     0.961409   2.4     False
+    -2.685547e-03  2.750000e+00 38.710192     18     0.957033   2.2     False
+    -2.636719e-03  2.700000e+00 40.060123     18     0.952656   2.2     False
+    -2.587891e-03  2.650000e+00 40.044667     18     0.948280   2.2     False
+    -2.539063e-03  2.600000e+00 38.794412     18     0.943903   2.2     False
+    -2.490234e-03  2.550000e+00 37.921935     18     0.939527   2.2     False
+    -2.441406e-03  2.500000e+00 39.053469     18     0.935150   2.2     False
+    -2.392578e-03  2.450000e+00 39.938592     17     0.730774   2.2     False
+    -2.343750e-03  2.400000e+00 40.863175     17     0.726397   2.0     False
+    -2.294922e-03  2.350000e+00 42.607707     17     0.722021   2.0     False
+    -2.246094e-03  2.300000e+00 43.236162     17     0.717645   2.0     False
+    -2.197266e-03  2.250000e+00 43.089172     17     0.713268   1.8     False
+    -2.148438e-03  2.200000e+00 44.220706     17     0.708892   1.8     False
+    -2.099609e-03  2.150000e+00 42.472162     17     0.704515   2.0     False
+    -2.050781e-03  2.100000e+00 43.390512     16     0.500139   1.8     False
+    -2.001953e-03  2.050000e+00 44.290670     16     0.495762   1.6     False
+    -1.953125e-03  2.000000e+00 47.246165     16     0.491386   1.6     False
+    -1.904297e-03  1.950000e+00 47.513244     16     0.487009   1.6     False
+    -1.855469e-03  1.900000e+00 47.573205     16     0.482633   1.6     False
+    -1.806641e-03  1.850000e+00 46.378900     16     0.478256   1.6     False
+    -1.757813e-03  1.800000e+00 46.801771     16     0.473880   1.6     False
+    -1.708984e-03  1.750000e+00 49.598831     16     0.469503   1.6     False
+    -1.660156e-03  1.700000e+00 49.897603     16     0.465127   1.4     False
+    -1.611328e-03  1.650000e+00 49.774041     15     0.260751   1.4     False
+    -1.562500e-03  1.600000e+00 52.562299     15     0.256374   1.4     False
+    -1.513672e-03  1.550000e+00 53.116538     15     0.251998   1.4     False
+    -1.464844e-03  1.500000e+00 54.272330     15     0.247621   1.4     False
+    -1.416016e-03  1.450000e+00 56.709289     15     0.243245   1.4     False
+    -1.367188e-03  1.400000e+00 56.355348     15     0.238868   1.2     False
+    -1.318359e-03  1.350000e+00 56.164825     14     0.034492   1.2     False
+    -1.269531e-03  1.300000e+00 57.878867     14     0.030115   1.2     False
+    -1.220703e-03  1.250000e+00 59.834362     14     0.025739   1.2     False
+    -1.171875e-03  1.200000e+00 60.885521     14     0.021362   1.2     False
+    -1.123047e-03  1.150000e+00 64.924034     14     0.016986   1.2     False
+    -1.074219e-03  1.100000e+00 67.516785     14     0.012609   1.0     False
+    -1.025391e-03  1.050000e+00 69.468269     14     0.008233   1.0     False
+    -9.765625e-04  1.000000e+00 68.469216     13    -0.196143   1.0     False
+    -9.277344e-04  9.500000e-01 70.213749     13    -0.200520   1.0     False
+    -8.789063e-04  9.000000e-01 71.603393     13    -0.204896   1.0     False
+    -8.300781e-04  8.500000e-01 76.920431     13    -0.209273   1.0     False
+    -7.812500e-04  8.000000e-01 79.644716     13    -0.213649   0.8     False
+    -7.324219e-04  7.500000e-01 80.449210     13    -0.218026   0.8     False
+    -6.835938e-04  7.000000e-01 80.242259     13    -0.222402   1.0     False
+    -6.347656e-04  6.500000e-01 80.505327     13    -0.226779   1.0     False
+    -5.859375e-04  6.000000e-01 81.652317     13    -0.231155   1.0     False
+    -5.371094e-04  5.500000e-01 80.569299     13    -0.235532   1.0     False
+    -4.882813e-04  5.000000e-01 82.540250     12    -0.439908   1.0     False
+    -4.394531e-04  4.500000e-01 83.273338     12    -0.444285   1.0     False
+    -3.906250e-04  4.000000e-01 86.129158     12    -0.448661   1.0     False
+    -3.417969e-04  3.500000e-01 87.821584     12    -0.453038   1.0     False
+    -2.929688e-04  3.000000e-01 88.893158     12    -0.457414   0.8     False
+    -2.441406e-04  2.500000e-01 93.425001     12    -0.461790   0.8     False
+    -1.953125e-04  2.000000e-01 92.110774     12    -0.466167   0.8     False
+    -1.464844e-04  1.500000e-01 90.593439     12    -0.470543   0.8     False
+    -9.765625e-05  1.000000e-01 89.446449     12    -0.474920   0.8     False
+    -4.882813e-05  5.000000e-02 87.885557     12    -0.479296   1.0     False
+    -1.734723e-17  1.776357e-14 86.778280     12    -0.483673   1.0     False
+     4.882812e-05 -5.000000e-02 84.277349     12    -0.488049   1.0     False
+     9.765625e-05 -1.000000e-01 86.052794     11    -0.692426   1.0     False
+     1.464844e-04 -1.500000e-01 84.905804     11    -0.696802   1.0     False
+     1.953125e-04 -2.000000e-01 86.430993     11    -0.701179   0.8     False
+     2.441406e-04 -2.500000e-01 85.778280     11    -0.705555   0.8     False
+     2.929687e-04 -3.000000e-01 84.969776     11    -0.709932   0.8     False
+     3.417969e-04 -3.500000e-01 82.938864     11    -0.714308   0.8     False
+     3.906250e-04 -4.000000e-01 81.493102     11    -0.718684   0.8     False
+     4.394531e-04 -4.500000e-01 78.851835     11    -0.723061   1.0     False
+     4.882812e-04 -5.000000e-01 75.617815     11    -0.727437   1.0     False
+     5.371094e-04 -5.500000e-01 74.247471     11    -0.731814   1.0     False
+     5.859375e-04 -6.000000e-01 70.248672     10    -0.936190   1.0     False
+     6.347656e-04 -6.500000e-01 70.006018     10    -0.940567   1.0     False
+     6.835937e-04 -7.000000e-01 67.512941     10    -0.944943   1.0     False
+     7.324219e-04 -7.500000e-01 66.473227     10    -0.949320   1.2     False
+     7.812500e-04 -8.000000e-01 65.290534     10    -0.953696   1.2     False
+     8.300781e-04 -8.500000e-01 63.844772     10    -0.958073   1.2     False
+     8.789062e-04 -9.000000e-01 63.717249     10    -0.962449   1.2     False
+     9.277344e-04 -9.500000e-01 61.175657     10    -0.966826   1.2     False
+     9.765625e-04 -1.000000e+00 59.068381     10    -0.971202   1.2     False
+     1.025391e-03 -1.050000e+00 56.346125      9    -1.175578   1.4     False
+     1.074219e-03 -1.100000e+00 55.274552      9    -1.194543   1.4     False
+     1.123047e-03 -1.150000e+00 53.975781      9    -1.219919   1.4     False
+     1.171875e-03 -1.200000e+00 53.171287      9    -1.245294   1.4     False
+     1.220703e-03 -1.250000e+00 51.327079      9    -1.270670   1.4     False
+     1.269531e-03 -1.300000e+00 51.278563      9    -1.296045   1.4     False
+     1.318359e-03 -1.350000e+00 50.557087      9    -1.321421   1.6     False
+     1.367187e-03 -1.400000e+00 48.748582      9    -1.346796   1.6     False
+     1.416016e-03 -1.450000e+00 47.377037      9    -1.372171   1.6     False
+     1.464844e-03 -1.500000e+00 46.998058      9    -1.397547   1.6     False
+     1.513672e-03 -1.550000e+00 46.479522      9    -1.422922   1.6     False
+     1.562500e-03 -1.600000e+00 46.252324      9    -1.463716   1.6     False
+     1.611328e-03 -1.650000e+00 45.016324      9    -1.512241   1.8     False
+     1.660156e-03 -1.700000e+00 45.223275      9    -1.560767   1.8     False
+     1.708984e-03 -1.750000e+00 44.929128     10    -1.409293   1.8     False
+     1.757812e-03 -1.800000e+00 43.339186     10    -1.457818   1.8     False
+     1.806641e-03 -1.850000e+00 41.980454     10    -1.506344   1.8     False
+     1.855469e-03 -1.900000e+00 42.091741     10    -1.554870   1.8     False
+     1.904297e-03 -1.950000e+00 41.753255     10    -1.603395   1.8     False
+     1.953125e-03 -2.000000e+00 41.552958     10    -1.651921   1.8     False
+     2.001953e-03 -2.050000e+00 41.827472     10    -1.700447   1.8     False
+     2.050781e-03 -2.100000e+00 40.680481     10    -1.748972   2.0     False
+     2.099609e-03 -2.150000e+00 40.236162     10    -1.797498   2.0     False
+     2.148437e-03 -2.200000e+00 39.960448     10    -1.846024   2.0     False
+     2.197266e-03 -2.250000e+00 39.122653     11    -1.694549   2.0     False
+     2.246094e-03 -2.300000e+00 37.486417     10    -1.943075   2.2     False
+     2.294922e-03 -2.350000e+00 37.759909     11    -1.791601   2.2     False
+     2.343750e-03 -2.400000e+00 38.364106     11    -1.840126   2.2     False
+     2.392578e-03 -2.450000e+00 36.805857     11    -1.888652   2.2     False
+     2.441406e-03 -2.500000e+00 36.614361     11    -1.937178   2.4     False
+     2.490234e-03 -2.550000e+00 36.614361     11    -1.985703   2.2     False
+     2.539062e-03 -2.600000e+00 37.398608     11    -2.034229   2.2     False
+     2.587891e-03 -2.650000e+00 36.203102     11    -2.082755   2.2     False
+     2.636719e-03 -2.700000e+00 36.975904     11    -2.131280   2.2     False
+     2.685547e-03 -2.750000e+00 36.131696     11    -2.179806   1.4     False
+     2.734375e-03 -2.800000e+00 35.581301     12    -2.028332   2.4     False
+     2.783203e-03 -2.850000e+00 35.278519     12    -2.076858   2.4     False
+     2.832031e-03 -2.900000e+00 34.944045     12    -2.125383   2.4     False
+     2.880859e-03 -2.950000e+00 33.474025     12    -2.173909   2.6     False
+     2.929687e-03 -3.000000e+00 34.282530     12    -2.222435   1.6     False
+     2.978516e-03 -3.050000e+00 34.306788     12    -2.270960   1.4     False
+     3.027344e-03 -3.100000e+00 34.609570     12    -2.319486   1.4     False
+     3.076172e-03 -3.150000e+00 34.055332     12    -2.368012   1.4     False
+     3.125000e-03 -3.200000e+00 34.333856     12    -2.416537   1.4     False
+     3.173828e-03 -3.250000e+00 32.720857     13    -2.265063   1.4     False
+     3.222656e-03 -3.300000e+00 33.226580     13    -2.313589   1.4     False
+     3.271484e-03 -3.350000e+00 32.923798     13    -2.362114   1.4     False
+     3.320312e-03 -3.400000e+00 32.923798     13    -2.410640   1.4     False
+     3.369141e-03 -3.450000e+00 33.106491     13    -2.459166   1.2     False
+     3.417969e-03 -3.500000e+00 32.277739     13    -2.507691   1.4     False
+     3.466797e-03 -3.550000e+00 32.591966     13    -2.556217   1.4     False
+     3.515625e-03 -3.600000e+00 31.576510     13    -2.604743   1.4     False
+     3.564453e-03 -3.650000e+00 29.910985     13    -2.653268   1.6     False
+     3.613281e-03 -3.700000e+00 30.130916     14    -2.501794   1.4     False
+     3.662109e-03 -3.750000e+00 31.373570     14    -2.550320   1.4     False
+     3.710937e-03 -3.800000e+00 31.507747     14    -2.598845   1.4     False
+     3.759766e-03 -3.850000e+00 31.336499     14    -2.647371   1.4     False
+     3.808594e-03 -3.900000e+00 29.919007     14    -2.695897   1.6     False
+     3.857422e-03 -3.950000e+00 30.293195     14    -2.744422   1.6     False
+     3.906250e-03 -4.000000e+00 29.616224     14    -2.792948   1.6     False
+     3.955078e-03 -4.050000e+00 29.919007     14    -2.841474   1.6     False
+     4.003906e-03 -4.100000e+00 29.253481     14    -2.890000   1.6     False
+     4.052734e-03 -4.150000e+00 28.723501     14    -2.938525   1.6     False
+     4.101562e-03 -4.200000e+00 28.930452     14    -2.987051   1.6     False
+     4.150391e-03 -4.250000e+00 29.030294     15    -2.835577   1.4     False
+     4.199219e-03 -4.300000e+00 28.707265     15    -2.884102   1.6     False
+     4.248047e-03 -4.350000e+00 28.344521     15    -2.932628   1.6     False
+     4.296875e-03 -4.400000e+00 28.077442     15    -2.981154   1.6     False
+     4.345703e-03 -4.450000e+00 28.053184     15    -3.029679   1.6     False
+     4.394531e-03 -4.500000e+00 28.188729     15    -3.078205   1.4     False
+     4.443359e-03 -4.550000e+00 27.742968     15    -3.126731   1.6     False
+     4.492187e-03 -4.600000e+00 27.511758     15    -3.175256   1.6     False
+     4.541016e-03 -4.650000e+00 27.188729     15    -3.223782   1.8     False
+     4.589844e-03 -4.700000e+00 27.658748     15    -3.272308   1.4     False
+     4.638672e-03 -4.750000e+00 26.658748     16    -3.120833   1.6     False
+     4.687500e-03 -4.800000e+00 27.128768     16    -3.169359   1.6     False
+     4.736328e-03 -4.850000e+00 26.961531     16    -3.217885   1.8     False
+     4.785156e-03 -4.900000e+00 26.372790     16    -3.266410   1.6     False
+     4.833984e-03 -4.950000e+00 27.025503     16    -3.314936   1.6     False
+    ####BEST:
+        slope  intercept    maxval  index  d_bestguess  fwhm  multimax
+    -0.000244       0.25 93.425001     12     -0.46179   0.8     False
+    Setting rough_cut_px=2.0000000000000018. limits: (0.3-0.8)
+    Setting rough_cut_px=0.8
+
+    ####################
+    ### d_rotated cut (Nsigma=3.0)
+    Keeping 119 out of 119, skippin 0 because of null values in columns d_rot_tmp
+    median: -0.459624
+    75.000000 percentile cut: max residual for cut: 0.204410
+    median: -0.466822
+    i:00 mean:-0.466822(0.011235) stdev:0.105392(0.007900) X2norm:0.99 Nchanged:0 Ngood:89 Nclip:30
+
+    mean: -0.458971
+    i:01 mean:-0.458971(0.013892) stdev:0.146360(0.009779) X2norm:1.00 Nchanged:23 Ngood:112 Nclip:7
+
+    mean: -0.451611
+    i:02 mean:-0.451611(0.014921) stdev:0.160010(0.010505) X2norm:1.00 Nchanged:4 Ngood:116 Nclip:3
+
+    mean: -0.451611
+    i:03 mean:-0.451611(0.014921) stdev:0.160010(0.010505) X2norm:1.00 Nchanged:0 Ngood:116 Nclip:3
+    i:03 mean:-0.451611(0.014921) stdev:0.160010(0.010505) X2norm:1.00 Nchanged:0 Ngood:116 Nclip:3
+    mastDownload/jw02107041001_02101_00001_nrcblong_tweakregstep.fits
+    Setting output directory for tweakregstep.fits file to mastDownload
+    Index(['aper_sum_2.9px', 'annulus_median_2.9px', 'aper_bkg_2.9px',
+           'aper_sum_bkgsub_2.9px', 'flux_err_2.9px', 'mag', 'dmag', 'x', 'y',
+           'sharpness', 'roundness1', 'roundness2', 'ra', 'dec', 'x_idl', 'y_idl',
+           'reffile_ra', 'reffile_dec', 'reffile_x', 'reffile_y', 'reffile_ID',
+           'reffile_mag', 'reffile_dmag', 'reffile_d2d', 'dx', 'dy', 'delta_mag',
+           '__weights', 'd_rot_tmp', '__tmp_residuals'],
+          dtype='object')
+    Index(['aper_sum_2.9px', 'annulus_median_2.9px', 'aper_bkg_2.9px',
+           'aper_sum_bkgsub_2.9px', 'flux_err_2.9px', 'mag', 'dmag', 'x', 'y',
+           'sharpness', 'roundness1', 'roundness2', 'ra', 'dec', 'x_idl', 'y_idl',
+           'reffile_ra', 'reffile_dec', 'reffile_ID', 'reffile_mag',
+           'reffile_dmag', 'delta_mag', '__weights', 'd_rot_tmp',
+           '__tmp_residuals', 'reffile_x', 'reffile_y', 'dx', 'dy'],
+          dtype='object')
+
+    0
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 150-155
+
+**Check the Output**
+
+The reference image has not changed, but let's read in the newly
+aligned image and compare with the original. 
+subsequent correction needed for optimal alignment.
+
+.. GENERATED FROM PYTHON SOURCE LINES 155-179
+
+.. code-block:: default
+
+
+    aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('cal.fits','tweakregstep.fits'))
+    aligned_fits = fits.open(aligned_image)
+    aligned_data = fits.open(aligned_image)['SCI',1].data
+    aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))
+    aligned_cutout = extract_array(aligned_data,(11,11),(aligned_x,aligned_y))
+
+    norm3 = simple_norm(aligned_cutout,stretch='log',min_cut=-1,max_cut=200)
+    fig,axes = plt.subplots(1,3)
+    axes[0].imshow(ref_cutout, origin='lower',
+                          norm=norm1,cmap='gray')
+    axes[1].imshow(align_cutout, origin='lower',
+                          norm=norm2,cmap='gray')
+    axes[2].imshow(aligned_cutout, origin='lower',
+                          norm=norm3,cmap='gray')
+    axes[0].set_title('Reference')
+    axes[1].set_title('To Align')
+    axes[2].set_title('Aligned')
+    for i in range(3):
+    	axes[i].tick_params(labelcolor='none',axis='both',color='none')
+
+
+    plt.show()
+
+
+
+
+.. image-sg:: /examples/images/sphx_glr_plot_b_nircam_008.png
+   :alt: Reference, To Align, Aligned
+   :srcset: /examples/images/sphx_glr_plot_b_nircam_008.png
+   :class: sphx-glr-single-img
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/wcs/wcs.py:725: FITSFixedWarning: 'obsfix' made the change 'Set OBSGEO-L to   -72.164999 from OBSGEO-[XYZ].
+    Set OBSGEO-B to   -38.353872 from OBSGEO-[XYZ].
+    Set OBSGEO-H to 1740894174.999 from OBSGEO-[XYZ]'.
+      warnings.warn(
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 180-187
+
+----------------
+Align to Catalog
+----------------
+
+You can also align each image to the Gaia DR3 catalog, or you
+could replace the catalog created in step one with your own
+catalog of the field. 
+
+.. GENERATED FROM PYTHON SOURCE LINES 188-222
+
+.. code-block:: default
+
+
+
+    wcs_align.run_all(align_image,
+    		  telescope='jwst',
+              overwrite=True,
+              d2d_max=.5,
+              showplots=0,
+              refcatname='Gaia',
+              histocut_order='dxdy',
+                  sharpness_lim=(0.3,0.9),
+                  roundness1_lim=(-0.7, 0.7),
+                  SNR_min= 3,
+                  dmag_max=1.0,
+                  objmag_lim =(14,24))
+
+    aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('cal.fits','tweakregstep.fits'))
+    aligned_fits = fits.open(aligned_image)
+    aligned_data = fits.open(aligned_image)['SCI',1].data
+    aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))
+    aligned_cutout = extract_array(aligned_data,(11,11),(aligned_x,aligned_y))
+
+    norm3 = simple_norm(aligned_cutout,stretch='log',min_cut=-1,max_cut=200)
+    fig,axes = plt.subplots(1,2)
+    axes[0].imshow(align_cutout, origin='lower',
+                          norm=norm2,cmap='gray')
+    axes[1].imshow(aligned_cutout, origin='lower',
+                          norm=norm3,cmap='gray')
+    axes[0].set_title('To Align')
+    axes[1].set_title('Aligned')
+    for i in range(2):
+    	axes[i].tick_params(labelcolor='none',axis='both',color='none')
+
+
+    plt.show()
+
+
+
+.. rst-class:: sphx-glr-horizontal
+
+
+    *
+
+      .. image-sg:: /examples/images/sphx_glr_plot_b_nircam_009.png
+         :alt: plot b nircam
+         :srcset: /examples/images/sphx_glr_plot_b_nircam_009.png
+         :class: sphx-glr-multi-img
+
+    *
+
+      .. image-sg:: /examples/images/sphx_glr_plot_b_nircam_010.png
+         :alt: pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction
+         :srcset: /examples/images/sphx_glr_plot_b_nircam_010.png
+         :class: sphx-glr-multi-img
+
+    *
+
+      .. image-sg:: /examples/images/sphx_glr_plot_b_nircam_011.png
+         :alt: after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction
+         :srcset: /examples/images/sphx_glr_plot_b_nircam_011.png
+         :class: sphx-glr-multi-img
+
+    *
+
+      .. image-sg:: /examples/images/sphx_glr_plot_b_nircam_012.png
+         :alt: To Align, Aligned
+         :srcset: /examples/images/sphx_glr_plot_b_nircam_012.png
+         :class: sphx-glr-multi-img
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+
+    ### Doing photometry on mastDownload/JWST/jw02107041001_02101_00001_nrcblong/jw02107041001_02101_00001_nrcblong_cal.fits
+    NO photometry catalog filename
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/wcs/wcs.py:725: FITSFixedWarning: 'datfix' made the change 'Set DATE-BEG to '2022-07-06T19:16:42.721' from MJD-BEG.
+    Set DATE-AVG to '2022-07-06T19:17:14.932' from MJD-AVG.
+    Set DATE-END to '2022-07-06T19:17:47.142' from MJD-END'.
+      warnings.warn(
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/wcs/wcs.py:725: FITSFixedWarning: 'obsfix' made the change 'Set OBSGEO-L to   -72.164999 from OBSGEO-[XYZ].
+    Set OBSGEO-B to   -38.353872 from OBSGEO-[XYZ].
+    Set OBSGEO-H to 1740894174.999 from OBSGEO-[XYZ]'.
+      warnings.warn(
+    Filename: mastDownload/JWST/jw02107041001_02101_00001_nrcblong/jw02107041001_02101_00001_nrcblong_cal.fits
+    No.    Name      Ver    Type      Cards   Dimensions   Format
+      0  PRIMARY       1 PrimaryHDU     346   ()      
+      1  SCI           1 ImageHDU       112   (2048, 2048)   float32   
+      2  ERR           1 ImageHDU        10   (2048, 2048)   float32   
+      3  DQ            1 ImageHDU        11   (2048, 2048)   int32 (rescales to uint32)   
+      4  AREA          1 ImageHDU         9   (2048, 2048)   float32   
+      5  VAR_POISSON    1 ImageHDU         9   (2048, 2048)   float32   
+      6  VAR_RNOISE    1 ImageHDU         9   (2048, 2048)   float32   
+      7  VAR_FLAT      1 ImageHDU         9   (2048, 2048)   float32   
+      8  ASDF          1 BinTableHDU     11   1R x 1C   [24762B]   
+    None
+    NIRCAM NRCBLONG F360M CLEAR FULL NRCB5_FULL
+    Finding stars --- Detector: NRCBLONG, Filter: F360M
+    FWHM for the filter F360M: 1.901 px
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
+      warnings.warn('Input data contains invalid values (NaNs or '
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
+      warnings.warn('Input data contains invalid values (NaNs or '
+
+    Number of sources found in the image: 4439
+    -------------------------------------
+
+    Performing aperture photometry for radius r = 2.9230000972747803 px
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:912: RuntimeWarning: invalid value encountered in log10
+      phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/units/function/logarithmic.py:47: RuntimeWarning: invalid value encountered in log10
+      return dex.to(self._function_unit, np.log10(x))
+    Time Elapsed: 2.467197443009354
+    4081 objects left after removing entries with NaNs in mag or dmag column
+    SNR_min cut: 3488 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
+    3488 out of 4081 entries remain in photometry table
+    0        772.450062
+    1        103.009572
+    2        534.976834
+    3       1656.493827
+    4        411.542888
+               ...     
+    4076     687.800123
+    4077    1896.908457
+    4078    1154.119188
+    4079    1168.525250
+    4080     926.912297
+    Name: x, Length: 4081, dtype: float64
+    bbbbbbb [0.025662132311264907, 0.025280356017559603, 0.025537133892918302, 0.025226197069312405]
+    347.44397520687136 -43.43020560976671 0.025662132311264907
+    RA/Dec columns in reference catalog:  auto auto
+    query:SELECT * FROM gaiadr2.gaia_source WHERE CONTAINS(POINT('ICRS',            gaiadr2.gaia_source.ra,gaiadr2.gaia_source.dec),            CIRCLE('ICRS',347.44397520687136,-43.43020560976671 ,0.051324264622529814))=1;
+    INFO: Query finished. [astroquery.utils.tap.core]
+    Number of stars: 30
+    ### NO propoer motion correction!!!
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/pandas/core/arraylike.py:397: RuntimeWarning: invalid value encountered in sqrt
+      result = getattr(ufunc, method)(*inputs, **kwargs)
+    Number of stars after removing nan's: 30
+    Matching reference catalog Gaia
+    image objects are in x_idl=[-64.09,64.06] and y_idl=[-64.46,63.74] range
+    Keeping 11 out of 30 catalog objects within x=-40.0-2088 and y=-40.0-2088
+    Keeping 11  after removing NaNs from ra/dec
+    ########### !!!!!!!!!!  INITIAL CUT: starting with 4081 objects
+    d2d =0.5 CUT:
+    19 left
+    dmag_max =1.0 CUT:
+    19 left
+    SHARPNESS =(0.3, 0.9) CUT:
+    18 left
+    roundness1=(-0.7, 0.7) CUT:
+    15 left
+    objmag_lim=(14, 24) CUT:
+    14 left
+    # of matched objects that pass initial cuts: 14
+    ### Doing histogram cut for dx, slope_min:-0.004883 slope_max:0.004883 slope_stepsize:0.000049
+    Nfwhm=2.5, rough_cut_px_min=0.3, rough_cut_px_max=0.8, Nsigma=3.0
+    ########################
+    ### rotate dx versus y
+    Applying rolling gaussian:
+    gaussian_sigma_px=0.22, binsize=0.2, gaussian_sigma(bins)=1.0999999999999999, windowsize(bins)=7 halfwindowsize(bins)=4
+    slope min: -0.0048828125, slope max: 0.0048828125, slope stepsize: slope_stepsize
+    iteration 0 out of 200: slope = -0.004883
+    iteration 1 out of 200: slope = -0.004834
+    iteration 2 out of 200: slope = -0.004785
+    iteration 3 out of 200: slope = -0.004736
+    iteration 4 out of 200: slope = -0.004688
+    iteration 5 out of 200: slope = -0.004639
+    iteration 6 out of 200: slope = -0.004590
+    iteration 7 out of 200: slope = -0.004541
+    iteration 8 out of 200: slope = -0.004492
+    iteration 9 out of 200: slope = -0.004443
+    iteration 10 out of 200: slope = -0.004395
+    iteration 11 out of 200: slope = -0.004346
+    iteration 12 out of 200: slope = -0.004297
+    iteration 13 out of 200: slope = -0.004248
+    iteration 14 out of 200: slope = -0.004199
+    iteration 15 out of 200: slope = -0.004150
+    iteration 16 out of 200: slope = -0.004102
+    iteration 17 out of 200: slope = -0.004053
+    iteration 18 out of 200: slope = -0.004004
+    iteration 19 out of 200: slope = -0.003955
+    iteration 20 out of 200: slope = -0.003906
+    iteration 21 out of 200: slope = -0.003857
+    iteration 22 out of 200: slope = -0.003809
+    iteration 23 out of 200: slope = -0.003760
+    iteration 24 out of 200: slope = -0.003711
+    iteration 25 out of 200: slope = -0.003662
+    iteration 26 out of 200: slope = -0.003613
+    iteration 27 out of 200: slope = -0.003564
+    iteration 28 out of 200: slope = -0.003516
+    iteration 29 out of 200: slope = -0.003467
+    iteration 30 out of 200: slope = -0.003418
+    iteration 31 out of 200: slope = -0.003369
+    iteration 32 out of 200: slope = -0.003320
+    iteration 33 out of 200: slope = -0.003271
+    iteration 34 out of 200: slope = -0.003223
+    iteration 35 out of 200: slope = -0.003174
+    iteration 36 out of 200: slope = -0.003125
+    iteration 37 out of 200: slope = -0.003076
+    iteration 38 out of 200: slope = -0.003027
+    iteration 39 out of 200: slope = -0.002979
+    iteration 40 out of 200: slope = -0.002930
+    iteration 41 out of 200: slope = -0.002881
+    iteration 42 out of 200: slope = -0.002832
+    iteration 43 out of 200: slope = -0.002783
+    iteration 44 out of 200: slope = -0.002734
+    iteration 45 out of 200: slope = -0.002686
+    iteration 46 out of 200: slope = -0.002637
+    iteration 47 out of 200: slope = -0.002588
+    iteration 48 out of 200: slope = -0.002539
+    iteration 49 out of 200: slope = -0.002490
+    iteration 50 out of 200: slope = -0.002441
+    iteration 51 out of 200: slope = -0.002393
+    iteration 52 out of 200: slope = -0.002344
+    iteration 53 out of 200: slope = -0.002295
+    iteration 54 out of 200: slope = -0.002246
+    iteration 55 out of 200: slope = -0.002197
+    iteration 56 out of 200: slope = -0.002148
+    iteration 57 out of 200: slope = -0.002100
+    iteration 58 out of 200: slope = -0.002051
+    iteration 59 out of 200: slope = -0.002002
+    iteration 60 out of 200: slope = -0.001953
+    iteration 61 out of 200: slope = -0.001904
+    iteration 62 out of 200: slope = -0.001855
+    iteration 63 out of 200: slope = -0.001807
+    iteration 64 out of 200: slope = -0.001758
+    iteration 65 out of 200: slope = -0.001709
+    iteration 66 out of 200: slope = -0.001660
+    iteration 67 out of 200: slope = -0.001611
+    iteration 68 out of 200: slope = -0.001563
+    iteration 69 out of 200: slope = -0.001514
+    iteration 70 out of 200: slope = -0.001465
+    iteration 71 out of 200: slope = -0.001416
+    iteration 72 out of 200: slope = -0.001367
+    iteration 73 out of 200: slope = -0.001318
+    iteration 74 out of 200: slope = -0.001270
+    iteration 75 out of 200: slope = -0.001221
+    iteration 76 out of 200: slope = -0.001172
+    iteration 77 out of 200: slope = -0.001123
+    iteration 78 out of 200: slope = -0.001074
+    iteration 79 out of 200: slope = -0.001025
+    iteration 80 out of 200: slope = -0.000977
+    iteration 81 out of 200: slope = -0.000928
+    iteration 82 out of 200: slope = -0.000879
+    iteration 83 out of 200: slope = -0.000830
+    iteration 84 out of 200: slope = -0.000781
+    iteration 85 out of 200: slope = -0.000732
+    iteration 86 out of 200: slope = -0.000684
+    iteration 87 out of 200: slope = -0.000635
+    iteration 88 out of 200: slope = -0.000586
+    iteration 89 out of 200: slope = -0.000537
+    iteration 90 out of 200: slope = -0.000488
+    iteration 91 out of 200: slope = -0.000439
+    iteration 92 out of 200: slope = -0.000391
+    iteration 93 out of 200: slope = -0.000342
+    iteration 94 out of 200: slope = -0.000293
+    iteration 95 out of 200: slope = -0.000244
+    iteration 96 out of 200: slope = -0.000195
+    iteration 97 out of 200: slope = -0.000146
+    iteration 98 out of 200: slope = -0.000098
+    iteration 99 out of 200: slope = -0.000049
+    iteration 100 out of 200: slope = -0.000000
+    iteration 101 out of 200: slope = 0.000049
+    iteration 102 out of 200: slope = 0.000098
+    iteration 103 out of 200: slope = 0.000146
+    iteration 104 out of 200: slope = 0.000195
+    iteration 105 out of 200: slope = 0.000244
+    iteration 106 out of 200: slope = 0.000293
+    iteration 107 out of 200: slope = 0.000342
+    iteration 108 out of 200: slope = 0.000391
+    iteration 109 out of 200: slope = 0.000439
+    iteration 110 out of 200: slope = 0.000488
+    iteration 111 out of 200: slope = 0.000537
+    iteration 112 out of 200: slope = 0.000586
+    iteration 113 out of 200: slope = 0.000635
+    iteration 114 out of 200: slope = 0.000684
+    iteration 115 out of 200: slope = 0.000732
+    iteration 116 out of 200: slope = 0.000781
+    iteration 117 out of 200: slope = 0.000830
+    iteration 118 out of 200: slope = 0.000879
+    iteration 119 out of 200: slope = 0.000928
+    iteration 120 out of 200: slope = 0.000977
+    iteration 121 out of 200: slope = 0.001025
+    iteration 122 out of 200: slope = 0.001074
+    iteration 123 out of 200: slope = 0.001123
+    iteration 124 out of 200: slope = 0.001172
+    iteration 125 out of 200: slope = 0.001221
+    iteration 126 out of 200: slope = 0.001270
+    iteration 127 out of 200: slope = 0.001318
+    iteration 128 out of 200: slope = 0.001367
+    iteration 129 out of 200: slope = 0.001416
+    iteration 130 out of 200: slope = 0.001465
+    iteration 131 out of 200: slope = 0.001514
+    iteration 132 out of 200: slope = 0.001562
+    iteration 133 out of 200: slope = 0.001611
+    iteration 134 out of 200: slope = 0.001660
+    iteration 135 out of 200: slope = 0.001709
+    iteration 136 out of 200: slope = 0.001758
+    iteration 137 out of 200: slope = 0.001807
+    iteration 138 out of 200: slope = 0.001855
+    iteration 139 out of 200: slope = 0.001904
+    iteration 140 out of 200: slope = 0.001953
+    iteration 141 out of 200: slope = 0.002002
+    iteration 142 out of 200: slope = 0.002051
+    iteration 143 out of 200: slope = 0.002100
+    iteration 144 out of 200: slope = 0.002148
+    iteration 145 out of 200: slope = 0.002197
+    iteration 146 out of 200: slope = 0.002246
+    iteration 147 out of 200: slope = 0.002295
+    iteration 148 out of 200: slope = 0.002344
+    iteration 149 out of 200: slope = 0.002393
+    iteration 150 out of 200: slope = 0.002441
+    iteration 151 out of 200: slope = 0.002490
+    iteration 152 out of 200: slope = 0.002539
+    iteration 153 out of 200: slope = 0.002588
+    iteration 154 out of 200: slope = 0.002637
+    iteration 155 out of 200: slope = 0.002686
+    iteration 156 out of 200: slope = 0.002734
+    iteration 157 out of 200: slope = 0.002783
+    iteration 158 out of 200: slope = 0.002832
+    iteration 159 out of 200: slope = 0.002881
+    iteration 160 out of 200: slope = 0.002930
+    iteration 161 out of 200: slope = 0.002979
+    iteration 162 out of 200: slope = 0.003027
+    iteration 163 out of 200: slope = 0.003076
+    iteration 164 out of 200: slope = 0.003125
+    iteration 165 out of 200: slope = 0.003174
+    iteration 166 out of 200: slope = 0.003223
+    iteration 167 out of 200: slope = 0.003271
+    iteration 168 out of 200: slope = 0.003320
+    iteration 169 out of 200: slope = 0.003369
+    iteration 170 out of 200: slope = 0.003418
+    iteration 171 out of 200: slope = 0.003467
+    iteration 172 out of 200: slope = 0.003516
+    iteration 173 out of 200: slope = 0.003564
+    iteration 174 out of 200: slope = 0.003613
+    iteration 175 out of 200: slope = 0.003662
+    iteration 176 out of 200: slope = 0.003711
+    iteration 177 out of 200: slope = 0.003760
+    iteration 178 out of 200: slope = 0.003809
+    iteration 179 out of 200: slope = 0.003857
+    iteration 180 out of 200: slope = 0.003906
+    iteration 181 out of 200: slope = 0.003955
+    iteration 182 out of 200: slope = 0.004004
+    iteration 183 out of 200: slope = 0.004053
+    iteration 184 out of 200: slope = 0.004102
+    iteration 185 out of 200: slope = 0.004150
+    iteration 186 out of 200: slope = 0.004199
+    iteration 187 out of 200: slope = 0.004248
+    iteration 188 out of 200: slope = 0.004297
+    iteration 189 out of 200: slope = 0.004346
+    iteration 190 out of 200: slope = 0.004395
+    iteration 191 out of 200: slope = 0.004443
+    iteration 192 out of 200: slope = 0.004492
+    iteration 193 out of 200: slope = 0.004541
+    iteration 194 out of 200: slope = 0.004590
+    iteration 195 out of 200: slope = 0.004639
+    iteration 196 out of 200: slope = 0.004687
+    iteration 197 out of 200: slope = 0.004736
+    iteration 198 out of 200: slope = 0.004785
+    iteration 199 out of 200: slope = 0.004834
+            slope     intercept   maxval  index  d_bestguess  fwhm  multimax
+    -4.882812e-03  5.000000e+00 3.323029      9    -4.266164   0.8     False
+    -4.833984e-03  4.950000e+00 3.323029      9    -4.259090   0.8     False
+    -4.785156e-03  4.900000e+00 2.984544      9    -4.252016   1.0     False
+    -4.736328e-03  4.850000e+00 2.661515     40     1.955057   0.8     False
+    -4.687500e-03  4.800000e+00 2.661515     40     1.962131   0.8     False
+    -4.638672e-03  4.750000e+00 2.661515     40     1.969205   0.8     False
+    -4.589844e-03  4.700000e+00 3.000000     40     1.976279   0.8     False
+    -4.541016e-03  4.650000e+00 2.661515     40     1.983353   0.8     False
+    -4.492188e-03  4.600000e+00 2.661515     40     1.990427   0.8     False
+    -4.443359e-03  4.550000e+00 2.661515     40     1.997501   0.8     False
+    -4.394531e-03  4.500000e+00 2.661515     40     2.004575   0.8     False
+    -4.345703e-03  4.450000e+00 2.661515     40     2.011649   0.8     False
+    -4.296875e-03  4.400000e+00 2.661515     40     2.018723   0.8     False
+    -4.248047e-03  4.350000e+00 2.661515     39     1.825797   0.8     False
+    -4.199219e-03  4.300000e+00 2.661515     39     1.832871   0.8     False
+    -4.150391e-03  4.250000e+00 2.661515     39     1.839945   0.8     False
+    -4.101563e-03  4.200000e+00 2.661515     39     1.847019   0.8     False
+    -4.052734e-03  4.150000e+00 3.000000     39     1.854093   0.8     False
+    -4.003906e-03  4.100000e+00 2.661515     39     1.861166   0.8     False
+    -3.955078e-03  4.050000e+00 2.661515     39     1.868240   0.8     False
+    -3.906250e-03  4.000000e+00 2.661515     39     1.875314   0.8     False
+    -3.857422e-03  3.950000e+00 2.661515     39     1.882388   0.8     False
+    -3.808594e-03  3.900000e+00 2.661515     39     1.889462   0.8     False
+    -3.759766e-03  3.850000e+00 2.661515     39     1.896536   0.8     False
+    -3.710938e-03  3.800000e+00 2.661515     38     1.703610   0.8     False
+    -3.662109e-03  3.750000e+00 2.661515     38     1.710684   0.8     False
+    -3.613281e-03  3.700000e+00 2.661515     38     1.717758   0.8     False
+    -3.564453e-03  3.650000e+00 2.661515     38     1.724832   0.8     False
+    -3.515625e-03  3.600000e+00 3.000000     38     1.731906   0.8     False
+    -3.466797e-03  3.550000e+00 2.661515     38     1.738980   0.8     False
+    -3.417969e-03  3.500000e+00 2.661515     38     1.746054   0.8     False
+    -3.369141e-03  3.450000e+00 2.661515     38     1.753128   0.8     False
+    -3.320313e-03  3.400000e+00 2.661515     38     1.760201   0.8     False
+    -3.271484e-03  3.350000e+00 2.661515     38     1.767275   0.8     False
+    -3.222656e-03  3.300000e+00 2.661515     38     1.774349   0.8     False
+    -3.173828e-03  3.250000e+00 2.661515     37     1.581423   0.8     False
+    -3.125000e-03  3.200000e+00 2.661515     37     1.588497   0.8     False
+    -3.076172e-03  3.150000e+00 2.661515     37     1.595571   0.8     False
+    -3.027344e-03  3.100000e+00 3.000000     37     1.602645   0.8     False
+    -2.978516e-03  3.050000e+00 3.000000     37     1.609719   0.8     False
+    -2.929688e-03  3.000000e+00 2.661515     37     1.616793   0.8     False
+    -2.880859e-03  2.950000e+00 2.661515     37     1.623867   0.8     False
+    -2.832031e-03  2.900000e+00 2.661515     37     1.630941   0.8     False
+    -2.783203e-03  2.850000e+00 2.661515     37     1.638015   0.8     False
+    -2.734375e-03  2.800000e+00 2.661515     37     1.645089   0.8     False
+    -2.685547e-03  2.750000e+00 2.661515     37     1.652163   0.8     False
+    -2.636719e-03  2.700000e+00 2.661515     36     1.459237   0.8     False
+    -2.587891e-03  2.650000e+00 2.661515     36     1.466310   0.8     False
+    -2.539063e-03  2.600000e+00 2.661515     36     1.473384   0.8     False
+    -2.490234e-03  2.550000e+00 3.000000     36     1.480458   0.8     False
+    -2.441406e-03  2.500000e+00 3.000000     36     1.487532   0.8     False
+    -2.392578e-03  2.450000e+00 3.000000     36     1.494606   0.8     False
+    -2.343750e-03  2.400000e+00 2.661515     36     1.501680   0.8     False
+    -2.294922e-03  2.350000e+00 2.661515     36     1.508754   0.8     False
+    -2.246094e-03  2.300000e+00 2.661515     36     1.515828   0.8     False
+    -2.197266e-03  2.250000e+00 2.661515     36     1.522902   0.8     False
+    -2.148438e-03  2.200000e+00 2.661515     36     1.529976   0.8     False
+    -2.099609e-03  2.150000e+00 2.661515     35     1.337050   0.8     False
+    -2.050781e-03  2.100000e+00 2.661515     35     1.336205   0.8     False
+    -2.001953e-03  2.050000e+00 2.661515     35     1.325536   0.8     False
+    -1.953125e-03  2.000000e+00 2.661515     35     1.314866   0.8     False
+    -1.904297e-03  1.950000e+00 2.661515     35     1.304197   0.8     False
+    -1.855469e-03  1.900000e+00 2.661515     35     1.293527   0.8     False
+    -1.806641e-03  1.850000e+00 2.661515     35     1.282858   0.8     False
+    -1.757813e-03  1.800000e+00 2.661515     35     1.272188   0.8     False
+    -1.708984e-03  1.750000e+00 2.661515     35     1.261519   0.8     False
+    -1.660156e-03  1.700000e+00 2.661515     35     1.250849   0.8     False
+    -1.611328e-03  1.650000e+00 2.661515     35     1.240179   0.8     False
+    -1.562500e-03  1.600000e+00 2.661515     35     1.229510   0.8     False
+    -1.513672e-03  1.550000e+00 2.661515     35     1.218840   0.8     False
+    -1.464844e-03  1.500000e+00 2.661515     35     1.208171   0.8     False
+    -1.416016e-03  1.450000e+00 2.661515     35     1.197501   0.8     False
+    -1.367188e-03  1.400000e+00 2.661515     35     1.186832   0.8     False
+    -1.318359e-03  1.350000e+00 2.661515     35     1.176162   0.8     False
+    -1.269531e-03  1.300000e+00 2.661515     35     1.165493   0.8     False
+    -1.220703e-03  1.250000e+00 2.661515     35     1.154823   0.8     False
+    -1.171875e-03  1.200000e+00 2.661515     35     1.144154   0.8     False
+    -1.123047e-03  1.150000e+00 2.661515     35     1.133484   0.8     False
+    -1.074219e-03  1.100000e+00 2.661515     35     1.122815   0.8     False
+    -1.025391e-03  1.050000e+00 2.661515     35     1.112145   0.8     False
+    -9.765625e-04  1.000000e+00 2.661515     35     1.101475   0.8     False
+    -9.277344e-04  9.500000e-01 2.661515     35     1.090806   0.8     False
+    -8.789063e-04  9.000000e-01 2.661515     35     1.080136   0.8     False
+    -8.300781e-04  8.500000e-01 2.661515     35     1.069467   0.8     False
+    -7.812500e-04  8.000000e-01 2.661515     35     1.058797   0.8     False
+    -7.324219e-04  7.500000e-01 3.000000     35     1.048128   0.8     False
+    -6.835938e-04  7.000000e-01 3.000000     35     1.037458   0.8     False
+    -6.347656e-04  6.500000e-01 3.000000     35     1.026789   0.8     False
+    -5.859375e-04  6.000000e-01 3.000000     35     1.016119   0.8     False
+    -5.371094e-04  5.500000e-01 3.000000     35     1.005450   0.8     False
+    -4.882813e-04  5.000000e-01 3.000000     35     0.994780   0.8     False
+    -4.394531e-04  4.500000e-01 3.000000     35     0.984110   0.8     False
+    -3.906250e-04  4.000000e-01 3.000000     35     0.973441   0.8     False
+    -3.417969e-04  3.500000e-01 3.000000     35     0.962771   0.8     False
+    -2.929688e-04  3.000000e-01 3.000000     35     0.952102   0.8     False
+    -2.441406e-04  2.500000e-01 3.000000     35     0.941432   0.8     False
+    -1.953125e-04  2.000000e-01 3.000000     35     0.930763   0.8     False
+    -1.464844e-04  1.500000e-01 3.000000     35     0.920093   0.8     False
+    -9.765625e-05  1.000000e-01 3.000000     35     0.909424   0.8     False
+    -4.882813e-05  5.000000e-02 3.000000     35     0.898754   0.8     False
+    -1.734723e-17  1.776357e-14 3.000000     35     0.888085   0.8     False
+     4.882812e-05 -5.000000e-02 3.000000     35     0.877415   0.8     False
+     9.765625e-05 -1.000000e-01 3.000000     35     0.866746   0.8     False
+     1.464844e-04 -1.500000e-01 3.000000     35     0.856076   0.8     False
+     1.953125e-04 -2.000000e-01 3.000000     35     0.845406   0.8     False
+     2.441406e-04 -2.500000e-01 3.000000     35     0.834737   0.8     False
+     2.929687e-04 -3.000000e-01 3.000000     35     0.824067   0.8     False
+     3.417969e-04 -3.500000e-01 3.000000     35     0.813398   0.8     False
+     3.906250e-04 -4.000000e-01 3.000000     35     0.802728   0.8     False
+     4.394531e-04 -4.500000e-01 3.000000     35     0.792059   0.8     False
+     4.882812e-04 -5.000000e-01 3.000000     35     0.781389   0.8     False
+     5.371094e-04 -5.500000e-01 3.000000     35     0.770720   0.8     False
+     5.859375e-04 -6.000000e-01 3.000000     35     0.760050   0.8     False
+     6.347656e-04 -6.500000e-01 3.024258     35     0.749381   0.8     False
+     6.835937e-04 -7.000000e-01 3.024258     35     0.738711   0.8     False
+     7.324219e-04 -7.500000e-01 3.024258     35     0.728041   0.8     False
+     7.812500e-04 -8.000000e-01 3.024258     35     0.717372   0.8     False
+     8.300781e-04 -8.500000e-01 3.191495     35     0.706702   0.8     False
+     8.789062e-04 -9.000000e-01 3.191495     35     0.696033   0.8     False
+     9.277344e-04 -9.500000e-01 3.191495     35     0.685363   0.8     False
+     9.765625e-04 -1.000000e+00 3.191495     35     0.674694   0.8     False
+     1.025391e-03 -1.050000e+00 3.661515     35     0.664024   0.8     False
+     1.074219e-03 -1.100000e+00 3.661515     35     0.653355   0.8     False
+     1.123047e-03 -1.150000e+00 3.661515     35     0.642685   0.8     False
+     1.171875e-03 -1.200000e+00 3.661515     35     0.632016   0.8     False
+     1.220703e-03 -1.250000e+00 4.000000     35     0.621346   0.8     False
+     1.269531e-03 -1.300000e+00 4.000000     35     0.610677   0.8     False
+     1.318359e-03 -1.350000e+00 4.000000     35     0.600007   0.8     False
+     1.367187e-03 -1.400000e+00 4.000000     35     0.589337   0.8     False
+     1.416016e-03 -1.450000e+00 3.661515     35     0.578668   0.8     False
+     1.464844e-03 -1.500000e+00 3.661515     35     0.567998   0.8     False
+     1.513672e-03 -1.550000e+00 3.661515     35     0.557329   0.8     False
+     1.562500e-03 -1.600000e+00 3.661515     35     0.546659   0.8     False
+     1.611328e-03 -1.650000e+00 3.191495     35     0.535990   0.8     False
+     1.660156e-03 -1.700000e+00 3.191495     35     0.525320   0.8     False
+     1.708984e-03 -1.750000e+00 3.191495     35     0.514651   0.8     False
+     1.757812e-03 -1.800000e+00 3.191495     35     0.503981   0.8     False
+     1.806641e-03 -1.850000e+00 3.024258     35     0.493312   0.8     False
+     1.855469e-03 -1.900000e+00 3.024258     35     0.482642   0.8     False
+     1.904297e-03 -1.950000e+00 3.024258     35     0.471972   0.8     False
+     1.953125e-03 -2.000000e+00 3.024258     35     0.461303   0.8     False
+     2.001953e-03 -2.050000e+00 3.024258     35     0.450633   0.8     False
+     2.050781e-03 -2.100000e+00 3.000000     35     0.439964   0.8     False
+     2.099609e-03 -2.150000e+00 3.000000     35     0.429294   0.8     False
+     2.148437e-03 -2.200000e+00 3.000000     35     0.418625   0.8     False
+     2.197266e-03 -2.250000e+00 3.000000     35     0.407955   0.8     False
+     2.246094e-03 -2.300000e+00 3.000000     35     0.397286   0.8     False
+     2.294922e-03 -2.350000e+00 3.000000     35     0.386616   0.8     False
+     2.343750e-03 -2.400000e+00 3.000000     35     0.375947   0.8     False
+     2.392578e-03 -2.450000e+00 3.000000     35     0.365277   0.8     False
+     2.441406e-03 -2.500000e+00 3.000000     35     0.354608   0.8     False
+     2.490234e-03 -2.550000e+00 3.000000     35     0.343938   0.8     False
+     2.539062e-03 -2.600000e+00 3.000000     35     0.333268   0.8     False
+     2.587891e-03 -2.650000e+00 3.000000     35     0.322599   0.8     False
+     2.636719e-03 -2.700000e+00 3.000000     35     0.311929   0.8     False
+     2.685547e-03 -2.750000e+00 3.000000     35     0.301260   0.8     False
+     2.734375e-03 -2.800000e+00 3.000000     35     0.290590   0.8     False
+     2.783203e-03 -2.850000e+00 3.000000     35     0.279921   0.8     False
+     2.832031e-03 -2.900000e+00 3.000000     35     0.269251   0.8     False
+     2.880859e-03 -2.950000e+00 3.000000     35     0.258582   0.8     False
+     2.929687e-03 -3.000000e+00 3.000000     35     0.247912   0.8     False
+     2.978516e-03 -3.050000e+00 3.000000     35     0.237243   0.8     False
+     3.027344e-03 -3.100000e+00 3.000000     35     0.226573   0.8     False
+     3.076172e-03 -3.150000e+00 3.000000     35     0.215903   0.8     False
+     3.125000e-03 -3.200000e+00 3.000000     35     0.205234   0.8     False
+     3.173828e-03 -3.250000e+00 3.000000     35     0.194564   0.8     False
+     3.222656e-03 -3.300000e+00 3.000000     35     0.183895   0.8     False
+     3.271484e-03 -3.350000e+00 3.000000     35     0.173225   0.8     False
+     3.320312e-03 -3.400000e+00 3.000000     35     0.162556   0.8     False
+     3.369141e-03 -3.450000e+00 3.000000     35     0.151886   0.8     False
+     3.417969e-03 -3.500000e+00 3.000000     35     0.141217   0.8     False
+     3.466797e-03 -3.550000e+00 3.000000     35     0.130547   0.8     False
+     3.515625e-03 -3.600000e+00 3.000000     35     0.119878   0.8     False
+     3.564453e-03 -3.650000e+00 3.000000     35     0.109208   0.8     False
+     3.613281e-03 -3.700000e+00 3.000000     35     0.098539   0.8     False
+     3.662109e-03 -3.750000e+00 3.000000     35     0.087869   0.8     False
+     3.710937e-03 -3.800000e+00 3.000000     35     0.077199   0.8     False
+     3.759766e-03 -3.850000e+00 3.000000     35     0.066530   0.8     False
+     3.808594e-03 -3.900000e+00 3.000000     35     0.055860   0.8     False
+     3.857422e-03 -3.950000e+00 3.000000     35     0.045191   0.8     False
+     3.906250e-03 -4.000000e+00 3.000000     35     0.034521   0.8     False
+     3.955078e-03 -4.050000e+00 3.000000     35     0.023852   0.8     False
+     4.003906e-03 -4.100000e+00 3.000000     35     0.013182   0.8     False
+     4.052734e-03 -4.150000e+00 3.000000     35     0.002513   0.8     False
+     4.101562e-03 -4.200000e+00 3.000000     35    -0.008157   0.8     False
+     4.150391e-03 -4.250000e+00 3.000000     35    -0.018826   0.8     False
+     4.199219e-03 -4.300000e+00 3.000000     35    -0.029496   0.8     False
+     4.248047e-03 -4.350000e+00 3.000000     35    -0.040166   0.8     False
+     4.296875e-03 -4.400000e+00 3.000000     35    -0.050835   0.8     False
+     4.345703e-03 -4.450000e+00 3.000000     35    -0.061505   0.8     False
+     4.394531e-03 -4.500000e+00 3.000000     35    -0.072174   0.8     False
+     4.443359e-03 -4.550000e+00 3.000000     35    -0.082844   0.8     False
+     4.492187e-03 -4.600000e+00 3.000000     35    -0.093513   0.8     False
+     4.541016e-03 -4.650000e+00 3.000000     35    -0.104183   0.8     False
+     4.589844e-03 -4.700000e+00 3.000000     35    -0.114852   0.8     False
+     4.638672e-03 -4.750000e+00 3.000000     35    -0.125522   0.8     False
+     4.687500e-03 -4.800000e+00 3.000000     35    -0.136191   0.8     False
+     4.736328e-03 -4.850000e+00 3.000000     35    -0.146861   0.8     False
+     4.785156e-03 -4.900000e+00 3.000000     35    -0.157530   0.8     False
+     4.833984e-03 -4.950000e+00 3.000000     35    -0.168200   0.8     False
+    ####BEST:
+       slope  intercept  maxval  index  d_bestguess  fwhm  multimax
+    0.001221      -1.25     4.0     35     0.621346   0.8     False
+    Setting rough_cut_px=2.0000000000000018. limits: (0.3-0.8)
+    Setting rough_cut_px=0.8
+
+    ####################
+    ### d_rotated cut (Nsigma=3.0)
+    Keeping 4 out of 4, skippin 0 because of null values in columns d_rot_tmp
+    median: 0.640435
+    75.000000 percentile cut: max residual for cut: 0.056049
+    median: 0.679705
+    i:00 mean:0.679705(0.044312) stdev:0.062666(0.025583) X2norm:0.79 Nchanged:0 Ngood:3 Nclip:1
+
+    mean: 0.623836
+    i:01 mean:0.623836(0.040472) stdev:0.070100(0.024784) X2norm:1.00 Nchanged:1 Ngood:4 Nclip:0
+
+    mean: 0.623836
+    i:02 mean:0.623836(0.040472) stdev:0.070100(0.024784) X2norm:1.00 Nchanged:0 Ngood:4 Nclip:0
+    i:02 mean:0.623836(0.040472) stdev:0.070100(0.024784) X2norm:1.00 Nchanged:0 Ngood:4 Nclip:0
+    ### Doing histogram cut for dy, slope_min:-0.004883 slope_max:0.004883 slope_stepsize:0.000049
+    Nfwhm=2.5, rough_cut_px_min=0.3, rough_cut_px_max=0.8, Nsigma=3.0
+    ########################
+    ### rotate dy versus x
+    Applying rolling gaussian:
+    gaussian_sigma_px=0.22, binsize=0.2, gaussian_sigma(bins)=1.0999999999999999, windowsize(bins)=7 halfwindowsize(bins)=4
+    slope min: -0.0048828125, slope max: 0.0048828125, slope stepsize: slope_stepsize
+    iteration 0 out of 200: slope = -0.004883
+    iteration 1 out of 200: slope = -0.004834
+    iteration 2 out of 200: slope = -0.004785
+    iteration 3 out of 200: slope = -0.004736
+    iteration 4 out of 200: slope = -0.004688
+    iteration 5 out of 200: slope = -0.004639
+    iteration 6 out of 200: slope = -0.004590
+    iteration 7 out of 200: slope = -0.004541
+    iteration 8 out of 200: slope = -0.004492
+    iteration 9 out of 200: slope = -0.004443
+    iteration 10 out of 200: slope = -0.004395
+    iteration 11 out of 200: slope = -0.004346
+    iteration 12 out of 200: slope = -0.004297
+    iteration 13 out of 200: slope = -0.004248
+    iteration 14 out of 200: slope = -0.004199
+    iteration 15 out of 200: slope = -0.004150
+    iteration 16 out of 200: slope = -0.004102
+    iteration 17 out of 200: slope = -0.004053
+    iteration 18 out of 200: slope = -0.004004
+    iteration 19 out of 200: slope = -0.003955
+    iteration 20 out of 200: slope = -0.003906
+    iteration 21 out of 200: slope = -0.003857
+    iteration 22 out of 200: slope = -0.003809
+    iteration 23 out of 200: slope = -0.003760
+    iteration 24 out of 200: slope = -0.003711
+    iteration 25 out of 200: slope = -0.003662
+    iteration 26 out of 200: slope = -0.003613
+    iteration 27 out of 200: slope = -0.003564
+    iteration 28 out of 200: slope = -0.003516
+    iteration 29 out of 200: slope = -0.003467
+    iteration 30 out of 200: slope = -0.003418
+    iteration 31 out of 200: slope = -0.003369
+    iteration 32 out of 200: slope = -0.003320
+    iteration 33 out of 200: slope = -0.003271
+    iteration 34 out of 200: slope = -0.003223
+    iteration 35 out of 200: slope = -0.003174
+    iteration 36 out of 200: slope = -0.003125
+    iteration 37 out of 200: slope = -0.003076
+    iteration 38 out of 200: slope = -0.003027
+    iteration 39 out of 200: slope = -0.002979
+    iteration 40 out of 200: slope = -0.002930
+    iteration 41 out of 200: slope = -0.002881
+    iteration 42 out of 200: slope = -0.002832
+    iteration 43 out of 200: slope = -0.002783
+    iteration 44 out of 200: slope = -0.002734
+    iteration 45 out of 200: slope = -0.002686
+    iteration 46 out of 200: slope = -0.002637
+    iteration 47 out of 200: slope = -0.002588
+    iteration 48 out of 200: slope = -0.002539
+    iteration 49 out of 200: slope = -0.002490
+    iteration 50 out of 200: slope = -0.002441
+    iteration 51 out of 200: slope = -0.002393
+    iteration 52 out of 200: slope = -0.002344
+    iteration 53 out of 200: slope = -0.002295
+    iteration 54 out of 200: slope = -0.002246
+    iteration 55 out of 200: slope = -0.002197
+    iteration 56 out of 200: slope = -0.002148
+    iteration 57 out of 200: slope = -0.002100
+    iteration 58 out of 200: slope = -0.002051
+    iteration 59 out of 200: slope = -0.002002
+    iteration 60 out of 200: slope = -0.001953
+    iteration 61 out of 200: slope = -0.001904
+    iteration 62 out of 200: slope = -0.001855
+    iteration 63 out of 200: slope = -0.001807
+    iteration 64 out of 200: slope = -0.001758
+    iteration 65 out of 200: slope = -0.001709
+    iteration 66 out of 200: slope = -0.001660
+    iteration 67 out of 200: slope = -0.001611
+    iteration 68 out of 200: slope = -0.001563
+    iteration 69 out of 200: slope = -0.001514
+    iteration 70 out of 200: slope = -0.001465
+    iteration 71 out of 200: slope = -0.001416
+    iteration 72 out of 200: slope = -0.001367
+    iteration 73 out of 200: slope = -0.001318
+    iteration 74 out of 200: slope = -0.001270
+    iteration 75 out of 200: slope = -0.001221
+    iteration 76 out of 200: slope = -0.001172
+    iteration 77 out of 200: slope = -0.001123
+    iteration 78 out of 200: slope = -0.001074
+    iteration 79 out of 200: slope = -0.001025
+    iteration 80 out of 200: slope = -0.000977
+    iteration 81 out of 200: slope = -0.000928
+    iteration 82 out of 200: slope = -0.000879
+    iteration 83 out of 200: slope = -0.000830
+    iteration 84 out of 200: slope = -0.000781
+    iteration 85 out of 200: slope = -0.000732
+    iteration 86 out of 200: slope = -0.000684
+    iteration 87 out of 200: slope = -0.000635
+    iteration 88 out of 200: slope = -0.000586
+    iteration 89 out of 200: slope = -0.000537
+    iteration 90 out of 200: slope = -0.000488
+    iteration 91 out of 200: slope = -0.000439
+    iteration 92 out of 200: slope = -0.000391
+    iteration 93 out of 200: slope = -0.000342
+    iteration 94 out of 200: slope = -0.000293
+    iteration 95 out of 200: slope = -0.000244
+    iteration 96 out of 200: slope = -0.000195
+    iteration 97 out of 200: slope = -0.000146
+    iteration 98 out of 200: slope = -0.000098
+    iteration 99 out of 200: slope = -0.000049
+    iteration 100 out of 200: slope = -0.000000
+    iteration 101 out of 200: slope = 0.000049
+    iteration 102 out of 200: slope = 0.000098
+    iteration 103 out of 200: slope = 0.000146
+    iteration 104 out of 200: slope = 0.000195
+    iteration 105 out of 200: slope = 0.000244
+    iteration 106 out of 200: slope = 0.000293
+    iteration 107 out of 200: slope = 0.000342
+    iteration 108 out of 200: slope = 0.000391
+    iteration 109 out of 200: slope = 0.000439
+    iteration 110 out of 200: slope = 0.000488
+    iteration 111 out of 200: slope = 0.000537
+    iteration 112 out of 200: slope = 0.000586
+    iteration 113 out of 200: slope = 0.000635
+    iteration 114 out of 200: slope = 0.000684
+    iteration 115 out of 200: slope = 0.000732
+    iteration 116 out of 200: slope = 0.000781
+    iteration 117 out of 200: slope = 0.000830
+    iteration 118 out of 200: slope = 0.000879
+    iteration 119 out of 200: slope = 0.000928
+    iteration 120 out of 200: slope = 0.000977
+    iteration 121 out of 200: slope = 0.001025
+    iteration 122 out of 200: slope = 0.001074
+    iteration 123 out of 200: slope = 0.001123
+    iteration 124 out of 200: slope = 0.001172
+    iteration 125 out of 200: slope = 0.001221
+    iteration 126 out of 200: slope = 0.001270
+    iteration 127 out of 200: slope = 0.001318
+    iteration 128 out of 200: slope = 0.001367
+    iteration 129 out of 200: slope = 0.001416
+    iteration 130 out of 200: slope = 0.001465
+    iteration 131 out of 200: slope = 0.001514
+    iteration 132 out of 200: slope = 0.001562
+    iteration 133 out of 200: slope = 0.001611
+    iteration 134 out of 200: slope = 0.001660
+    iteration 135 out of 200: slope = 0.001709
+    iteration 136 out of 200: slope = 0.001758
+    iteration 137 out of 200: slope = 0.001807
+    iteration 138 out of 200: slope = 0.001855
+    iteration 139 out of 200: slope = 0.001904
+    iteration 140 out of 200: slope = 0.001953
+    iteration 141 out of 200: slope = 0.002002
+    iteration 142 out of 200: slope = 0.002051
+    iteration 143 out of 200: slope = 0.002100
+    iteration 144 out of 200: slope = 0.002148
+    iteration 145 out of 200: slope = 0.002197
+    iteration 146 out of 200: slope = 0.002246
+    iteration 147 out of 200: slope = 0.002295
+    iteration 148 out of 200: slope = 0.002344
+    iteration 149 out of 200: slope = 0.002393
+    iteration 150 out of 200: slope = 0.002441
+    iteration 151 out of 200: slope = 0.002490
+    iteration 152 out of 200: slope = 0.002539
+    iteration 153 out of 200: slope = 0.002588
+    iteration 154 out of 200: slope = 0.002637
+    iteration 155 out of 200: slope = 0.002686
+    iteration 156 out of 200: slope = 0.002734
+    iteration 157 out of 200: slope = 0.002783
+    iteration 158 out of 200: slope = 0.002832
+    iteration 159 out of 200: slope = 0.002881
+    iteration 160 out of 200: slope = 0.002930
+    iteration 161 out of 200: slope = 0.002979
+    iteration 162 out of 200: slope = 0.003027
+    iteration 163 out of 200: slope = 0.003076
+    iteration 164 out of 200: slope = 0.003125
+    iteration 165 out of 200: slope = 0.003174
+    iteration 166 out of 200: slope = 0.003223
+    iteration 167 out of 200: slope = 0.003271
+    iteration 168 out of 200: slope = 0.003320
+    iteration 169 out of 200: slope = 0.003369
+    iteration 170 out of 200: slope = 0.003418
+    iteration 171 out of 200: slope = 0.003467
+    iteration 172 out of 200: slope = 0.003516
+    iteration 173 out of 200: slope = 0.003564
+    iteration 174 out of 200: slope = 0.003613
+    iteration 175 out of 200: slope = 0.003662
+    iteration 176 out of 200: slope = 0.003711
+    iteration 177 out of 200: slope = 0.003760
+    iteration 178 out of 200: slope = 0.003809
+    iteration 179 out of 200: slope = 0.003857
+    iteration 180 out of 200: slope = 0.003906
+    iteration 181 out of 200: slope = 0.003955
+    iteration 182 out of 200: slope = 0.004004
+    iteration 183 out of 200: slope = 0.004053
+    iteration 184 out of 200: slope = 0.004102
+    iteration 185 out of 200: slope = 0.004150
+    iteration 186 out of 200: slope = 0.004199
+    iteration 187 out of 200: slope = 0.004248
+    iteration 188 out of 200: slope = 0.004297
+    iteration 189 out of 200: slope = 0.004346
+    iteration 190 out of 200: slope = 0.004395
+    iteration 191 out of 200: slope = 0.004443
+    iteration 192 out of 200: slope = 0.004492
+    iteration 193 out of 200: slope = 0.004541
+    iteration 194 out of 200: slope = 0.004590
+    iteration 195 out of 200: slope = 0.004639
+    iteration 196 out of 200: slope = 0.004687
+    iteration 197 out of 200: slope = 0.004736
+    iteration 198 out of 200: slope = 0.004785
+    iteration 199 out of 200: slope = 0.004834
+            slope     intercept   maxval  index  d_bestguess  fwhm  multimax
+    -4.882812e-03  5.000000e+00 2.323029      5    -5.210110   0.8     False
+    -4.833984e-03  4.950000e+00 2.323029      5    -5.176109   0.8     False
+    -4.785156e-03  4.900000e+00 2.661515      5    -5.142107   0.8     False
+    -4.736328e-03  4.850000e+00 2.661515      5    -5.108106   0.8     False
+    -4.687500e-03  4.800000e+00 2.661515      5    -5.074105   0.8     False
+    -4.638672e-03  4.750000e+00 2.661515      5    -5.040103   0.8     False
+    -4.589844e-03  4.700000e+00 2.661515      5    -5.006102   0.8     False
+    -4.541016e-03  4.650000e+00 2.661515      5    -4.972101   0.8     False
+    -4.492188e-03  4.600000e+00 2.661515      5    -4.938099   0.8     False
+    -4.443359e-03  4.550000e+00 2.661515      5    -4.904098   0.8     False
+    -4.394531e-03  4.500000e+00 2.661515      5    -4.870097   0.8     False
+    -4.345703e-03  4.450000e+00 2.661515      5    -4.836096   0.8     False
+    -4.296875e-03  4.400000e+00 2.661515      5    -4.802094   0.8     False
+    -4.248047e-03  4.350000e+00 2.661515      5    -4.768093   0.8     False
+    -4.199219e-03  4.300000e+00 2.661515      5    -4.734092   0.8     False
+    -4.150391e-03  4.250000e+00 2.661515      5    -4.700090   0.8     False
+    -4.101563e-03  4.200000e+00 2.661515      5    -4.666089   0.8     False
+    -4.052734e-03  4.150000e+00 2.661515      5    -4.632088   0.8     False
+    -4.003906e-03  4.100000e+00 2.661515      5    -4.598086   0.8     False
+    -3.955078e-03  4.050000e+00 2.661515      5    -4.564085   0.8     False
+    -3.906250e-03  4.000000e+00 2.661515      5    -4.530084   0.8     False
+    -3.857422e-03  3.950000e+00 2.661515      5    -4.496082   0.8     False
+    -3.808594e-03  3.900000e+00 2.661515      5    -4.462081   0.8     False
+    -3.759766e-03  3.850000e+00 2.661515      5    -4.428080   0.8     False
+    -3.710938e-03  3.800000e+00 2.661515      5    -4.394079   0.8     False
+    -3.662109e-03  3.750000e+00 2.661515      5    -4.360077   0.8     False
+    -3.613281e-03  3.700000e+00 2.661515      5    -4.326076   0.8     False
+    -3.564453e-03  3.650000e+00 2.661515      5    -4.292075   0.8     False
+    -3.515625e-03  3.600000e+00 2.661515      5    -4.258073   0.8     False
+    -3.466797e-03  3.550000e+00 2.661515      5    -4.224072   0.8     False
+    -3.417969e-03  3.500000e+00 2.661515      5    -4.190071   0.8     False
+    -3.369141e-03  3.450000e+00 2.661515      5    -4.156069   0.8     False
+    -3.320313e-03  3.400000e+00 2.661515      5    -4.122068   0.8     False
+    -3.271484e-03  3.350000e+00 2.661515      5    -4.088067   0.8     False
+    -3.222656e-03  3.300000e+00 2.661515      5    -4.054066   0.8     False
+    -3.173828e-03  3.250000e+00 2.661515      5    -4.020064   0.8     False
+    -3.125000e-03  3.200000e+00 2.661515      5    -3.986063   0.8     False
+    -3.076172e-03  3.150000e+00 2.661515      5    -3.952062   0.8     False
+    -3.027344e-03  3.100000e+00 2.661515      5    -3.918060   0.8     False
+    -2.978516e-03  3.050000e+00 2.661515      5    -3.884059   0.8     False
+    -2.929688e-03  3.000000e+00 2.661515      5    -3.850058   0.8     False
+    -2.880859e-03  2.950000e+00 2.661515      5    -3.816056   0.8     False
+    -2.832031e-03  2.900000e+00 2.661515      5    -3.782055   0.8     False
+    -2.783203e-03  2.850000e+00 2.661515      5    -3.748054   0.8     False
+    -2.734375e-03  2.800000e+00 2.661515      5    -3.714053   0.8     False
+    -2.685547e-03  2.750000e+00 2.661515      5    -3.680051   0.8     False
+    -2.636719e-03  2.700000e+00 2.661515      5    -3.646050   0.8     False
+    -2.587891e-03  2.650000e+00 2.661515      5    -3.612049   0.8     False
+    -2.539063e-03  2.600000e+00 2.661515      5    -3.578047   0.8     False
+    -2.490234e-03  2.550000e+00 2.661515      5    -3.544046   0.8     False
+    -2.441406e-03  2.500000e+00 2.661515      5    -3.510045   0.8     False
+    -2.392578e-03  2.450000e+00 2.661515      5    -3.476043   0.8     False
+    -2.343750e-03  2.400000e+00 2.661515      5    -3.442042   0.8     False
+    -2.294922e-03  2.350000e+00 2.661515      5    -3.408041   0.8     False
+    -2.246094e-03  2.300000e+00 2.661515      5    -3.374039   0.8     False
+    -2.197266e-03  2.250000e+00 2.661515      5    -3.340038   0.8     False
+    -2.148438e-03  2.200000e+00 2.661515      4    -3.506037   0.8     False
+    -2.099609e-03  2.150000e+00 2.661515      4    -3.472036   0.8     False
+    -2.050781e-03  2.100000e+00 2.661515      4    -3.438034   0.8     False
+    -2.001953e-03  2.050000e+00 3.000000      4    -3.404033   0.8     False
+    -1.953125e-03  2.000000e+00 3.000000      4    -3.370032   0.8     False
+    -1.904297e-03  1.950000e+00 3.000000      4    -3.336030   0.8     False
+    -1.855469e-03  1.900000e+00 3.000000      4    -3.302029   0.8     False
+    -1.806641e-03  1.850000e+00 3.000000      4    -3.268028   0.8     False
+    -1.757813e-03  1.800000e+00 3.000000      4    -3.234026   0.8     False
+    -1.708984e-03  1.750000e+00 3.000000      4    -3.200025   0.8     False
+    -1.660156e-03  1.700000e+00 3.000000      4    -3.166024   0.8     False
+    -1.611328e-03  1.650000e+00 3.000000      4    -3.132023   0.8     False
+    -1.562500e-03  1.600000e+00 3.000000      4    -3.098021   0.8     False
+    -1.513672e-03  1.550000e+00 3.000000      4    -3.064020   0.8     False
+    -1.464844e-03  1.500000e+00 3.000000      4    -3.030019   0.8     False
+    -1.416016e-03  1.450000e+00 3.000000      4    -2.996017   0.8     False
+    -1.367188e-03  1.400000e+00 3.000000      4    -2.962016   0.8     False
+    -1.318359e-03  1.350000e+00 3.000000      4    -2.928015   0.8     False
+    -1.269531e-03  1.300000e+00 3.000000      4    -2.894013   0.8     False
+    -1.220703e-03  1.250000e+00 3.000000      4    -2.860012   0.8     False
+    -1.171875e-03  1.200000e+00 3.000000      4    -2.826011   0.8     False
+    -1.123047e-03  1.150000e+00 3.000000      4    -2.792010   0.8     False
+    -1.074219e-03  1.100000e+00 3.000000      4    -2.758008   0.8     False
+    -1.025391e-03  1.050000e+00 3.000000      4    -2.724007   0.8     False
+    -9.765625e-04  1.000000e+00 3.000000      4    -2.690006   0.8     False
+    -9.277344e-04  9.500000e-01 3.000000      4    -2.656004   0.8     False
+    -8.789063e-04  9.000000e-01 3.000000      4    -2.622003   0.8     False
+    -8.300781e-04  8.500000e-01 3.000000      4    -2.588002   0.8     False
+    -7.812500e-04  8.000000e-01 3.000000      4    -2.554000   0.8     False
+    -7.324219e-04  7.500000e-01 3.000000      4    -2.519999   0.8     False
+    -6.835938e-04  7.000000e-01 3.000000      4    -2.485998   0.8     False
+    -6.347656e-04  6.500000e-01 3.000000      4    -2.451996   0.8     False
+    -5.859375e-04  6.000000e-01 3.000000      4    -2.417995   0.8     False
+    -5.371094e-04  5.500000e-01 3.000000      4    -2.383994   0.8     False
+    -4.882813e-04  5.000000e-01 3.000000      4    -2.349993   0.8     False
+    -4.394531e-04  4.500000e-01 3.000000      4    -2.315991   0.8     False
+    -3.906250e-04  4.000000e-01 3.000000      4    -2.281990   0.8     False
+    -3.417969e-04  3.500000e-01 3.024258      4    -2.247989   0.8     False
+    -2.929688e-04  3.000000e-01 3.024258      4    -2.213987   0.8     False
+    -2.441406e-04  2.500000e-01 3.024258      4    -2.179986   0.8     False
+    -1.953125e-04  2.000000e-01 3.024258      4    -2.145985   0.8     False
+    -1.464844e-04  1.500000e-01 3.024258      4    -2.111983   0.8     False
+    -9.765625e-05  1.000000e-01 3.024258      4    -2.077982   0.8     False
+    -4.882813e-05  5.000000e-02 3.191495      4    -2.043981   0.8     False
+    -1.734723e-17  1.776357e-14 3.191495      4    -2.009980   0.8     False
+     4.882812e-05 -5.000000e-02 3.191495      4    -1.975978   0.8     False
+     9.765625e-05 -1.000000e-01 3.191495      4    -1.941977   0.8     False
+     1.464844e-04 -1.500000e-01 3.191495      4    -1.907976   0.8     False
+     1.953125e-04 -2.000000e-01 3.191495      4    -1.873974   0.8     False
+     2.441406e-04 -2.500000e-01 3.661515      4    -1.839973   0.8     False
+     2.929687e-04 -3.000000e-01 3.661515      4    -1.805972   0.8     False
+     3.417969e-04 -3.500000e-01 3.661515      4    -1.771970   0.8     False
+     3.906250e-04 -4.000000e-01 3.661515      4    -1.737969   0.8     False
+     4.394531e-04 -4.500000e-01 3.661515      4    -1.703968   0.8     False
+     4.882812e-04 -5.000000e-01 3.661515      4    -1.672801   0.8     False
+     5.371094e-04 -5.500000e-01 4.000000      4    -1.642504   0.8     False
+     5.859375e-04 -6.000000e-01 4.000000      4    -1.612207   0.8     False
+     6.347656e-04 -6.500000e-01 4.000000      4    -1.581910   0.8     False
+     6.835937e-04 -7.000000e-01 4.000000      4    -1.551612   0.8     False
+     7.324219e-04 -7.500000e-01 4.000000      4    -1.521315   0.8     False
+     7.812500e-04 -8.000000e-01 4.000000      4    -1.491018   0.8     False
+     8.300781e-04 -8.500000e-01 4.000000      4    -1.460720   0.8     False
+     8.789062e-04 -9.000000e-01 4.000000      4    -1.444205   0.8     False
+     9.277344e-04 -9.500000e-01 4.000000      4    -1.443972   0.8     False
+     9.765625e-04 -1.000000e+00 3.661515      4    -1.443739   0.8     False
+     1.025391e-03 -1.050000e+00 3.661515      4    -1.443506   0.8     False
+     1.074219e-03 -1.100000e+00 3.661515      4    -1.443273   0.8     False
+     1.123047e-03 -1.150000e+00 3.323029      4    -1.443040   1.0      True
+     1.171875e-03 -1.200000e+00 3.323029      4    -1.442807   1.0      True
+     1.220703e-03 -1.250000e+00 3.661515      5    -1.242573   0.8     False
+     1.269531e-03 -1.300000e+00 3.323029      5    -1.242340   0.8     False
+     1.318359e-03 -1.350000e+00 3.323029      5    -1.242107   0.8     False
+     1.367187e-03 -1.400000e+00 3.323029      5    -1.241874   0.8     False
+     1.416016e-03 -1.450000e+00 2.984544      5    -1.241641   1.0     False
+     1.464844e-03 -1.500000e+00 2.984544      5    -1.241408   1.0     False
+     1.513672e-03 -1.550000e+00 3.191495      6    -1.041175   0.8     False
+     1.562500e-03 -1.600000e+00 2.853010      6    -1.040941   0.8     False
+     1.611328e-03 -1.650000e+00 2.853010      6    -1.040708   0.8     False
+     1.660156e-03 -1.700000e+00 2.853010      6    -1.040475   0.8     False
+     1.708984e-03 -1.750000e+00 2.685773      7    -0.840242   1.0     False
+     1.757812e-03 -1.800000e+00 2.685773      7    -0.840009   1.0     False
+     1.806641e-03 -1.850000e+00 2.685773      7    -0.839776   1.0     False
+     1.855469e-03 -1.900000e+00 2.685773      7    -0.839543   0.8     False
+     1.904297e-03 -1.950000e+00 2.685773      7    -0.839310   0.8     False
+     1.953125e-03 -2.000000e+00 2.685773      7    -0.839076   0.8     False
+     2.001953e-03 -2.050000e+00 2.661515      8    -0.638843   0.8     False
+     2.050781e-03 -2.100000e+00 2.661515      8    -0.638610   0.8     False
+     2.099609e-03 -2.150000e+00 2.661515      8    -0.638377   0.8     False
+     2.148437e-03 -2.200000e+00 2.323029      8    -0.638144   0.8     False
+     2.197266e-03 -2.250000e+00 2.661515      8    -0.637911   0.8     False
+     2.246094e-03 -2.300000e+00 2.661515      8    -0.637678   0.8     False
+     2.294922e-03 -2.350000e+00 2.661515      9    -0.437444   0.8     False
+     2.343750e-03 -2.400000e+00 2.661515      9    -0.437211   0.8     False
+     2.392578e-03 -2.450000e+00 2.661515      9    -0.436978   0.8     False
+     2.441406e-03 -2.500000e+00 2.323029      9    -0.436745   0.8     False
+     2.490234e-03 -2.550000e+00 2.661515      9    -0.436512   0.8     False
+     2.539062e-03 -2.600000e+00 2.661515      9    -0.436279   0.8     False
+     2.587891e-03 -2.650000e+00 2.661515     10    -0.236046   0.8     False
+     2.636719e-03 -2.700000e+00 2.661515     10    -0.235812   0.8     False
+     2.685547e-03 -2.750000e+00 2.661515     10    -0.235579   0.8     False
+     2.734375e-03 -2.800000e+00 2.661515     10    -0.235346   0.8     False
+     2.783203e-03 -2.850000e+00 2.323029     10    -0.235113   0.8     False
+     2.832031e-03 -2.900000e+00 2.661515     10    -0.234880   0.8     False
+     2.880859e-03 -2.950000e+00 2.661515     11    -0.034647   0.8     False
+     2.929687e-03 -3.000000e+00 2.661515     11    -0.034414   0.8     False
+     2.978516e-03 -3.050000e+00 2.661515     11    -0.034180   0.8     False
+     3.027344e-03 -3.100000e+00 2.661515     11    -0.033947   0.8     False
+     3.076172e-03 -3.150000e+00 2.323029     11    -0.033714   0.8     False
+     3.125000e-03 -3.200000e+00 2.323029     11    -0.033481   0.8     False
+     3.173828e-03 -3.250000e+00 2.661515     12     0.166752   0.8     False
+     3.222656e-03 -3.300000e+00 2.661515     12     0.166985   0.8     False
+     3.271484e-03 -3.350000e+00 2.661515     12     0.167218   0.8     False
+     3.320312e-03 -3.400000e+00 2.661515     12     0.167451   0.8     False
+     3.369141e-03 -3.450000e+00 2.323029     12     0.167685   0.8     False
+     3.417969e-03 -3.500000e+00 2.191495     13     0.367918   1.0     False
+     3.466797e-03 -3.550000e+00 2.661515     13     0.368151   0.8     False
+     3.515625e-03 -3.600000e+00 2.661515     13     0.368384   0.8     False
+     3.564453e-03 -3.650000e+00 2.661515     13     0.368617   0.8     False
+     3.613281e-03 -3.700000e+00 2.661515     13     0.368850   0.8     False
+     3.662109e-03 -3.750000e+00 2.323029     13     0.369083   0.8     False
+     3.710937e-03 -3.800000e+00 2.191495     14     0.569317   1.0     False
+     3.759766e-03 -3.850000e+00 2.191495     14     0.569550   1.0     False
+     3.808594e-03 -3.900000e+00 2.661515     14     0.569783   0.8     False
+     3.857422e-03 -3.950000e+00 2.661515     14     0.570016   0.8     False
+     3.906250e-03 -4.000000e+00 2.661515     14     0.570249   0.8     False
+     3.955078e-03 -4.050000e+00 2.323029     14     0.570482   0.8     False
+     4.003906e-03 -4.100000e+00 2.191495     15     0.770715   1.0     False
+     4.052734e-03 -4.150000e+00 2.191495     15     0.770949   1.0     False
+     4.101562e-03 -4.200000e+00 2.191495     15     0.771182   1.0     False
+     4.150391e-03 -4.250000e+00 2.661515     15     0.771415   0.8     False
+     4.199219e-03 -4.300000e+00 2.661515     15     0.771648   0.8     False
+     4.248047e-03 -4.350000e+00 2.323029     15     0.771881   0.8     False
+     4.296875e-03 -4.400000e+00 2.191495     16     0.972114   1.0     False
+     4.345703e-03 -4.450000e+00 2.191495     16     0.972347   1.0     False
+     4.394531e-03 -4.500000e+00 2.191495     16     0.972581   1.0     False
+     4.443359e-03 -4.550000e+00 2.661515     16     0.972814   0.8     False
+     4.492187e-03 -4.600000e+00 2.661515     16     0.973047   0.8     False
+     4.541016e-03 -4.650000e+00 2.661515     16     0.973280   0.8     False
+     4.589844e-03 -4.700000e+00 2.191495     17     1.173513   1.0     False
+     4.638672e-03 -4.750000e+00 2.191495     17     1.173746   1.0     False
+     4.687500e-03 -4.800000e+00 2.191495     17     1.173979   1.0     False
+     4.736328e-03 -4.850000e+00 2.191495     17     1.174213   1.0     False
+     4.785156e-03 -4.900000e+00 2.661515     17     1.174446   0.8     False
+     4.833984e-03 -4.950000e+00 2.661515     17     1.174679   0.8     False
+    ####BEST:
+       slope  intercept  maxval  index  d_bestguess  fwhm  multimax
+    0.000537      -0.55     4.0      4    -1.642504   0.8     False
+    Setting rough_cut_px=2.0000000000000018. limits: (0.3-0.8)
+    Setting rough_cut_px=0.8
+
+    ####################
+    ### d_rotated cut (Nsigma=3.0)
+    Keeping 4 out of 4, skippin 0 because of null values in columns d_rot_tmp
+    median: -1.671795
+    75.000000 percentile cut: max residual for cut: 0.084521
+    median: -1.735965
+    i:00 mean:-1.735965(0.072502) stdev:0.102533(0.041859) X2norm:0.79 Nchanged:0 Ngood:3 Nclip:1
+
+    mean: -1.657983
+    i:01 mean:-1.657983(0.056113) stdev:0.097190(0.034362) X2norm:1.00 Nchanged:1 Ngood:4 Nclip:0
+
+    mean: -1.657983
+    i:02 mean:-1.657983(0.056113) stdev:0.097190(0.034362) X2norm:1.00 Nchanged:0 Ngood:4 Nclip:0
+    i:02 mean:-1.657983(0.056113) stdev:0.097190(0.034362) X2norm:1.00 Nchanged:0 Ngood:4 Nclip:0
+    mastDownload/jw02107041001_02101_00001_nrcblong_tweakregstep.fits
+    Setting output directory for tweakregstep.fits file to mastDownload
+    Index(['aper_sum_2.9px', 'annulus_median_2.9px', 'aper_bkg_2.9px',
+           'aper_sum_bkgsub_2.9px', 'flux_err_2.9px', 'mag', 'dmag', 'x', 'y',
+           'sharpness', 'roundness1', 'roundness2', 'ra', 'dec', 'x_idl', 'y_idl',
+           'gaia_ra', 'gaia_dec', 'gaia_x', 'gaia_y', 'gaia_ID', 'gaia_g',
+           'gaia_g_err', 'gaia_g_rp', 'gaia_source_id', 'gaia_ra_error',
+           'gaia_dec_error', 'gaia_rp', 'gaia_rp_err', 'gaia_g_rp_err', 'gaia_d2d',
+           'dx', 'dy', 'delta_mag', '__weights', 'd_rot_tmp', '__tmp_residuals'],
+          dtype='object')
+    Index(['aper_sum_2.9px', 'annulus_median_2.9px', 'aper_bkg_2.9px',
+           'aper_sum_bkgsub_2.9px', 'flux_err_2.9px', 'mag', 'dmag', 'x', 'y',
+           'sharpness', 'roundness1', 'roundness2', 'ra', 'dec', 'x_idl', 'y_idl',
+           'gaia_ra', 'gaia_dec', 'gaia_ID', 'gaia_g', 'gaia_g_err', 'gaia_g_rp',
+           'gaia_source_id', 'gaia_ra_error', 'gaia_dec_error', 'gaia_rp',
+           'gaia_rp_err', 'gaia_g_rp_err', 'delta_mag', '__weights', 'd_rot_tmp',
+           '__tmp_residuals', 'gaia_x', 'gaia_y', 'dx', 'dy'],
+          dtype='object')
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/wcs/wcs.py:725: FITSFixedWarning: 'obsfix' made the change 'Set OBSGEO-L to   -72.164999 from OBSGEO-[XYZ].
+    Set OBSGEO-B to   -38.353872 from OBSGEO-[XYZ].
+    Set OBSGEO-H to 1740894174.999 from OBSGEO-[XYZ]'.
+      warnings.warn(
 
 
 
@@ -51,7 +2491,7 @@ Explain here what this example does
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  0.004 seconds)
+   **Total running time of the script:** ( 1 minutes  29.115 seconds)
 
 
 .. _sphx_glr_download_examples_plot_b_nircam.py:

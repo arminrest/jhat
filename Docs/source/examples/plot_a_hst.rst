@@ -69,7 +69,7 @@ Relative Alignment
 
 **Download some Data**
 
-For this example we download 2 HST FLT images from MAST. They're
+For this example we download 2 HST DRZ images from MAST. They're
 the same filter and same field, just separated in time. Note that 
 the code will also work for drizzled images.
 
@@ -110,7 +110,7 @@ the code will also work for drizzled images.
 
     <div class="output_subarea output_html rendered_html output_result">
     <div><i>Table length=1</i>
-    <table id="table140507334544592" class="table-striped table-bordered table-condensed">
+    <table id="table140233643448288" class="table-striped table-bordered table-condensed">
     <thead><tr><th>Local Path</th><th>Status</th><th>Message</th><th>URL</th></tr></thead>
     <thead><tr><th>str95</th><th>str8</th><th>object</th><th>object</th></tr></thead>
     <tr><td>./mastDownload/HST/hst_16264_15_wfc3_ir_f110w_iebc15/hst_16264_15_wfc3_ir_f110w_iebc15_drz.fits</td><td>COMPLETE</td><td>None</td><td>None</td></tr>
@@ -235,9 +235,9 @@ create a catalog that we will use to align the other image.
     photometry catalog filename: mastDownload/HST/hst_16264_15_wfc3_ir_f110w_iebc15/hst_16264_15_wfc3_ir_f110w_iebc15_drz.phot.txt
     Finding stars --- Detector: None, Filter: F110W
     FWHM for the filter F110W: 1.8 px
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
 
     Number of sources found in the image: 1131
@@ -245,11 +245,11 @@ create a catalog that we will use to align the other image.
 
     F110W
     Performing aperture photometry for radius r = 5 px
-    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1787: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1776: RuntimeWarning: invalid value encountered in log10
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
-    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1790: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1779: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 1.0244867840000005
+    Time Elapsed: 1.117840976046864
     996 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 769 objects left after removing entries dmag>0.36200000000000004 (SNR<3.0)
     769 out of 996 entries remain in photometry table
@@ -368,9 +368,9 @@ subsequent correction needed for optimal alignment.
     NO photometry catalog filename
     Finding stars --- Detector: None, Filter: F110W
     FWHM for the filter F110W: 2 px
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
 
     Number of sources found in the image: 1065
@@ -378,11 +378,11 @@ subsequent correction needed for optimal alignment.
 
     F110W
     Performing aperture photometry for radius r = 4 px
-    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1787: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1776: RuntimeWarning: invalid value encountered in log10
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
-    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1790: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1779: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 0.8745033019999973
+    Time Elapsed: 1.017577344959136
     947 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 733 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     733 out of 947 entries remain in photometry table
@@ -398,7 +398,7 @@ subsequent correction needed for optimal alignment.
     945    647.708427
     946    696.459286
     Name: x, Length: 947, dtype: float64
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
     'WFC3' is not one of ['NIRCAM', 'NIRSPEC', 'MIRI', 'TFI', 'FGS', 'NIRISS', 'ANY', 'N/A']
 
     Failed validating 'enum' in schema:
@@ -419,7 +419,7 @@ subsequent correction needed for optimal alignment.
     On instance:
         'WFC3'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
     'IR' is not one of ['NRCA1', 'NRCA2', 'NRCA3', 'NRCA4', 'NRCALONG', 'NRCB1', 'NRCB2', 'NRCB3', 'NRCB4', 'NRCBLONG', 'NRS1', 'NRS2', 'ANY', 'MIRIMAGE', 'MIRIFULONG', 'MIRIFUSHORT', 'NIS', 'GUIDER1', 'GUIDER2', 'N/A', 'MULTIPLE']
 
     Failed validating 'enum' in schema:
@@ -454,7 +454,7 @@ subsequent correction needed for optimal alignment.
     On instance:
         'IR'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
     False is not of type 'string'
 
     Failed validating 'type' in schema:
@@ -1422,7 +1422,7 @@ subsequent correction needed for optimal alignment.
     mean: 1.940734
     i:08 mean:1.940734(0.004244) stdev:0.058191(0.002993) X2norm:1.00 Nchanged:0 Ngood:189 Nclip:9
     i:08 mean:1.940734(0.004244) stdev:0.058191(0.002993) X2norm:1.00 Nchanged:0 Ngood:189 Nclip:9
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
     'WFC3' is not one of ['NIRCAM', 'NIRSPEC', 'MIRI', 'TFI', 'FGS', 'NIRISS', 'ANY', 'N/A']
 
     Failed validating 'enum' in schema:
@@ -1443,7 +1443,7 @@ subsequent correction needed for optimal alignment.
     On instance:
         'WFC3'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
     'IR' is not one of ['NRCA1', 'NRCA2', 'NRCA3', 'NRCA4', 'NRCALONG', 'NRCB1', 'NRCB2', 'NRCB3', 'NRCB4', 'NRCBLONG', 'NRS1', 'NRS2', 'ANY', 'MIRIMAGE', 'MIRIFULONG', 'MIRIFUSHORT', 'NIS', 'GUIDER1', 'GUIDER2', 'N/A', 'MULTIPLE']
 
     Failed validating 'enum' in schema:
@@ -1478,7 +1478,7 @@ subsequent correction needed for optimal alignment.
     On instance:
         'IR'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
     False is not of type 'string'
 
     Failed validating 'type' in schema:
@@ -1530,7 +1530,7 @@ subsequent correction needed for optimal alignment.
                                  'SUB320B430R',
                       ...
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/jwst/datamodels/util.py:234: NoTypeWarning: model_type not found. Opening mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits as a ImageModel
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jwst/datamodels/util.py:234: NoTypeWarning: model_type not found. Opening mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits as a ImageModel
       warnings.warn(f"model_type not found. Opening {file_name} as a {class_name}",
     mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_tweakregstep.fits
     Setting output directory for tweakregstep.fits file to mastDownload
@@ -1668,9 +1668,9 @@ catalog of the field.
     NO photometry catalog filename
     Finding stars --- Detector: None, Filter: F110W
     FWHM for the filter F110W: 2 px
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
 
     Number of sources found in the image: 1065
@@ -1678,11 +1678,11 @@ catalog of the field.
 
     F110W
     Performing aperture photometry for radius r = 4 px
-    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1787: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1776: RuntimeWarning: invalid value encountered in log10
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
-    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1790: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1779: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 0.8706292130000008
+    Time Elapsed: 1.0219029110157862
     947 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 733 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     733 out of 947 entries remain in photometry table
@@ -1698,7 +1698,7 @@ catalog of the field.
     945    647.708427
     946    696.459286
     Name: x, Length: 947, dtype: float64
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
     'WFC3' is not one of ['NIRCAM', 'NIRSPEC', 'MIRI', 'TFI', 'FGS', 'NIRISS', 'ANY', 'N/A']
 
     Failed validating 'enum' in schema:
@@ -1719,7 +1719,7 @@ catalog of the field.
     On instance:
         'WFC3'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
     'IR' is not one of ['NRCA1', 'NRCA2', 'NRCA3', 'NRCA4', 'NRCALONG', 'NRCB1', 'NRCB2', 'NRCB3', 'NRCB4', 'NRCBLONG', 'NRS1', 'NRS2', 'ANY', 'MIRIMAGE', 'MIRIFULONG', 'MIRIFUSHORT', 'NIS', 'GUIDER1', 'GUIDER2', 'N/A', 'MULTIPLE']
 
     Failed validating 'enum' in schema:
@@ -1754,7 +1754,7 @@ catalog of the field.
     On instance:
         'IR'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
     False is not of type 'string'
 
     Failed validating 'type' in schema:
@@ -1811,7 +1811,7 @@ catalog of the field.
     INFO: Query finished. [astroquery.utils.tap.core]
     Number of stars: 164
     ### NO propoer motion correction!!!
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/pandas/core/arraylike.py:402: RuntimeWarning: invalid value encountered in sqrt
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/pandas/core/arraylike.py:397: RuntimeWarning: invalid value encountered in sqrt
       result = getattr(ufunc, method)(*inputs, **kwargs)
     Number of stars after removing nan's: 164
     Matching reference catalog Gaia
@@ -2686,7 +2686,7 @@ catalog of the field.
     mean: 2.331019
     i:02 mean:2.331019(0.114384) stdev:0.302631(0.075658) X2norm:1.00 Nchanged:0 Ngood:8 Nclip:0
     i:02 mean:2.331019(0.114384) stdev:0.302631(0.075658) X2norm:1.00 Nchanged:0 Ngood:8 Nclip:0
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
     'WFC3' is not one of ['NIRCAM', 'NIRSPEC', 'MIRI', 'TFI', 'FGS', 'NIRISS', 'ANY', 'N/A']
 
     Failed validating 'enum' in schema:
@@ -2707,7 +2707,7 @@ catalog of the field.
     On instance:
         'WFC3'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
     'IR' is not one of ['NRCA1', 'NRCA2', 'NRCA3', 'NRCA4', 'NRCALONG', 'NRCB1', 'NRCB2', 'NRCB3', 'NRCB4', 'NRCBLONG', 'NRS1', 'NRS2', 'ANY', 'MIRIMAGE', 'MIRIFULONG', 'MIRIFUSHORT', 'NIS', 'GUIDER1', 'GUIDER2', 'N/A', 'MULTIPLE']
 
     Failed validating 'enum' in schema:
@@ -2742,7 +2742,7 @@ catalog of the field.
     On instance:
         'IR'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
     False is not of type 'string'
 
     Failed validating 'type' in schema:
@@ -2794,7 +2794,7 @@ catalog of the field.
                                  'SUB320B430R',
                       ...
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/jwst/datamodels/util.py:234: NoTypeWarning: model_type not found. Opening mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits as a ImageModel
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jwst/datamodels/util.py:234: NoTypeWarning: model_type not found. Opening mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits as a ImageModel
       warnings.warn(f"model_type not found. Opening {file_name} as a {class_name}",
     mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_tweakregstep.fits
     Setting output directory for tweakregstep.fits file to mastDownload
@@ -2913,9 +2913,9 @@ and add an additional 3 pixel offset in the wcs.
     NO photometry catalog filename
     Finding stars --- Detector: None, Filter: F110W
     FWHM for the filter F110W: 2 px
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
 
     Number of sources found in the image: 1065
@@ -2923,11 +2923,11 @@ and add an additional 3 pixel offset in the wcs.
 
     F110W
     Performing aperture photometry for radius r = 4 px
-    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1787: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1776: RuntimeWarning: invalid value encountered in log10
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
-    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1790: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1779: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 0.8384330709999972
+    Time Elapsed: 0.9952844349900261
     947 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 733 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     733 out of 947 entries remain in photometry table
@@ -2943,7 +2943,7 @@ and add an additional 3 pixel offset in the wcs.
     945    647.708427
     946    696.459286
     Name: x, Length: 947, dtype: float64
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
     'WFC3' is not one of ['NIRCAM', 'NIRSPEC', 'MIRI', 'TFI', 'FGS', 'NIRISS', 'ANY', 'N/A']
 
     Failed validating 'enum' in schema:
@@ -2964,7 +2964,7 @@ and add an additional 3 pixel offset in the wcs.
     On instance:
         'WFC3'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
     'IR' is not one of ['NRCA1', 'NRCA2', 'NRCA3', 'NRCA4', 'NRCALONG', 'NRCB1', 'NRCB2', 'NRCB3', 'NRCB4', 'NRCBLONG', 'NRS1', 'NRS2', 'ANY', 'MIRIMAGE', 'MIRIFULONG', 'MIRIFUSHORT', 'NIS', 'GUIDER1', 'GUIDER2', 'N/A', 'MULTIPLE']
 
     Failed validating 'enum' in schema:
@@ -2999,7 +2999,7 @@ and add an additional 3 pixel offset in the wcs.
     On instance:
         'IR'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
     False is not of type 'string'
 
     Failed validating 'type' in schema:
@@ -3921,7 +3921,7 @@ and add an additional 3 pixel offset in the wcs.
     mean: 1.079986
     i:01 mean:1.079986(0.055176) stdev:0.078030(0.031856) X2norm:1.00 Nchanged:0 Ngood:3 Nclip:1
     i:01 mean:1.079986(0.055176) stdev:0.078030(0.031856) X2norm:1.00 Nchanged:0 Ngood:3 Nclip:1
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
     'WFC3' is not one of ['NIRCAM', 'NIRSPEC', 'MIRI', 'TFI', 'FGS', 'NIRISS', 'ANY', 'N/A']
 
     Failed validating 'enum' in schema:
@@ -3942,7 +3942,7 @@ and add an additional 3 pixel offset in the wcs.
     On instance:
         'WFC3'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
     'IR' is not one of ['NRCA1', 'NRCA2', 'NRCA3', 'NRCA4', 'NRCALONG', 'NRCB1', 'NRCB2', 'NRCB3', 'NRCB4', 'NRCBLONG', 'NRS1', 'NRS2', 'ANY', 'MIRIMAGE', 'MIRIFULONG', 'MIRIFUSHORT', 'NIS', 'GUIDER1', 'GUIDER2', 'N/A', 'MULTIPLE']
 
     Failed validating 'enum' in schema:
@@ -3977,7 +3977,7 @@ and add an additional 3 pixel offset in the wcs.
     On instance:
         'IR'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
     False is not of type 'string'
 
     Failed validating 'type' in schema:
@@ -4029,7 +4029,7 @@ and add an additional 3 pixel offset in the wcs.
                                  'SUB320B430R',
                       ...
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/jwst/datamodels/util.py:234: NoTypeWarning: model_type not found. Opening mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits as a ImageModel
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jwst/datamodels/util.py:234: NoTypeWarning: model_type not found. Opening mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits as a ImageModel
       warnings.warn(f"model_type not found. Opening {file_name} as a {class_name}",
     mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_tweakregstep.fits
     Setting output directory for tweakregstep.fits file to mastDownload
@@ -4139,9 +4139,9 @@ sources being matched in the reference and target images:
     NO photometry catalog filename
     Finding stars --- Detector: None, Filter: F110W
     FWHM for the filter F110W: 2 px
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
 
     Number of sources found in the image: 1065
@@ -4149,11 +4149,11 @@ sources being matched in the reference and target images:
 
     F110W
     Performing aperture photometry for radius r = 4 px
-    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1787: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1776: RuntimeWarning: invalid value encountered in log10
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
-    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1790: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1779: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 0.8464599309999983
+    Time Elapsed: 0.9276840669917874
     947 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 733 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     733 out of 947 entries remain in photometry table
@@ -4169,7 +4169,7 @@ sources being matched in the reference and target images:
     945    647.708427
     946    696.459286
     Name: x, Length: 947, dtype: float64
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
     'WFC3' is not one of ['NIRCAM', 'NIRSPEC', 'MIRI', 'TFI', 'FGS', 'NIRISS', 'ANY', 'N/A']
 
     Failed validating 'enum' in schema:
@@ -4190,7 +4190,7 @@ sources being matched in the reference and target images:
     On instance:
         'WFC3'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
     'IR' is not one of ['NRCA1', 'NRCA2', 'NRCA3', 'NRCA4', 'NRCALONG', 'NRCB1', 'NRCB2', 'NRCB3', 'NRCB4', 'NRCBLONG', 'NRS1', 'NRS2', 'ANY', 'MIRIMAGE', 'MIRIFULONG', 'MIRIFUSHORT', 'NIS', 'GUIDER1', 'GUIDER2', 'N/A', 'MULTIPLE']
 
     Failed validating 'enum' in schema:
@@ -4225,7 +4225,7 @@ sources being matched in the reference and target images:
     On instance:
         'IR'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
     False is not of type 'string'
 
     Failed validating 'type' in schema:
@@ -5168,7 +5168,7 @@ sources being matched in the reference and target images:
     mean: 4.943574
     i:05 mean:4.943574(0.004317) stdev:0.053053(0.003043) X2norm:1.00 Nchanged:0 Ngood:152 Nclip:10
     i:05 mean:4.943574(0.004317) stdev:0.053053(0.003043) X2norm:1.00 Nchanged:0 Ngood:152 Nclip:10
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
     'WFC3' is not one of ['NIRCAM', 'NIRSPEC', 'MIRI', 'TFI', 'FGS', 'NIRISS', 'ANY', 'N/A']
 
     Failed validating 'enum' in schema:
@@ -5189,7 +5189,7 @@ sources being matched in the reference and target images:
     On instance:
         'WFC3'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
     'IR' is not one of ['NRCA1', 'NRCA2', 'NRCA3', 'NRCA4', 'NRCALONG', 'NRCB1', 'NRCB2', 'NRCB3', 'NRCB4', 'NRCBLONG', 'NRS1', 'NRS2', 'ANY', 'MIRIMAGE', 'MIRIFULONG', 'MIRIFUSHORT', 'NIS', 'GUIDER1', 'GUIDER2', 'N/A', 'MULTIPLE']
 
     Failed validating 'enum' in schema:
@@ -5224,7 +5224,7 @@ sources being matched in the reference and target images:
     On instance:
         'IR'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
     False is not of type 'string'
 
     Failed validating 'type' in schema:
@@ -5276,7 +5276,7 @@ sources being matched in the reference and target images:
                                  'SUB320B430R',
                       ...
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/jwst/datamodels/util.py:234: NoTypeWarning: model_type not found. Opening mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits as a ImageModel
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jwst/datamodels/util.py:234: NoTypeWarning: model_type not found. Opening mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits as a ImageModel
       warnings.warn(f"model_type not found. Opening {file_name} as a {class_name}",
     mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_tweakregstep.fits
     Setting output directory for tweakregstep.fits file to mastDownload
@@ -5383,9 +5383,9 @@ smaller d2d_max for matching:
     NO photometry catalog filename
     Finding stars --- Detector: None, Filter: F110W
     FWHM for the filter F110W: 2 px
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
 
     Number of sources found in the image: 1065
@@ -5393,11 +5393,11 @@ smaller d2d_max for matching:
 
     F110W
     Performing aperture photometry for radius r = 4 px
-    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1787: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1776: RuntimeWarning: invalid value encountered in log10
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
-    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1790: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1779: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 0.8553355590000038
+    Time Elapsed: 0.9107083220151253
     947 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 733 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     733 out of 947 entries remain in photometry table
@@ -5413,7 +5413,7 @@ smaller d2d_max for matching:
     945    647.708427
     946    696.459286
     Name: x, Length: 947, dtype: float64
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
     'WFC3' is not one of ['NIRCAM', 'NIRSPEC', 'MIRI', 'TFI', 'FGS', 'NIRISS', 'ANY', 'N/A']
 
     Failed validating 'enum' in schema:
@@ -5434,7 +5434,7 @@ smaller d2d_max for matching:
     On instance:
         'WFC3'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
     'IR' is not one of ['NRCA1', 'NRCA2', 'NRCA3', 'NRCA4', 'NRCALONG', 'NRCB1', 'NRCB2', 'NRCB3', 'NRCB4', 'NRCBLONG', 'NRS1', 'NRS2', 'ANY', 'MIRIMAGE', 'MIRIFULONG', 'MIRIFUSHORT', 'NIS', 'GUIDER1', 'GUIDER2', 'N/A', 'MULTIPLE']
 
     Failed validating 'enum' in schema:
@@ -5469,7 +5469,7 @@ smaller d2d_max for matching:
     On instance:
         'IR'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
     False is not of type 'string'
 
     Failed validating 'type' in schema:
@@ -6433,7 +6433,7 @@ smaller d2d_max for matching:
     mean: 4.940799
     i:08 mean:4.940799(0.004205) stdev:0.057955(0.002965) X2norm:1.00 Nchanged:0 Ngood:191 Nclip:12
     i:08 mean:4.940799(0.004205) stdev:0.057955(0.002965) X2norm:1.00 Nchanged:0 Ngood:191 Nclip:12
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
     'WFC3' is not one of ['NIRCAM', 'NIRSPEC', 'MIRI', 'TFI', 'FGS', 'NIRISS', 'ANY', 'N/A']
 
     Failed validating 'enum' in schema:
@@ -6454,7 +6454,7 @@ smaller d2d_max for matching:
     On instance:
         'WFC3'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.detector the following error occurred:
     'IR' is not one of ['NRCA1', 'NRCA2', 'NRCA3', 'NRCA4', 'NRCALONG', 'NRCB1', 'NRCB2', 'NRCB3', 'NRCB4', 'NRCBLONG', 'NRS1', 'NRS2', 'ANY', 'MIRIMAGE', 'MIRIFULONG', 'MIRIFUSHORT', 'NIS', 'GUIDER1', 'GUIDER2', 'N/A', 'MULTIPLE']
 
     Failed validating 'enum' in schema:
@@ -6489,7 +6489,7 @@ smaller d2d_max for matching:
     On instance:
         'IR'
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.subarray.name the following error occurred:
     False is not of type 'string'
 
     Failed validating 'type' in schema:
@@ -6541,7 +6541,7 @@ smaller d2d_max for matching:
                                  'SUB320B430R',
                       ...
       warnings.warn(errmsg, ValidationWarning)
-    /Users/jpierel/miniconda3/envs/jhat/lib/python3.8/site-packages/jwst/datamodels/util.py:234: NoTypeWarning: model_type not found. Opening mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits as a ImageModel
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jwst/datamodels/util.py:234: NoTypeWarning: model_type not found. Opening mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits as a ImageModel
       warnings.warn(f"model_type not found. Opening {file_name} as a {class_name}",
     mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_tweakregstep.fits
     Setting output directory for tweakregstep.fits file to mastDownload
@@ -6552,7 +6552,7 @@ smaller d2d_max for matching:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  46.694 seconds)
+   **Total running time of the script:** ( 0 minutes  48.016 seconds)
 
 
 .. _sphx_glr_download_examples_plot_a_hst.py:

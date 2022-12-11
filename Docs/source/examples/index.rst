@@ -12,24 +12,24 @@ Examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="Aligning JWST NIRCam images with JHAT.">
+    <div class="sphx-glr-thumbcontainer" tooltip="Aligning JWST/MIRI images with JHAT.">
 
 .. only:: html
 
   .. image:: /examples/images/thumb/sphx_glr_plot_b_nircam_thumb.png
-    :alt: JWST NIRCam
+    :alt: JWST MIRI
 
   :ref:`sphx_glr_examples_plot_b_nircam.py`
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">JWST NIRCam</div>
+      <div class="sphx-glr-thumbnail-title">JWST MIRI</div>
     </div>
 
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="Aligning JWST MIRI images with JHAT.">
+    <div class="sphx-glr-thumbcontainer" tooltip="Aligning JWST/MIRI images with JHAT.">
 
 .. only:: html
 

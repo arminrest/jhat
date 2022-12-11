@@ -38,7 +38,7 @@ from jhat import hst_photclass,st_wcs_align
 #
 # **Download some Data**
 #
-# For this example we download 2 HST FLT images from MAST. They're
+# For this example we download 2 HST DRZ images from MAST. They're
 # the same filter and same field, just separated in time. Note that 
 # the code will also work for drizzled images.
 

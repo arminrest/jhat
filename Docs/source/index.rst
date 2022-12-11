@@ -14,6 +14,7 @@ Welcome to the JWST/HST Alignment Tool (JHAT)
    install
    params
    batch
+   plots
 
 .. include:: examples/index.rst
    :start-after: :orphan:
