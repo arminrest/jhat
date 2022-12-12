@@ -101,45 +101,6 @@ def get_apcorr_params(fname,ee=70):
            aperture_params['bkg_aperture_outer_radius']]
 
 
-def get_GAIA_sources_NP(f,pm=True,radius_factor=2):
-    """"Nor Pirzkal: Return a GAIA catalog/table that is location and time matched to an observation.
-    It applies the GAIA proper motion by default (pm=True).
-    The (x,y) pixel coordinates of the GAIA source are also returned in  'x' and 'y' column.
-    radius_factor is 2 by default and hence about twice that of the FOV but can be set."""
-
-    h = fits.open(f)[1].header
-    d = fits.open(f)[1].data
-
-    direct_with_wcs = datamodels.open(f)
-    world_to_pix = direct_with_wcs.meta.wcs.get_transform('world','detector')
-    pix_to_world = direct_with_wcs.meta.wcs.get_transform('detector','world')
-
-    sy,sx = np.shape(d)
-    ra0,dec0 = pix_to_world(sx/2,sy/2)
-    radius = np.abs(pix_to_world(sx,sy)[1] - dec0)*radius_factor # Approx radius needed in deg
-        
-    job5 = Gaia.launch_job_async("SELECT * \
-                    FROM gaiadr2.gaia_source WHERE CONTAINS(POINT('ICRS',\
-                    gaiadr2.gaia_source.ra,gaiadr2.gaia_source.dec),\
-                    CIRCLE('ICRS',{},{} ,{}))=1;".format(ra0,dec0,radius))
-    tb_gaia = job5.get_results() 
-    print("Number of stars:",len(tb_gaia))
-    
-    if pm is True:
-        time_gaia = Time(tb_gaia['ref_epoch'], format = 'jyear')[0]
-        time_obs = Time(h['MJD-AVG'], format ='mjd')
-
-        dRA = ((time_obs - time_gaia).to(u.yr).value * tb_gaia['pmra'].data * u.mas / np.cos(np.deg2rad(tb_gaia['dec']))).to(u.deg).value
-        dDec = ((time_obs - time_gaia).to(u.yr).value * tb_gaia['pmdec'].data * u.mas).to(u.deg).value
-
-        tb_gaia['ra'] = tb_gaia['ra'] + dRA
-        tb_gaia['dec'] = tb_gaia['dec'] + dDec
-    
-    tb_gaia['x'],tb_gaia['y'] = world_to_pix(tb_gaia['ra'],tb_gaia['dec'])
-    
-    ok = (np.isfinite(tb_gaia['x'])) & (np.isfinite(tb_gaia['y'])) 
-    return tb_gaia[ok]
-
 def get_refcat_file(refcatfilename,racol=None,deccol=None):
     cat = pdastroclass()
     cat.load(refcatfilename)
@@ -510,6 +471,10 @@ class jwst_photclass(pdastrostatsclass):
         self.refcat_xcol = None
         self.refcat_ycol = None
 
+        self.ixs_use = None
+        self.ixs_notuse = None
+        self.ixs_use_refcat = None
+        self.ixs_notuse_refcat = None
         
     
 
@@ -1208,7 +1173,9 @@ class jwst_photclass(pdastrostatsclass):
                      max_sep = 1.0,
                      borderpadding=40,
                      refcatshort=None,
-                     indices=None):
+                     ixs_obj=None,
+                     ixs_refcat=None,
+                     ):
         """
         Matches the photometry catalog to the reference catalog.
         
@@ -1240,7 +1207,7 @@ class jwst_photclass(pdastrostatsclass):
         #     aperturename = self.aperture
 
         # make sure there are no NaNs        
-        ixs_obj = self.ix_not_null(['ra','dec'],indices=indices)
+        ixs_obj = self.ix_not_null(['ra','dec'],indices=ixs_obj)
         # get SkyCoord objects (needed for matching)
         objcoord = SkyCoord(self.t.loc[ixs_obj,'ra'],self.t.loc[ixs_obj,'dec'], unit='deg')
 
@@ -1250,7 +1217,7 @@ class jwst_photclass(pdastrostatsclass):
         xmax = self.t.loc[ixs_obj,'x_idl'].max()
         ymin = self.t.loc[ixs_obj,'y_idl'].min()
         ymax = self.t.loc[ixs_obj,'y_idl'].max()
-        print(f'image objects are in x_idl=[{xmin:.2f},{xmax:.2f}] and y_idl=[{ymin:.2f},{ymax:.2f}] range')
+        print(f'Using {len(ixs_obj)} image objects that are in x_idl=[{xmin:.2f},{xmax:.2f}] and y_idl=[{ymin:.2f},{ymax:.2f}] range')
 
         #### gaia catalog
         # get ideal coords into table
@@ -1289,28 +1256,29 @@ class jwst_photclass(pdastrostatsclass):
         ymin = 0.0-borderpadding
         ymax = self.scihdr['NAXIS2']+borderpadding
         
-        ixs_cat = self.refcat.ix_inrange('x',xmin,xmax)
-        ixs_cat = self.refcat.ix_inrange('y',ymin,ymax,indices=ixs_cat)
-        print(f'Keeping {len(ixs_cat)} out of {len(self.refcat.getindices())} catalog objects within x={xmin}-{xmax} and y={ymin}-{ymax}')
-        ixs_cat = self.refcat.ix_not_null([self.refcat.racol,self.refcat.deccol],indices=ixs_cat)
-        print(f'Keeping {len(ixs_cat)}  after removing NaNs from ra/dec')
+        ixs_refcat = self.refcat.ix_inrange('x',xmin,xmax,indices=ixs_refcat)
+        ixs_refcat = self.refcat.ix_inrange('y',ymin,ymax,indices=ixs_refcat)
+        print(f'Keeping {len(ixs_refcat)} out of {len(self.refcat.getindices())} catalog objects within x={xmin}-{xmax} and y={ymin}-{ymax}')
+        ixs_refcat = self.refcat.ix_not_null([self.refcat.racol,self.refcat.deccol],indices=ixs_refcat)
+        print(f'Keeping {len(ixs_refcat)}  after removing NaNs from ra/dec')
 
-        if len(ixs_cat) == 0:
+        if len(ixs_refcat) == 0:
             print('WARNING!!!! 0 sources from reference catalog within the image bounderies! skipping the rest of the steps calculating x,y of the Gaia sources etc... ')
             return(0)
 
         # Get the detector x,y position
         image_model = ImageModel(self.im)
         world_to_detector = image_model.meta.wcs.get_transform('world', 'detector')
-        self.refcat.t.loc[ixs_cat,'x'], self.refcat.t.loc[ixs_cat,'y'] = world_to_detector(self.refcat.t.loc[ixs_cat,self.refcat.racol],self.refcat.t.loc[ixs_cat,self.refcat.deccol])
+        self.refcat.t.loc[ixs_refcat,'x'], self.refcat.t.loc[ixs_refcat,'y'] = world_to_detector(self.refcat.t.loc[ixs_refcat,self.refcat.racol],self.refcat.t.loc[ixs_refcat,self.refcat.deccol])
 
-        refcatcoord = SkyCoord(self.refcat.t.loc[ixs_cat,self.refcat.racol],self.refcat.t.loc[ixs_cat,self.refcat.deccol], unit='deg')
+        refcatcoord = SkyCoord(self.refcat.t.loc[ixs_refcat,self.refcat.racol],self.refcat.t.loc[ixs_refcat,self.refcat.deccol], unit='deg')
     
-        #idx, d2d, _ = match_coordinates_sky(self.t.loc[ixs_obj,'coord'], self.refcat.t.loc[ixs_cat,'coord'])
+        print(f'!! Matching {len(ixs_obj)} image objects to {len(ixs_refcat)} refcat objects!')
+        #idx, d2d, _ = match_coordinates_sky(self.t.loc[ixs_obj,'coord'], self.refcat.t.loc[ixs_refcat,'coord'])
         idx, d2d, _ = match_coordinates_sky(objcoord,refcatcoord)
         # ixs_cat4obj has the same length as ixs_obj
         # for each object in ixs_obj, it contains the index to the self.refcat entry
-        ixs_cat4obj = ixs_cat[idx]
+        ixs_cat4obj = ixs_refcat[idx]
 
 
         # copy over the relevant columns from refcat. The columns are preceded with '{refcatshort}_'
@@ -1360,21 +1328,20 @@ class jwst_photclass(pdastrostatsclass):
                          outrootdir=None,
                          outsubdir=None,
                          imagename=None):
-        if photfilename is None:
+        if (photfilename is not None):
+            if photfilename.lower() == 'auto':
+                if imagename is None:
+                    raise RuntimeError(f'could not get photfilename from {imagename}')
+                    
+                photfilename = re.sub('\.fits$','.phot.txt',imagename)
+                if photfilename == imagename:
+                    raise RuntimeError(f'could not get photfilename from {self.imagename}')
+            else:
+                return(photfilename)
+        else:
             return(None)
 
-        if photfilename.lower() == 'none':
-            return(None)
-        
-        if photfilename.lower() == 'auto':
-            if imagename is None:
-                raise RuntimeError(f'could not get photfilename from {imagename}')
-                
-            photfilename = re.sub('\.fits$','.phot.txt',imagename)
-            if photfilename == imagename:
-                raise RuntimeError(f'could not get photfilename from {self.imagename}')
-                
-        if outrootdir is not None or outsubdir is not None:
+        if (outrootdir is not None) or (outsubdir is not None):
             basename = os.path.basename(photfilename)
             if outrootdir is not None:
                 outdir=outrootdir
@@ -1384,8 +1351,7 @@ class jwst_photclass(pdastrostatsclass):
             if outsubdir is not None:
                 outdir+=f'/{outsubdir}'
 
-            photfilename = f'{outdir}/{basename}'
-         
+            photfilename = f'{outdir}/{basename}'        
             
         return(photfilename)
                     
@@ -1402,7 +1368,6 @@ class jwst_photclass(pdastrostatsclass):
             for y in [0,ny-1]:     
                 ra,dec = image_model.meta.wcs(x,y)
                 radius_deg.append(coord0.separation(SkyCoord(ra,dec,unit=(u.deg, u.deg), frame='icrs')).deg)
-        print('bbbbbbb',radius_deg)
         radius_deg = np.amax(radius_deg)
 
         print(ra0,dec0,radius_deg)
@@ -1410,20 +1375,11 @@ class jwst_photclass(pdastrostatsclass):
 
         
     def run_phot(self,imagename, 
-                 refcatname=None,
-                 refcat_racol=None,
-                 refcat_deccol=None,
-                 refcat_magcol=None,
-                 refcat_magerrcol=None,
-                 refcat_colorcol=None,
-                 pmflag = False, # apply proper motion
-                 pm_median=False,# if pm_median, then the median proper motion is added instead of the individual ones
                  photfilename=None,
                  outrootdir=None,
                  outsubdir=None,
                  overwrite=False,                
                  load_photcat_if_exists=False,
-                 rematch_refcat=False,
                  use_dq = False,
                  DNunits=True, 
                  SNR_min=3.0,
@@ -1435,6 +1391,7 @@ class jwst_photclass(pdastrostatsclass):
                  ee_radius=70):
         print(f'\n### Doing photometry on {imagename}')
         self.ee_radius = ee_radius
+        
         # get the photfilename. photfilename='auto' removes fits from image name and replaces it with phot.txt
         self.photfilename = self.get_photfilename(photfilename,outrootdir=outrootdir,outsubdir=outsubdir,imagename=imagename)
         
@@ -1491,22 +1448,51 @@ class jwst_photclass(pdastrostatsclass):
          
         # calculate the ideal coordinates
         #self.radec_to_idl(indices=ixs_clean)
-        
         self.xy_to_idl(indices=ixs_clean)
-        
-        # calculate the ideal coordinates
-        #self.xy_to_idl(indices=ixs_clean,xcol_idl='x_idl_test',ycol_idl='y_idl_test')
-        
-        # get the refcat and match it, but only if either the photometry has 
-        # been done (not photcat_loaded), or if rematch_refcat is requested
+                
+        #self.write(self.get_photfilename()+'.all')
+        # save the catalog
+
+        if self.photfilename is not None:
+            print(f'Saving {self.photfilename}')
+            self.write(self.photfilename,indices=ixs_clean)
+        return(self.photfilename,photcat_loaded)
+
+    def load_and_match_refcat(self,
+                              ixs_obj=None,
+                              ixs_refcat=None,
+                              refcatname=None,
+                              refcat_racol=None,
+                              refcat_deccol=None,
+                              refcat_magcol=None,
+                              refcat_magerrcol=None,
+                              refcat_colorcol=None,
+                              refmag_lim=None,
+                              refmagerr_lim=None,
+                              refcolor_lim=None,
+                              pmflag = False, # apply proper motion
+                              pm_median=False,# if pm_median, then the median proper motion is added instead of the individual ones
+                              initialize_only=False):
+
+        # make sure you have all indices if ixs=None
+        ixs_obj = self.getindices(ixs_obj)
+
         if (refcatname is not None):
             if pmflag or pm_median: 
                 mjd=self.scihdr['MJD-AVG']
             else: 
                 mjd=None
-            if (rematch_refcat or (not photcat_loaded)):
+            #if (rematch_refcat or (not photcat_loaded)):
+            if initialize_only:
+                # set refcat parameters like refcat.racol etc
+                if self.verbose: print(f'initializing {refcatname} only instead of reloading and rematching it')
+                self.init_refcat(refcatname,mjd=mjd,
+                                 refcat_racol=refcat_racol,
+                                 refcat_deccol=refcat_deccol)
+                self.set_important_refcatcols()
+            else:
                 (ra0,dec0,radius_deg)=self.get_radecinfo_image()
-                radius_deg *=2.0
+                radius_deg *=1.5
                 if self.verbose: print(f'Getting {refcatname} and matching it: ra={ra0} dec={dec0} radius={radius_deg} deg')
                 self.load_refcat(refcatname,
                                  ra0,dec0,radius_deg,
@@ -1517,23 +1503,148 @@ class jwst_photclass(pdastrostatsclass):
                                  refcat_magcol=refcat_magcol,
                                  refcat_magerrcol=refcat_magerrcol,
                                  refcat_colorcol=refcat_colorcol)
-                #self.refcat.write('DELMErefcat.txt')
-                self.match_refcat(indices=ixs_clean)
-            else:
-                # set refcat parameters like refcat.
-                self.init_refcat(refcatname,mjd=mjd,
-                                 refcat_racol=refcat_racol,
-                                 refcat_deccol=refcat_deccol)
-                self.set_important_refcatcols()
                 
+                # make an initial cut on reference objects
+                ixs_refcat = self.initial_cut_refcat(refmag_lim = refmag_lim,
+                                                     refmagerr_lim = refmagerr_lim, # limits on refcat.refcat_magerrcol, the magnitude error of the reference catalog
+                                                     refcolor_lim = refcolor_lim,
+                                                     ixs_refcat=ixs_refcat
+                                                     )
+                
+                #self.refcat.write('DELMErefcat.txt')
+                self.match_refcat(ixs_obj=ixs_obj,
+                                  ixs_refcat=ixs_refcat)
+               
+    # make some rough cuts on dmag, d2d, and Nbright
+    # sets self.ixs_use and self.ixs_notuse
+    def initial_cut_photcat(self, dmag_max=None,
+                            sharpness_lim = (None, None), # sharpness limits
+                            roundness1_lim = (None, None), # roundness1 limits 
+                            objmag_lim = (None,None), # limits on mag, the magnitude of the objects in the image
+                            Nbright=None, ixs=None):
+        ixs = self.getindices(ixs)
+        ixs_use = copy.deepcopy(ixs)
         
-        #self.write(self.get_photfilename()+'.all')
-        # save the catalog
+        print(f'########### !!!!!!!!!!  INITIAL CUT on image photometry cat: starting with {len(ixs)} objects')
+        
+        if dmag_max is not None:
+            print(f'dmag_max ={dmag_max} CUT:')
+            ixs_use = self.ix_inrange('dmag',None,dmag_max,indices=ixs_use)
+            print(f'{len(ixs_use)} left')
+        if (sharpness_lim[0] is not None) or (sharpness_lim[1] is not None):
+            print(f'SHARPNESS ={sharpness_lim} CUT:')
+            ixs_use = self.ix_inrange('sharpness',sharpness_lim[0],sharpness_lim[1],indices=ixs_use)
+            print(f'{len(ixs_use)} left')
+        if (roundness1_lim[0] is not None) or (roundness1_lim[1] is not None):
+            print(f'roundness1={roundness1_lim} CUT:')
+            ixs_use = self.ix_inrange('roundness1',roundness1_lim[0],roundness1_lim[1],indices=ixs_use)
+            print(f'{len(ixs_use)} left')
+        if (objmag_lim[0] is not None) or (objmag_lim[1] is not None):
+            print(f'objmag_lim={objmag_lim} CUT:')
+            ixs_use = self.ix_inrange('mag',objmag_lim[0],objmag_lim[1],indices=ixs_use)
+            print(f'{len(ixs_use)} left')
+        if Nbright is not None:
+            print(f'Nbright={Nbright} CUT:')
+            ixs_sort = self.ix_sort_by_cols(['mag'],indices=ixs_use)
+            ixs_use = ixs_sort[:Nbright]
+            print(f'{len(ixs_use)} left')
+            
+        
+        ixs_notuse = AnotB(ixs,ixs_use)
 
-        if self.photfilename is not None:
-            print(f'Saving {self.photfilename}')
-            self.write(self.photfilename,indices=ixs_clean)
-        return(self.photfilename)
+        print(f'{len(ixs_use)} of image photometry objects pass initial cuts #1, {len(ixs_notuse)} cut')
+
+        self.ixs_use = ixs_use
+        
+        if self.ixs_notuse is None:
+            self.ixs_notuse = ixs_notuse
+        else:
+            self.ixs_notuse = AorB(ixs_notuse,self.ixs_notuse)         
+        return(self.ixs_use)
+
+    def initial_cut_matches(self, 
+                            d2d_max=None,                    
+                            delta_mag_lim = (None,None), # limits on mag - refcat_mainfilter!
+                            Nbright=None,
+                            ixs=None):
+        ixs = self.getindices(ixs)
+        ixs_use = copy.deepcopy(ixs)
+        
+        print(f'########### !!!!!!!!!!  INITIAL CUT on matched cat: starting with {len(ixs)} objects')
+        if d2d_max is not None:
+            print(f'd2d ={d2d_max} CUT:')
+            d2d_colname = f'{self.refcat.short}_d2d'
+            ixs_use = self.ix_inrange(d2d_colname,None,d2d_max,indices=ixs_use)
+            print(f'{len(ixs_use)} left')
+        if (delta_mag_lim[0] is not None) or (delta_mag_lim[1] is not None):
+            print(f'delta_mag_lim={delta_mag_lim} CUT:')
+            if self.refcat_mainfilter is None:
+                raise RuntimeError('Cannot do delta_mag cut since the refcat_mainfilter is not defined!')
+            ixs_use = self.ix_inrange('delta_mag',delta_mag_lim[0],delta_mag_lim[1],indices=ixs_use)
+            print(f'{len(ixs_use)} left')
+        if Nbright is not None:
+            print(f'Nbright={Nbright} CUT:')
+            ixs_sort = self.ix_sort_by_cols(['mag'],indices=ixs_use)
+            ixs_use = ixs_sort[:Nbright]
+            print(f'{len(ixs_use)} left')
+            
+        
+        ixs_notuse = AnotB(ixs,ixs_use)
+        print(f'{len(ixs_use)} of image photometry objects pass initial cuts #1, {len(ixs_notuse)} cut')
+
+        self.ixs_use = ixs_use
+        
+        if self.ixs_notuse is None:
+            self.ixs_notuse = ixs_notuse
+        else:
+            self.ixs_notuse = AorB(ixs_notuse,self.ixs_notuse)         
+        return(self.ixs_use)
+    
+
+               
+    # make some rough cuts on reference catalog parameters like mag, dmag, color
+    # sets self.ixs_use_refcat and self.ixs_notuse_refcat
+    def initial_cut_refcat(self,  
+                           refmag_lim = (None,None), # limits on refcat.refcat_magcol, the magnitude of the reference catalog                    
+                           refmagerr_lim = (None,None), # limits on refcat.refcat_magerrcol, the magnitude error of the reference catalog
+                           refcolor_lim = (None,None), # limits on refcat.refcat_colorcol, the color of the reference catalog
+                           ixs_refcat=None):
+    
+        ixs_refcat = self.refcat.getindices(ixs_refcat)
+        ixs_use_refcat = copy.deepcopy(ixs_refcat)
+        
+        print(f'########### !!!!!!!!!!  INITIAL CUT on reference catalog: starting with {len(ixs_refcat)} objects')
+        if (refmag_lim[0] is not None) or (refmag_lim[1] is not None):
+            print(f'refmag_lim={refmag_lim} CUT:')
+            if self.refcat.mainfilter is None:
+                raise RuntimeError('Cannot do refmag_lim cut since the mainfilter is not defined!')
+            ixs_use_refcat = self.refcat.ix_inrange(self.refcat.mainfilter,refmag_lim[0],refmag_lim[1],indices=ixs_use_refcat)
+            print(f'{len(ixs_use_refcat)} left')
+        if (refmagerr_lim[0] is not None) or (refmagerr_lim[1] is not None):
+            print(f'refmagerr_lim={refmagerr_lim} CUT:')
+            if self.refcat.mainfilter_err is None:
+                raise RuntimeError('Cannot do refmagerr_lim cut since the mainfilter_err is not defined!')
+            ixs_use_refcat = self.refcat.ix_inrange(self.refcat.mainfilter_err,refmagerr_lim[0],refmagerr_lim[1],indices=ixs_use_refcat)
+            print(f'{len(ixs_use_refcat)} left')
+        if (refcolor_lim[0] is not None) or (refcolor_lim[1] is not None):
+            print(f'refcolor_lim={refcolor_lim} CUT:')
+            if self.refcat.maincolor is None:
+                raise RuntimeError('Cannot do refcolor_lim cut since the maincolor is not defined!')
+            ixs_use_refcat = self.refcat.ix_inrange(self.refcat.maincolor,refcolor_lim[0],refcolor_lim[1],indices=ixs_use_refcat)
+            print(f'{len(ixs_use_refcat)} left')
+
+        ixs_notuse_refcat = AnotB(ixs_refcat,ixs_use_refcat)
+
+        print(f'{len(ixs_use_refcat)} of image photometry objects pass initial cuts #1, {len(ixs_notuse_refcat)} cut')
+
+        self.ixs_use_refcat = ixs_use_refcat
+        
+        if self.ixs_notuse_refcat is None:
+            self.ixs_notuse_refcat = ixs_notuse_refcat
+        else:
+            self.ixs_notuse_refcat = AorB(ixs_notuse_refcat,self.ixs_notuse_refcat)         
+        return(self.ixs_use_refcat)
+
 
 class hst_photclass(jwst_photclass):
     """The photometry class for HST images.
@@ -1867,10 +1978,8 @@ class hst_photclass(jwst_photclass):
                      max_sep = 1.0,
                      borderpadding=40,
                      refcatshort=None,
-                     #aperturename=None,
-                     #primaryhdr=None, 
-                     #scihdr=None,
-                     indices=None):
+                     ixs_obj=None,
+                     ixs_refcat=None):
         """
         Matches the photometry catalog to the reference catalog.
         
@@ -1902,7 +2011,7 @@ class hst_photclass(jwst_photclass):
         #    aperturename = self.aperture
 
         # make sure there are no NaNs        
-        ixs_obj = self.ix_not_null(['ra','dec'],indices=indices)
+        ixs_obj = self.ix_not_null(['ra','dec'],indices=ixs_obj)
         # get SkyCoord objects (needed for matching)
         objcoord = SkyCoord(self.t.loc[ixs_obj,'ra'],self.t.loc[ixs_obj,'dec'], unit='deg')
 
@@ -1951,28 +2060,29 @@ class hst_photclass(jwst_photclass):
         ymin = 0.0-borderpadding
         ymax = self.scihdr['NAXIS2']+borderpadding
         
-        ixs_cat = self.refcat.ix_inrange('x',xmin,xmax)
-        ixs_cat = self.refcat.ix_inrange('y',ymin,ymax,indices=ixs_cat)
-        print(f'Keeping {len(ixs_cat)} out of {len(self.refcat.getindices())} catalog objects within x={xmin}-{xmax} and y={ymin}-{ymax}')
-        ixs_cat = self.refcat.ix_not_null([self.refcat.racol,self.refcat.deccol],indices=ixs_cat)
-        print(f'Keeping {len(ixs_cat)}  after removing NaNs from ra/dec')
+        ixs_refcat = self.refcat.ix_inrange('x',xmin,xmax,indices=ixs_refcat)
+        ixs_refcat = self.refcat.ix_inrange('y',ymin,ymax,indices=ixs_refcat)
+        print(f'Keeping {len(ixs_refcat)} out of {len(self.refcat.getindices())} catalog objects within x={xmin}-{xmax} and y={ymin}-{ymax}')
+        ixs_refcat = self.refcat.ix_not_null([self.refcat.racol,self.refcat.deccol],indices=ixs_refcat)
+        print(f'Keeping {len(ixs_refcat)}  after removing NaNs from ra/dec')
 
-        if len(ixs_cat) == 0:
+        if len(ixs_refcat) == 0:
             print('WARNING!!!! 0 Gaia sources from catalog within the image bounderies! skipping the rest of the steps calculating x,y of the Gaia sources etc... ')
             return(0)
 
         # Get the detector x,y position
-        self.refcat.t.loc[ixs_cat,'x'], self.refcat.t.loc[ixs_cat,'y'] = self.sci_wcs.world_to_pixel(SkyCoord(self.refcat.t.loc[ixs_cat,self.refcat.racol],
-                                                                                                            self.refcat.t.loc[ixs_cat,self.refcat.deccol],
+        self.refcat.t.loc[ixs_refcat,'x'], self.refcat.t.loc[ixs_refcat,'y'] = self.sci_wcs.world_to_pixel(SkyCoord(self.refcat.t.loc[ixs_refcat,self.refcat.racol],
+                                                                                                            self.refcat.t.loc[ixs_refcat,self.refcat.deccol],
                                                                                                             unit=u.deg))
 
-        refcatcoord = SkyCoord(self.refcat.t.loc[ixs_cat,self.refcat.racol],self.refcat.t.loc[ixs_cat,self.refcat.deccol], unit='deg')
+        refcatcoord = SkyCoord(self.refcat.t.loc[ixs_refcat,self.refcat.racol],self.refcat.t.loc[ixs_refcat,self.refcat.deccol], unit='deg')
     
-        #idx, d2d, _ = match_coordinates_sky(self.t.loc[ixs_obj,'coord'], self.refcat.t.loc[ixs_cat,'coord'])
+        print(f'!! Matching {len(ixs_obj)} image objects to {len(ixs_refcat)} refcat objects!')
+        #idx, d2d, _ = match_coordinates_sky(self.t.loc[ixs_obj,'coord'], self.refcat.t.loc[ixs_refcat,'coord'])
         idx, d2d, _ = match_coordinates_sky(objcoord,refcatcoord)
         # ixs_cat4obj has the same length as ixs_obj
         # for each object in ixs_obj, it contains the index to the self.refcat entry
-        ixs_cat4obj = ixs_cat[idx]
+        ixs_cat4obj = ixs_refcat[idx]
 
 
         # copy over the relevant columns from refcat. The columns are preceded with '{refcatshort}_'
