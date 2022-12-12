@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from jhat import st_wcs_align
 
@@ -19,11 +19,13 @@ wcs_align.d_rotated_Nsigma = args.d_rotated_Nsigma
 
 #wcs_align.calphot=jwst_photclass()
 
-wcs_align.set_outdir(args.outrootdir, args.outsubdir)
+#wcs_align.set_outdir(args.outrootdir, args.outsubdir)
 
 wcs_align.run_all(args.cal_image,
                  telescope = args.telescope,
                  #distortion_file = args.distortion_file,
+                 outrootdir = args.outrootdir,
+                 outsubdir = args.outsubdir,
                  overwrite = args.overwrite,
                  #skip_applydistortions_if_exists=args.skip_applydistortions_if_exists,
                  use_dq = args.use_dq,
