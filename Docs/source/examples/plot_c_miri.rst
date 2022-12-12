@@ -61,7 +61,7 @@ key parameters used for alignment see
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 34-47
+.. GENERATED FROM PYTHON SOURCE LINES 34-43
 
 ------------------
 Relative Alignment
@@ -69,17 +69,14 @@ Relative Alignment
 
 **Download some Data**
 
-For this example we download 2 HST DRZ images from MAST. They're
-the same filter and same field, just separated in time. Note that 
-the code will also work for drizzled images.
-obs_table1 = Observations.query_object('23:09:44.0809 -43:26:05.613')
-obs_table1 = obs_table1[obs_table1['instrument_name']=='MIRI']
-print(list(zip(obs_table1['filters'],obs_table1['obs_id'])))
-sys.exit()
+For this example we download 2 MIRI cal images from MAST. They're
+the same field and different filters. Note that 
+the code will also work for level 3 images.
 
-.. GENERATED FROM PYTHON SOURCE LINES 48-60
+.. GENERATED FROM PYTHON SOURCE LINES 44-57
 
 .. code-block:: default
+
 
     obs_table1 = Observations.query_criteria(obs_id='jw02107-o038_t019_miri_f770w')
     data_products_by_obs = Observations.get_product_list(obs_table1)
@@ -109,7 +106,7 @@ sys.exit()
 
     <div class="output_subarea output_html rendered_html output_result">
     <div><i>Table length=1</i>
-    <table id="table140389632908384" class="table-striped table-bordered table-condensed">
+    <table id="table140678349701232" class="table-striped table-bordered table-condensed">
     <thead><tr><th>Local Path</th><th>Status</th><th>Message</th><th>URL</th></tr></thead>
     <thead><tr><th>str98</th><th>str8</th><th>object</th><th>object</th></tr></thead>
     <tr><td>./mastDownload/JWST/jw02107038001_02105_00001_mirimage/jw02107038001_02105_00001_mirimage_cal.fits</td><td>COMPLETE</td><td>None</td><td>None</td></tr>
@@ -118,12 +115,12 @@ sys.exit()
     <br />
     <br />
 
-.. GENERATED FROM PYTHON SOURCE LINES 61-63
+.. GENERATED FROM PYTHON SOURCE LINES 58-60
 
 **Examine the Reference Image**
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 63-75
+.. GENERATED FROM PYTHON SOURCE LINES 60-73
 
 .. code-block:: default
 
@@ -137,6 +134,7 @@ sys.exit()
 
     plt.imshow(ref_data, origin='lower',
                           norm=norm1,cmap='gray')
+    plt.gca().tick_params(labelcolor='none',axis='both',color='none')
     plt.show()
 
 
@@ -157,7 +155,7 @@ sys.exit()
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 76-82
+.. GENERATED FROM PYTHON SOURCE LINES 74-80
 
 **Zoom in to see the offset**
 
@@ -166,7 +164,7 @@ same star in both images at the same ra/dec
 location, demonstrating a large offset between
 the images.  
 
-.. GENERATED FROM PYTHON SOURCE LINES 82-109
+.. GENERATED FROM PYTHON SOURCE LINES 80-107
 
 .. code-block:: default
 
@@ -230,14 +228,14 @@ the images.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 110-114
+.. GENERATED FROM PYTHON SOURCE LINES 108-112
 
 **Create a Photometric Catalog for Relative Alignment**
 
 We choose one of the images to be the reference image, and then 
 create a catalog that we will use to align the other image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 114-121
+.. GENERATED FROM PYTHON SOURCE LINES 112-119
 
 .. code-block:: default
 
@@ -293,7 +291,7 @@ create a catalog that we will use to align the other image.
     Performing aperture photometry for radius r = 4.083545207977295 px
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/units/function/logarithmic.py:47: RuntimeWarning: invalid value encountered in log10
       return dex.to(self._function_unit, np.log10(x))
-    Time Elapsed: 0.19829933997243643
+    Time Elapsed: 0.18672659998992458
     218 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 214 objects left after removing entries dmag>0.36200000000000004 (SNR<3.0)
     214 out of 218 entries remain in photometry table
@@ -339,7 +337,7 @@ create a catalog that we will use to align the other image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 122-127
+.. GENERATED FROM PYTHON SOURCE LINES 120-125
 
 **Align the second image**
 
@@ -347,7 +345,7 @@ The plots outputted here show the various steps used by jhat to
 determine the true matching sources in the image, and the
 subsequent correction needed for optimal alignment.
 
-.. GENERATED FROM PYTHON SOURCE LINES 127-150
+.. GENERATED FROM PYTHON SOURCE LINES 125-148
 
 .. code-block:: default
 
@@ -459,7 +457,7 @@ subsequent correction needed for optimal alignment.
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/units/function/logarithmic.py:47: RuntimeWarning: invalid value encountered in log10
       return dex.to(self._function_unit, np.log10(x))
-    Time Elapsed: 0.14521310798591003
+    Time Elapsed: 0.12376011296873912
     169 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 167 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     167 out of 169 entries remain in photometry table
@@ -1389,7 +1387,7 @@ subsequent correction needed for optimal alignment.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 151-156
+.. GENERATED FROM PYTHON SOURCE LINES 149-154
 
 **Check the Output**
 
@@ -1397,7 +1395,7 @@ The reference image has not changed, but let's read in the newly
 aligned image and compare with the original. 
 subsequent correction needed for optimal alignment.
 
-.. GENERATED FROM PYTHON SOURCE LINES 156-180
+.. GENERATED FROM PYTHON SOURCE LINES 154-177
 
 .. code-block:: default
 
@@ -1427,7 +1425,6 @@ subsequent correction needed for optimal alignment.
 
 
 
-
 .. image-sg:: /examples/images/sphx_glr_plot_c_miri_008.png
    :alt: Reference, To Align, Aligned
    :srcset: /examples/images/sphx_glr_plot_c_miri_008.png
@@ -1446,64 +1443,10 @@ subsequent correction needed for optimal alignment.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 181-187
-
-----------------
-Align to Catalog
-----------------
-
-You can also align each image to a specific catalog, in this case
-one produced from NIRCam (see :ref:`sphx_glr_examples_plot_b_nircam.py`)
-
-.. GENERATED FROM PYTHON SOURCE LINES 188-222
-
-.. code-block:: default
-
-
-
-    # wcs_align.run_all(align_image,
-    # 		  telescope='jwst',
-    #           overwrite=True,
-    #           d2d_max=.5,
-    #           showplots=0,
-    #           refcatname='Gaia',
-    #           histocut_order='dxdy',
-    #               sharpness_lim=(0.3,0.9),
-    #               roundness1_lim=(-0.7, 0.7),
-    #               SNR_min= 3,
-    #               dmag_max=1.0,
-    #               objmag_lim =(14,24))
-
-    # aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('cal.fits','tweakregstep.fits'))
-    # aligned_fits = fits.open(aligned_image)
-    # aligned_data = fits.open(aligned_image)['SCI',1].data
-    # aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))
-    # aligned_cutout = extract_array(aligned_data,(11,11),(aligned_x,aligned_y))
-
-    # norm3 = simple_norm(aligned_cutout,stretch='log',min_cut=-1,max_cut=200)
-    # fig,axes = plt.subplots(1,2)
-    # axes[0].imshow(align_cutout, origin='lower',
-    #                       norm=norm2,cmap='gray')
-    # axes[1].imshow(aligned_cutout, origin='lower',
-    #                       norm=norm3,cmap='gray')
-    # axes[0].set_title('To Align')
-    # axes[1].set_title('Aligned')
-    # for i in range(2):
-    # 	axes[i].tick_params(labelcolor='none',axis='both',color='none')
-
-
-    # plt.show()
-
-
-
-
-
-
-
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  33.462 seconds)
+   **Total running time of the script:** ( 0 minutes  20.346 seconds)
 
 
 .. _sphx_glr_download_examples_plot_c_miri.py:

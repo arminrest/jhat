@@ -12,23 +12,6 @@ Examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="Aligning JWST/NIRCAM images with JHAT.">
-
-.. only:: html
-
-  .. image:: /examples/images/thumb/sphx_glr_plot_b_nircam_thumb.png
-    :alt: JWST NIRCAM
-
-  :ref:`sphx_glr_examples_plot_b_nircam.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">JWST NIRCAM</div>
-    </div>
-
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="Aligning JWST/MIRI images with JHAT.">
 
 .. only:: html
@@ -41,6 +24,23 @@ Examples
 .. raw:: html
 
       <div class="sphx-glr-thumbnail-title">JWST MIRI</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Aligning JWST/NIRCAM images with JHAT.">
+
+.. only:: html
+
+  .. image:: /examples/images/thumb/sphx_glr_plot_b_nircam_thumb.png
+    :alt: JWST NIRCAM
+
+  :ref:`sphx_glr_examples_plot_b_nircam.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">JWST NIRCAM</div>
     </div>
 
 
@@ -69,8 +69,8 @@ Examples
 .. toctree::
    :hidden:
 
-   /examples/plot_b_nircam
    /examples/plot_c_miri
+   /examples/plot_b_nircam
    /examples/plot_a_hst
 
 

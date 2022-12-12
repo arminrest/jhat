@@ -38,13 +38,10 @@ from jhat import jwst_photclass,st_wcs_align
 #
 # **Download some Data**
 #
-# For this example we download 2 HST DRZ images from MAST. They're
-# the same filter and same field, just separated in time. Note that 
-# the code will also work for drizzled images.
-# obs_table1 = Observations.query_object('23:09:44.0809 -43:26:05.613')
-# obs_table1 = obs_table1[obs_table1['instrument_name']=='MIRI']
-# print(list(zip(obs_table1['filters'],obs_table1['obs_id'])))
-# sys.exit()
+# For this example we download 2 MIRI cal images from MAST. They're
+# the same field and different filters. Note that 
+# the code will also work for level 3 images.
+
 obs_table1 = Observations.query_criteria(obs_id='jw02107-o038_t019_miri_f770w')
 data_products_by_obs = Observations.get_product_list(obs_table1)
 data_products_by_obs = data_products_by_obs[data_products_by_obs['calib_level']==2]
@@ -70,6 +67,7 @@ norm1 = simple_norm(ref_data,stretch='log',min_cut=5,max_cut=25)
 
 plt.imshow(ref_data, origin='lower',
                       norm=norm1,cmap='gray')
+plt.gca().tick_params(labelcolor='none',axis='both',color='none')
 plt.show()
 
 ####################################################################
@@ -176,46 +174,3 @@ for i in range(3):
 
 
 plt.show()
-
-####################################################################
-# 
-# ----------------
-# Align to Catalog
-# ----------------
-#
-# You can also align each image to a specific catalog, in this case
-# one produced from NIRCam (see :ref:`sphx_glr_examples_plot_b_nircam.py`)
-
-
-# wcs_align.run_all(align_image,
-# 		  telescope='jwst',
-#           overwrite=True,
-#           d2d_max=.5,
-#           showplots=0,
-#           refcatname='Gaia',
-#           histocut_order='dxdy',
-#               sharpness_lim=(0.3,0.9),
-#               roundness1_lim=(-0.7, 0.7),
-#               SNR_min= 3,
-#               dmag_max=1.0,
-#               objmag_lim =(14,24))
-
-# aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('cal.fits','tweakregstep.fits'))
-# aligned_fits = fits.open(aligned_image)
-# aligned_data = fits.open(aligned_image)['SCI',1].data
-# aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))
-# aligned_cutout = extract_array(aligned_data,(11,11),(aligned_x,aligned_y))
-
-# norm3 = simple_norm(aligned_cutout,stretch='log',min_cut=-1,max_cut=200)
-# fig,axes = plt.subplots(1,2)
-# axes[0].imshow(align_cutout, origin='lower',
-#                       norm=norm2,cmap='gray')
-# axes[1].imshow(aligned_cutout, origin='lower',
-#                       norm=norm3,cmap='gray')
-# axes[0].set_title('To Align')
-# axes[1].set_title('Aligned')
-# for i in range(2):
-# 	axes[i].tick_params(labelcolor='none',axis='both',color='none')
-
-
-# plt.show()

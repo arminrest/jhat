@@ -97,15 +97,15 @@ the code will also work for level 3 data images.
 
  .. code-block:: none
 
-    INFO: Found cached file ./mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.fits with expected size 117538560. [astroquery.query]
-    INFO: Found cached file ./mastDownload/JWST/jw02107041001_02101_00001_nrcblong/jw02107041001_02101_00001_nrcblong_cal.fits with expected size 117538560. [astroquery.query]
+    Downloading URL https://mast.stsci.edu/api/v0.1/Download/file?uri=mast:JWST/product/jw02107041001_02101_00001_nrcb1_cal.fits to ./mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.fits ... [Done]
+    Downloading URL https://mast.stsci.edu/api/v0.1/Download/file?uri=mast:JWST/product/jw02107041001_02101_00001_nrcblong_cal.fits to ./mastDownload/JWST/jw02107041001_02101_00001_nrcblong/jw02107041001_02101_00001_nrcblong_cal.fits ... [Done]
 
 
 .. raw:: html
 
     <div class="output_subarea output_html rendered_html output_result">
     <div><i>Table length=1</i>
-    <table id="table140676961858752" class="table-striped table-bordered table-condensed">
+    <table id="table140678647315856" class="table-striped table-bordered table-condensed">
     <thead><tr><th>Local Path</th><th>Status</th><th>Message</th><th>URL</th></tr></thead>
     <thead><tr><th>str98</th><th>str8</th><th>object</th><th>object</th></tr></thead>
     <tr><td>./mastDownload/JWST/jw02107041001_02101_00001_nrcblong/jw02107041001_02101_00001_nrcblong_cal.fits</td><td>COMPLETE</td><td>None</td><td>None</td></tr>
@@ -119,7 +119,7 @@ the code will also work for level 3 data images.
 **Examine the Reference Image**
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 59-70
+.. GENERATED FROM PYTHON SOURCE LINES 59-71
 
 .. code-block:: default
 
@@ -132,6 +132,7 @@ the code will also work for level 3 data images.
 
     plt.imshow(ref_data, origin='lower',
                           norm=norm1,cmap='gray')
+    plt.gca().tick_params(labelcolor='none',axis='both',color='none')
     plt.show()
 
 
@@ -146,7 +147,7 @@ the code will also work for level 3 data images.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 71-77
+.. GENERATED FROM PYTHON SOURCE LINES 72-78
 
 **Zoom in to see the offset**
 
@@ -155,7 +156,7 @@ same star in both images at the same ra/dec
 location, demonstrating a large offset between
 the images.  
 
-.. GENERATED FROM PYTHON SOURCE LINES 77-104
+.. GENERATED FROM PYTHON SOURCE LINES 78-105
 
 .. code-block:: default
 
@@ -219,14 +220,14 @@ the images.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 105-109
+.. GENERATED FROM PYTHON SOURCE LINES 106-110
 
 **Create a Photometric Catalog for Relative Alignment**
 
 We choose one of the images to be the reference image, and then 
 create a catalog that we will use to align the other image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 109-116
+.. GENERATED FROM PYTHON SOURCE LINES 110-117
 
 .. code-block:: default
 
@@ -248,7 +249,6 @@ create a catalog that we will use to align the other image.
 
     ### Doing photometry on mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.fits
     photometry catalog filename: mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.phot.txt
-    photcat mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.phot.txt already exists, but recreating it since overwrite=True
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/wcs/wcs.py:725: FITSFixedWarning: 'datfix' made the change 'Set DATE-BEG to '2022-07-06T19:16:42.721' from MJD-BEG.
     Set DATE-AVG to '2022-07-06T19:17:14.932' from MJD-AVG.
     Set DATE-END to '2022-07-06T19:17:47.142' from MJD-END'.
@@ -285,7 +285,7 @@ create a catalog that we will use to align the other image.
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/units/function/logarithmic.py:47: RuntimeWarning: invalid value encountered in log10
       return dex.to(self._function_unit, np.log10(x))
-    Time Elapsed: 2.924353168986272
+    Time Elapsed: 2.4426772769656964
     4363 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 1697 objects left after removing entries dmag>0.36200000000000004 (SNR<3.0)
     1697 out of 4363 entries remain in photometry table
@@ -331,7 +331,7 @@ create a catalog that we will use to align the other image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 117-122
+.. GENERATED FROM PYTHON SOURCE LINES 118-123
 
 **Align the second image**
 
@@ -339,7 +339,7 @@ The plots outputted here show the various steps used by jhat to
 determine the true matching sources in the image, and the
 subsequent correction needed for optimal alignment.
 
-.. GENERATED FROM PYTHON SOURCE LINES 122-145
+.. GENERATED FROM PYTHON SOURCE LINES 123-146
 
 .. code-block:: default
 
@@ -451,7 +451,7 @@ subsequent correction needed for optimal alignment.
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/units/function/logarithmic.py:47: RuntimeWarning: invalid value encountered in log10
       return dex.to(self._function_unit, np.log10(x))
-    Time Elapsed: 2.849201640987303
+    Time Elapsed: 2.141832253022585
     4081 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 3488 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     3488 out of 4081 entries remain in photometry table
@@ -1378,7 +1378,7 @@ subsequent correction needed for optimal alignment.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 146-151
+.. GENERATED FROM PYTHON SOURCE LINES 147-152
 
 **Check the Output**
 
@@ -1386,7 +1386,7 @@ The reference image has not changed, but let's read in the newly
 aligned image and compare with the original. 
 subsequent correction needed for optimal alignment.
 
-.. GENERATED FROM PYTHON SOURCE LINES 151-175
+.. GENERATED FROM PYTHON SOURCE LINES 152-176
 
 .. code-block:: default
 
@@ -1435,7 +1435,7 @@ subsequent correction needed for optimal alignment.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 176-183
+.. GENERATED FROM PYTHON SOURCE LINES 177-184
 
 ----------------
 Align to Catalog
@@ -1445,7 +1445,7 @@ You can also align each image to the Gaia DR3 catalog, or you
 could replace the catalog created in step one with your own
 catalog of the field. 
 
-.. GENERATED FROM PYTHON SOURCE LINES 184-218
+.. GENERATED FROM PYTHON SOURCE LINES 185-219
 
 .. code-block:: default
 
@@ -1561,7 +1561,7 @@ catalog of the field.
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/units/function/logarithmic.py:47: RuntimeWarning: invalid value encountered in log10
       return dex.to(self._function_unit, np.log10(x))
-    Time Elapsed: 2.635318946035113
+    Time Elapsed: 2.2447370819863863
     4081 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 3488 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     3488 out of 4081 entries remain in photometry table
@@ -2488,7 +2488,7 @@ catalog of the field.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  48.410 seconds)
+   **Total running time of the script:** ( 0 minutes  55.294 seconds)
 
 
 .. _sphx_glr_download_examples_plot_b_nircam.py:

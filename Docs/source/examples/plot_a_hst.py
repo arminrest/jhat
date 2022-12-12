@@ -69,6 +69,7 @@ norm1 = simple_norm(ref_data,stretch='log',min_cut=-1,max_cut=15)
 
 plt.imshow(ref_data, origin='lower',
                       norm=norm1,cmap='gray')
+plt.gca().tick_params(labelcolor='none',axis='both',color='none')
 plt.show()
 
 ####################################################################
