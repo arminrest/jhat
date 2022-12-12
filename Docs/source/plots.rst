@@ -29,3 +29,16 @@ The second important set of plots comes from the selection of good matches betwe
     :align: center
     :height: 800px
     :alt: alternate text
+
+Finally, we can check what the alignment did by observing the pre and post wcs-correction plots.
+
+.. image:: _static/cut_plot4.png
+    :width: 1000px
+    :align: center
+    :height: 800px
+    :alt: alternate text
+.. image:: _static/cut_plot5.png
+    :width: 1000px
+    :align: center
+    :height: 800px
+    :alt: alternate text

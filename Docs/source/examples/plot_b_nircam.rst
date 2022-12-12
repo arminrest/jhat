@@ -18,15 +18,15 @@
 .. _sphx_glr_examples_plot_b_nircam.py:
 
 
-=========
-JWST MIRI
-=========
+===========
+JWST NIRCAM
+===========
 
-Aligning JWST/MIRI images with JHAT.
+Aligning JWST/NIRCAM images with JHAT.
 
 .. GENERATED FROM PYTHON SOURCE LINES 10-14
 
-An example MIRI Dataset is downloaded, and then a series of
+An example NIRCam Dataset is downloaded, and then a series of
 alignment methods are used. For more information on the
 key parameters used for alignment see 
 :ref:`params:Useful Parameters`.
@@ -61,7 +61,7 @@ key parameters used for alignment see
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 34-47
+.. GENERATED FROM PYTHON SOURCE LINES 34-43
 
 ------------------
 Relative Alignment
@@ -69,15 +69,11 @@ Relative Alignment
 
 **Download some Data**
 
-For this example we download 2 HST DRZ images from MAST. They're
-the same filter and same field, just separated in time. Note that 
-the code will also work for drizzled images.
-obs_table1 = Observations.query_object('23:09:44.0809 -43:26:05.613')
-obs_table1 = obs_table1[obs_table1['instrument_name']=='NIRCAM']
-print(list(zip(obs_table1['filters'],obs_table1['obs_id'])))
-sys.exit()
+For this example we download 2 JWST NIRCam images from MAST. They're
+the same field but different filters. Note that 
+the code will also work for level 3 data images.
 
-.. GENERATED FROM PYTHON SOURCE LINES 48-60
+.. GENERATED FROM PYTHON SOURCE LINES 44-56
 
 .. code-block:: default
 
@@ -101,15 +97,15 @@ sys.exit()
 
  .. code-block:: none
 
-    Downloading URL https://mast.stsci.edu/api/v0.1/Download/file?uri=mast:JWST/product/jw02107041001_02101_00001_nrcb1_cal.fits to ./mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.fits ... [Done]
-    Downloading URL https://mast.stsci.edu/api/v0.1/Download/file?uri=mast:JWST/product/jw02107041001_02101_00001_nrcblong_cal.fits to ./mastDownload/JWST/jw02107041001_02101_00001_nrcblong/jw02107041001_02101_00001_nrcblong_cal.fits ... [Done]
+    INFO: Found cached file ./mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.fits with expected size 117538560. [astroquery.query]
+    INFO: Found cached file ./mastDownload/JWST/jw02107041001_02101_00001_nrcblong/jw02107041001_02101_00001_nrcblong_cal.fits with expected size 117538560. [astroquery.query]
 
 
 .. raw:: html
 
     <div class="output_subarea output_html rendered_html output_result">
     <div><i>Table length=1</i>
-    <table id="table140389066550688" class="table-striped table-bordered table-condensed">
+    <table id="table140676961858752" class="table-striped table-bordered table-condensed">
     <thead><tr><th>Local Path</th><th>Status</th><th>Message</th><th>URL</th></tr></thead>
     <thead><tr><th>str98</th><th>str8</th><th>object</th><th>object</th></tr></thead>
     <tr><td>./mastDownload/JWST/jw02107041001_02101_00001_nrcblong/jw02107041001_02101_00001_nrcblong_cal.fits</td><td>COMPLETE</td><td>None</td><td>None</td></tr>
@@ -118,12 +114,12 @@ sys.exit()
     <br />
     <br />
 
-.. GENERATED FROM PYTHON SOURCE LINES 61-63
+.. GENERATED FROM PYTHON SOURCE LINES 57-59
 
 **Examine the Reference Image**
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 63-74
+.. GENERATED FROM PYTHON SOURCE LINES 59-70
 
 .. code-block:: default
 
@@ -132,7 +128,7 @@ sys.exit()
 
     ref_fits = fits.open(ref_image)
     ref_data = fits.open(ref_image)['SCI',1].data
-    norm1 = simple_norm(ref_data,stretch='log',min_cut=5,max_cut=25)
+    norm1 = simple_norm(ref_data,stretch='linear',min_cut=-.5,max_cut=3)
 
     plt.imshow(ref_data, origin='lower',
                           norm=norm1,cmap='gray')
@@ -150,7 +146,7 @@ sys.exit()
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 75-81
+.. GENERATED FROM PYTHON SOURCE LINES 71-77
 
 **Zoom in to see the offset**
 
@@ -159,15 +155,15 @@ same star in both images at the same ra/dec
 location, demonstrating a large offset between
 the images.  
 
-.. GENERATED FROM PYTHON SOURCE LINES 81-108
+.. GENERATED FROM PYTHON SOURCE LINES 77-104
 
 .. code-block:: default
 
     star_location = SkyCoord('23:09:41.0532','-43:26:41.128',unit=(u.hourangle,u.deg))
     align_image = glob.glob('mastDownload/JWST/*long*/*cal.fits')[0]
     align_fits = fits.open(align_image)
-    #align_fits['SCI',1].header['CRPIX1']+=2
-    #align_fits['SCI',1].header['CRPIX2']+=2
+    align_fits['SCI',1].header['CRPIX1']+=1
+    align_fits['SCI',1].header['CRPIX2']+=1
     align_fits.writeto(align_image,overwrite=True)
 
     align_data = fits.open(align_image)['SCI',1].data
@@ -176,8 +172,8 @@ the images.
 
     ref_cutout = extract_array(ref_data,(11,11),(ref_x,ref_y))
     align_cutout = extract_array(align_data,(11,11),(align_x,align_y))
-    norm1 = simple_norm(ref_cutout,stretch='log',min_cut=-1,max_cut=200)
-    norm2 = simple_norm(align_cutout,stretch='log',min_cut=-1,max_cut=200)
+    norm1 = simple_norm(ref_cutout,stretch='linear',min_cut=-.5,max_cut=3)
+    norm2 = simple_norm(align_cutout,stretch='linear',min_cut=-.5,max_cut=3)
     fig,axes = plt.subplots(1,2)
     axes[0].imshow(ref_cutout, origin='lower',
                           norm=norm1,cmap='gray')
@@ -223,14 +219,14 @@ the images.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 109-113
+.. GENERATED FROM PYTHON SOURCE LINES 105-109
 
 **Create a Photometric Catalog for Relative Alignment**
 
 We choose one of the images to be the reference image, and then 
 create a catalog that we will use to align the other image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 113-120
+.. GENERATED FROM PYTHON SOURCE LINES 109-116
 
 .. code-block:: default
 
@@ -252,6 +248,7 @@ create a catalog that we will use to align the other image.
 
     ### Doing photometry on mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.fits
     photometry catalog filename: mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.phot.txt
+    photcat mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.phot.txt already exists, but recreating it since overwrite=True
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/wcs/wcs.py:725: FITSFixedWarning: 'datfix' made the change 'Set DATE-BEG to '2022-07-06T19:16:42.721' from MJD-BEG.
     Set DATE-AVG to '2022-07-06T19:17:14.932' from MJD-AVG.
     Set DATE-END to '2022-07-06T19:17:47.142' from MJD-END'.
@@ -288,7 +285,7 @@ create a catalog that we will use to align the other image.
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/units/function/logarithmic.py:47: RuntimeWarning: invalid value encountered in log10
       return dex.to(self._function_unit, np.log10(x))
-    Time Elapsed: 2.4236966529861093
+    Time Elapsed: 2.924353168986272
     4363 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 1697 objects left after removing entries dmag>0.36200000000000004 (SNR<3.0)
     1697 out of 4363 entries remain in photometry table
@@ -334,7 +331,7 @@ create a catalog that we will use to align the other image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 121-126
+.. GENERATED FROM PYTHON SOURCE LINES 117-122
 
 **Align the second image**
 
@@ -342,7 +339,7 @@ The plots outputted here show the various steps used by jhat to
 determine the true matching sources in the image, and the
 subsequent correction needed for optimal alignment.
 
-.. GENERATED FROM PYTHON SOURCE LINES 126-149
+.. GENERATED FROM PYTHON SOURCE LINES 122-145
 
 .. code-block:: default
 
@@ -454,7 +451,7 @@ subsequent correction needed for optimal alignment.
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/units/function/logarithmic.py:47: RuntimeWarning: invalid value encountered in log10
       return dex.to(self._function_unit, np.log10(x))
-    Time Elapsed: 2.556265685998369
+    Time Elapsed: 2.849201640987303
     4081 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 3488 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     3488 out of 4081 entries remain in photometry table
@@ -1381,7 +1378,7 @@ subsequent correction needed for optimal alignment.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 150-155
+.. GENERATED FROM PYTHON SOURCE LINES 146-151
 
 **Check the Output**
 
@@ -1389,7 +1386,7 @@ The reference image has not changed, but let's read in the newly
 aligned image and compare with the original. 
 subsequent correction needed for optimal alignment.
 
-.. GENERATED FROM PYTHON SOURCE LINES 155-179
+.. GENERATED FROM PYTHON SOURCE LINES 151-175
 
 .. code-block:: default
 
@@ -1400,7 +1397,7 @@ subsequent correction needed for optimal alignment.
     aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))
     aligned_cutout = extract_array(aligned_data,(11,11),(aligned_x,aligned_y))
 
-    norm3 = simple_norm(aligned_cutout,stretch='log',min_cut=-1,max_cut=200)
+    norm3 = simple_norm(aligned_cutout,stretch='linear',min_cut=-.5,max_cut=3)
     fig,axes = plt.subplots(1,3)
     axes[0].imshow(ref_cutout, origin='lower',
                           norm=norm1,cmap='gray')
@@ -1438,7 +1435,7 @@ subsequent correction needed for optimal alignment.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 180-187
+.. GENERATED FROM PYTHON SOURCE LINES 176-183
 
 ----------------
 Align to Catalog
@@ -1448,7 +1445,7 @@ You can also align each image to the Gaia DR3 catalog, or you
 could replace the catalog created in step one with your own
 catalog of the field. 
 
-.. GENERATED FROM PYTHON SOURCE LINES 188-222
+.. GENERATED FROM PYTHON SOURCE LINES 184-218
 
 .. code-block:: default
 
@@ -1473,7 +1470,7 @@ catalog of the field.
     aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))
     aligned_cutout = extract_array(aligned_data,(11,11),(aligned_x,aligned_y))
 
-    norm3 = simple_norm(aligned_cutout,stretch='log',min_cut=-1,max_cut=200)
+    norm3 = simple_norm(aligned_cutout,stretch='linear',min_cut=-.5,max_cut=3)
     fig,axes = plt.subplots(1,2)
     axes[0].imshow(align_cutout, origin='lower',
                           norm=norm2,cmap='gray')
@@ -1564,7 +1561,7 @@ catalog of the field.
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/units/function/logarithmic.py:47: RuntimeWarning: invalid value encountered in log10
       return dex.to(self._function_unit, np.log10(x))
-    Time Elapsed: 2.467197443009354
+    Time Elapsed: 2.635318946035113
     4081 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 3488 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     3488 out of 4081 entries remain in photometry table
@@ -2491,7 +2488,7 @@ catalog of the field.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 1 minutes  29.115 seconds)
+   **Total running time of the script:** ( 0 minutes  48.410 seconds)
 
 
 .. _sphx_glr_download_examples_plot_b_nircam.py:

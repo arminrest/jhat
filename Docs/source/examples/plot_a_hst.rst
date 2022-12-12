@@ -61,7 +61,7 @@ key parameters used for alignment see
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 34-43
+.. GENERATED FROM PYTHON SOURCE LINES 34-42
 
 ------------------
 Relative Alignment
@@ -70,10 +70,9 @@ Relative Alignment
 **Download some Data**
 
 For this example we download 2 HST DRZ images from MAST. They're
-the same filter and same field, just separated in time. Note that 
-the code will also work for drizzled images.
+the same filter and same field, just separated in time. 
 
-.. GENERATED FROM PYTHON SOURCE LINES 44-61
+.. GENERATED FROM PYTHON SOURCE LINES 43-60
 
 .. code-block:: default
 
@@ -110,7 +109,7 @@ the code will also work for drizzled images.
 
     <div class="output_subarea output_html rendered_html output_result">
     <div><i>Table length=1</i>
-    <table id="table140233643448288" class="table-striped table-bordered table-condensed">
+    <table id="table140579818555376" class="table-striped table-bordered table-condensed">
     <thead><tr><th>Local Path</th><th>Status</th><th>Message</th><th>URL</th></tr></thead>
     <thead><tr><th>str95</th><th>str8</th><th>object</th><th>object</th></tr></thead>
     <tr><td>./mastDownload/HST/hst_16264_15_wfc3_ir_f110w_iebc15/hst_16264_15_wfc3_ir_f110w_iebc15_drz.fits</td><td>COMPLETE</td><td>None</td><td>None</td></tr>
@@ -119,12 +118,12 @@ the code will also work for drizzled images.
     <br />
     <br />
 
-.. GENERATED FROM PYTHON SOURCE LINES 62-64
+.. GENERATED FROM PYTHON SOURCE LINES 61-63
 
 **Examine the Reference Image**
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 64-75
+.. GENERATED FROM PYTHON SOURCE LINES 63-74
 
 .. code-block:: default
 
@@ -151,7 +150,7 @@ the code will also work for drizzled images.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 76-82
+.. GENERATED FROM PYTHON SOURCE LINES 75-81
 
 **Zoom in to see the offset**
 
@@ -160,7 +159,7 @@ same star in both images at the same ra/dec
 location, demonstrating a large offset between
 the images.  
 
-.. GENERATED FROM PYTHON SOURCE LINES 82-110
+.. GENERATED FROM PYTHON SOURCE LINES 81-109
 
 .. code-block:: default
 
@@ -204,14 +203,14 @@ the images.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 111-115
+.. GENERATED FROM PYTHON SOURCE LINES 110-114
 
 **Create a Photometric Catalog for Relative Alignment**
 
 We choose one of the images to be the reference image, and then 
 create a catalog that we will use to align the other image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 115-122
+.. GENERATED FROM PYTHON SOURCE LINES 114-121
 
 .. code-block:: default
 
@@ -249,7 +248,7 @@ create a catalog that we will use to align the other image.
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1779: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 1.117840976046864
+    Time Elapsed: 1.1743992759729736
     996 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 769 objects left after removing entries dmag>0.36200000000000004 (SNR<3.0)
     769 out of 996 entries remain in photometry table
@@ -295,7 +294,7 @@ create a catalog that we will use to align the other image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 123-128
+.. GENERATED FROM PYTHON SOURCE LINES 122-127
 
 **Align the second image**
 
@@ -303,7 +302,7 @@ The plots outputted here show the various steps used by jhat to
 determine the true matching sources in the image, and the
 subsequent correction needed for optimal alignment.
 
-.. GENERATED FROM PYTHON SOURCE LINES 128-151
+.. GENERATED FROM PYTHON SOURCE LINES 127-150
 
 .. code-block:: default
 
@@ -382,7 +381,7 @@ subsequent correction needed for optimal alignment.
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1779: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 1.017577344959136
+    Time Elapsed: 1.0596035110065714
     947 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 733 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     733 out of 947 entries remain in photometry table
@@ -1539,7 +1538,7 @@ subsequent correction needed for optimal alignment.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 152-157
+.. GENERATED FROM PYTHON SOURCE LINES 151-156
 
 **Check the Output**
 
@@ -1547,7 +1546,7 @@ The reference image has not changed, but let's read in the newly
 aligned image and compare with the original. 
 subsequent correction needed for optimal alignment.
 
-.. GENERATED FROM PYTHON SOURCE LINES 157-182
+.. GENERATED FROM PYTHON SOURCE LINES 156-181
 
 .. code-block:: default
 
@@ -1588,7 +1587,7 @@ subsequent correction needed for optimal alignment.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 183-190
+.. GENERATED FROM PYTHON SOURCE LINES 182-189
 
 -------------
 Align to Gaia
@@ -1598,7 +1597,7 @@ You can also align each image to the Gaia DR3 catalog, or you
 could replace the catalog created in step one with your own
 catalog of the field. 
 
-.. GENERATED FROM PYTHON SOURCE LINES 191-226
+.. GENERATED FROM PYTHON SOURCE LINES 190-225
 
 .. code-block:: default
 
@@ -1682,7 +1681,7 @@ catalog of the field.
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1779: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 1.0219029110157862
+    Time Elapsed: 0.9912956610205583
     947 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 733 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     733 out of 947 entries remain in photometry table
@@ -2802,7 +2801,7 @@ catalog of the field.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 227-234
+.. GENERATED FROM PYTHON SOURCE LINES 226-233
 
 -------------
 Large Offsets
@@ -2812,7 +2811,7 @@ Sometimes the initial images are so poorly aligned, that the code
 fails. Here we read in the same image as in the first example,
 and add an additional 3 pixel offset in the wcs. 
 
-.. GENERATED FROM PYTHON SOURCE LINES 235-287
+.. GENERATED FROM PYTHON SOURCE LINES 234-286
 
 .. code-block:: default
 
@@ -2927,7 +2926,7 @@ and add an additional 3 pixel offset in the wcs.
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1779: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 0.9952844349900261
+    Time Elapsed: 0.9997446210472845
     947 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 733 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     733 out of 947 entries remain in photometry table
@@ -4038,14 +4037,14 @@ and add an additional 3 pixel offset in the wcs.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 288-292
+.. GENERATED FROM PYTHON SOURCE LINES 287-291
 
 This is what a failure looks like (compare to the plots above).
 There are now a couple of options here. You can increase the 
 d2d_max parameter, which increases the allowed distance between 
 sources being matched in the reference and target images:
 
-.. GENERATED FROM PYTHON SOURCE LINES 293-338
+.. GENERATED FROM PYTHON SOURCE LINES 292-337
 
 .. code-block:: default
 
@@ -4153,7 +4152,7 @@ sources being matched in the reference and target images:
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1779: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 0.9276840669917874
+    Time Elapsed: 0.9384188990225084
     947 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 733 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     733 out of 947 entries remain in photometry table
@@ -5284,12 +5283,12 @@ sources being matched in the reference and target images:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 339-341
+.. GENERATED FROM PYTHON SOURCE LINES 338-340
 
 Or you can apply a rough guess for the offset, and then use a
 smaller d2d_max for matching:
 
-.. GENERATED FROM PYTHON SOURCE LINES 342-387
+.. GENERATED FROM PYTHON SOURCE LINES 341-386
 
 .. code-block:: default
 
@@ -5397,7 +5396,7 @@ smaller d2d_max for matching:
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1779: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 0.9107083220151253
+    Time Elapsed: 0.8780295850010589
     947 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 733 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     733 out of 947 entries remain in photometry table
@@ -6552,7 +6551,7 @@ smaller d2d_max for matching:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  48.016 seconds)
+   **Total running time of the script:** ( 0 minutes  40.266 seconds)
 
 
 .. _sphx_glr_download_examples_plot_a_hst.py:

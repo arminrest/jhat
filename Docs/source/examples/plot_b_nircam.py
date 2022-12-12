@@ -1,13 +1,13 @@
 """
-=========
-JWST MIRI
-=========
+===========
+JWST NIRCAM
+===========
 
-Aligning JWST/MIRI images with JHAT.
+Aligning JWST/NIRCAM images with JHAT.
 """
 	
 ###############################################################
-# An example MIRI Dataset is downloaded, and then a series of
+# An example NIRCam Dataset is downloaded, and then a series of
 # alignment methods are used. For more information on the
 # key parameters used for alignment see 
 # :ref:`params:Useful Parameters`.
@@ -38,13 +38,9 @@ from jhat import jwst_photclass,st_wcs_align
 #
 # **Download some Data**
 #
-# For this example we download 2 HST DRZ images from MAST. They're
-# the same filter and same field, just separated in time. Note that 
-# the code will also work for drizzled images.
-# obs_table1 = Observations.query_object('23:09:44.0809 -43:26:05.613')
-# obs_table1 = obs_table1[obs_table1['instrument_name']=='NIRCAM']
-# print(list(zip(obs_table1['filters'],obs_table1['obs_id'])))
-# sys.exit()
+# For this example we download 2 JWST NIRCam images from MAST. They're
+# the same field but different filters. Note that 
+# the code will also work for level 3 data images.
 obs_table1 = Observations.query_criteria(obs_id='jw02107-o041_t019_nircam_clear-f200w')
 data_products_by_obs = Observations.get_product_list(obs_table1)
 data_products_by_obs = data_products_by_obs[data_products_by_obs['calib_level']==2]
@@ -65,7 +61,7 @@ ref_image = glob.glob('mastDownload/JWST/*nrcb1*/*cal.fits')[0]
 
 ref_fits = fits.open(ref_image)
 ref_data = fits.open(ref_image)['SCI',1].data
-norm1 = simple_norm(ref_data,stretch='log',min_cut=5,max_cut=25)
+norm1 = simple_norm(ref_data,stretch='linear',min_cut=-.5,max_cut=3)
 
 plt.imshow(ref_data, origin='lower',
                       norm=norm1,cmap='gray')
@@ -81,8 +77,8 @@ plt.show()
 star_location = SkyCoord('23:09:41.0532','-43:26:41.128',unit=(u.hourangle,u.deg))
 align_image = glob.glob('mastDownload/JWST/*long*/*cal.fits')[0]
 align_fits = fits.open(align_image)
-#align_fits['SCI',1].header['CRPIX1']+=2
-#align_fits['SCI',1].header['CRPIX2']+=2
+align_fits['SCI',1].header['CRPIX1']+=1
+align_fits['SCI',1].header['CRPIX2']+=1
 align_fits.writeto(align_image,overwrite=True)
 
 align_data = fits.open(align_image)['SCI',1].data
@@ -91,8 +87,8 @@ align_y,align_x = skycoord_to_pixel(star_location,wcs.WCS(align_fits['SCI',1],al
 
 ref_cutout = extract_array(ref_data,(11,11),(ref_x,ref_y))
 align_cutout = extract_array(align_data,(11,11),(align_x,align_y))
-norm1 = simple_norm(ref_cutout,stretch='log',min_cut=-1,max_cut=200)
-norm2 = simple_norm(align_cutout,stretch='log',min_cut=-1,max_cut=200)
+norm1 = simple_norm(ref_cutout,stretch='linear',min_cut=-.5,max_cut=3)
+norm2 = simple_norm(align_cutout,stretch='linear',min_cut=-.5,max_cut=3)
 fig,axes = plt.subplots(1,2)
 axes[0].imshow(ref_cutout, origin='lower',
                       norm=norm1,cmap='gray')
@@ -159,7 +155,7 @@ aligned_data = fits.open(aligned_image)['SCI',1].data
 aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))
 aligned_cutout = extract_array(aligned_data,(11,11),(aligned_x,aligned_y))
 
-norm3 = simple_norm(aligned_cutout,stretch='log',min_cut=-1,max_cut=200)
+norm3 = simple_norm(aligned_cutout,stretch='linear',min_cut=-.5,max_cut=3)
 fig,axes = plt.subplots(1,3)
 axes[0].imshow(ref_cutout, origin='lower',
                       norm=norm1,cmap='gray')
@@ -206,7 +202,7 @@ aligned_data = fits.open(aligned_image)['SCI',1].data
 aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))
 aligned_cutout = extract_array(aligned_data,(11,11),(aligned_x,aligned_y))
 
-norm3 = simple_norm(aligned_cutout,stretch='log',min_cut=-1,max_cut=200)
+norm3 = simple_norm(aligned_cutout,stretch='linear',min_cut=-.5,max_cut=3)
 fig,axes = plt.subplots(1,2)
 axes[0].imshow(align_cutout, origin='lower',
                       norm=norm2,cmap='gray')

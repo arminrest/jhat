@@ -39,8 +39,7 @@ from jhat import hst_photclass,st_wcs_align
 # **Download some Data**
 #
 # For this example we download 2 HST DRZ images from MAST. They're
-# the same filter and same field, just separated in time. Note that 
-# the code will also work for drizzled images.
+# the same filter and same field, just separated in time. 
 
 obs_table = Observations.query_criteria(obs_id='hst_16264_12_wfc3_ir_f110w_iebc12')
 obs_table1 = obs_table[obs_table['filters']=='F110W']
