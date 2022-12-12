@@ -833,15 +833,6 @@ class st_wcs_align:
         self.phot.ixs4use=None            
         if self.verbose: print(f'telescope set to {self.telescope}')
 
-    def set_outdir(self,outrootdir=None,outsubdir=None):
-        self.outdir = outrootdir
-        if self.outdir is None: self.outdir = '.'
-        
-        if outsubdir is not None:
-            self.outdir+=f'/{outsubdir}'
-        
-        return(self.outdir)
-
     def set_outbasename(self,outrootdir=None,outsubdir=None,outbasename=None,inputname=None):
         self.outdir = outrootdir
         if self.outdir is None: self.outdir = '.'
@@ -902,12 +893,23 @@ class st_wcs_align:
         cal_image = datamodels.open(imfilename)
 
         if outputfits is None:
-            outputfits = re.sub('_[a-zA-Z0-9]+\.fits$','_jhat.fits',os.path.basename(imfilename))
-            if outputfits == imfilename:
-                raise RuntimeError('could not determine tweakreg filename for {imfilename}')
-            outputfits = f'{outdir}/{outputfits}'
-        print(f'output fits image: {outputfits}')
-        print(f'Setting output directory for tweakregstep.fits file to {outdir}')
+            shortoutputfits = re.sub('_[a-zA-Z0-9]+\.fits$','_jhat.fits',os.path.basename(imfilename))
+            if shortoutputfits == os.path.basename(imfilename):
+                raise RuntimeError('could not determine output filename for {imfilename}')
+            # if outdir is None, try to determine it!
+            if outdir is None:
+                outdir = self.outdir
+            if outdir is None:
+                outdir = os.path.dirname(imfilename)
+            if outdir is None:
+                raise RuntimeError('Could not determine outdir!')
+            outputfits = f'{outdir}/{shortoutputfits}'
+        else:
+            (outdir,shortoutputfits) = os.path.split(outputfits)
+            
+            
+            
+        print(f'Setting output directory for {outputfits} file to {outdir}')
         tweakreg.output_dir = outdir
         if not os.path.isdir(outdir):
             makepath(outdir)
@@ -963,7 +965,7 @@ class st_wcs_align:
         
         cal_data = [datamodels.open(cal_image)]
         tweakreg.input_file = imfilename
-        tweakreg.output_file = outputfits
+        tweakreg.output_file = shortoutputfits
         tweakreg.run(cal_data)
 
         if not os.path.isfile(outputfits):
