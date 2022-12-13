@@ -834,79 +834,31 @@ class st_wcs_align:
         self.phot.ixs4use=None            
         if self.verbose: print(f'telescope set to {self.telescope}')
 
-    def set_outdir(self,outrootdir=None,outsubdir=None):
+    def set_outbasename(self,outrootdir=None,outsubdir=None,outbasename=None,inputname=None):
         self.outdir = outrootdir
         if self.outdir is None: self.outdir = '.'
         
         if outsubdir is not None:
             self.outdir+=f'/{outsubdir}'
         
-        return(self.outdir)
-
-    # make some rough cuts on dmag, d2d, and Nbright
-    # sets phot.ixs_use and phot.ixs_notuse
-    def initial_cut(self, phot=None, d2d_max=None,dmag_max=None,
-                    sharpness_lim = (None, None), # sharpness limits
-                    roundness1_lim = (None, None), # roundness1 limits 
-                    delta_mag_lim = (None,None), # limits on mag - refcat_mainfilter!
-                    objmag_lim = (None,None), # limits on mag, the magnitude of the objects in the image
-                    refmag_lim = (None,None), # limits on refcat_mainfilter, the magnitude of the reference catalog                    
-                    Nbright=None, ixs=None):
-        if phot is None:
-            phot=self.phot
-            
-        ixs = phot.getindices(ixs)
-        ixs_use = copy.deepcopy(ixs)
+        self.outbasename = self.outdir
         
-        print(f'########### !!!!!!!!!!  INITIAL CUT: starting with {len(ixs)} objects')
+        if outbasename is not None:
+            self.outbasename += f'/{os.path.basename(outbasename)}'
+        else:
+            if inputname is not None:
+                inputname = os.path.basename(inputname)
+                inputbasename = re.sub('\.fits$','',inputname)
+                if inputbasename == inputname:
+                    raise RuntimeError(f'Cound not strip ".fits" from {inputname}')
+                self.outbasename += f'/{inputbasename}'
+            else:
+                RuntimeError('Could not determinev outputbasename, neither image nor basename passed to routine')
         
-        if d2d_max is not None:
-            print(f'd2d ={d2d_max} CUT:')
-            d2d_colname = f'{phot.refcat.short}_d2d'
-            ixs_use = phot.ix_inrange(d2d_colname,None,d2d_max,indices=ixs_use)
-            print(f'{len(ixs_use)} left')
-        if dmag_max is not None:
-            print(f'dmag_max ={dmag_max} CUT:')
-            ixs_use = phot.ix_inrange('dmag',None,dmag_max,indices=ixs_use)
-            print(f'{len(ixs_use)} left')
-        if (sharpness_lim[0] is not None) or (sharpness_lim[1] is not None):
-            print(f'SHARPNESS ={sharpness_lim} CUT:')
-            ixs_use = phot.ix_inrange('sharpness',sharpness_lim[0],sharpness_lim[1],indices=ixs_use)
-            print(f'{len(ixs_use)} left')
-        if (roundness1_lim[0] is not None) or (roundness1_lim[1] is not None):
-            print(f'roundness1={roundness1_lim} CUT:')
-            ixs_use = phot.ix_inrange('roundness1',roundness1_lim[0],roundness1_lim[1],indices=ixs_use)
-            print(f'{len(ixs_use)} left')
-        if (objmag_lim[0] is not None) or (objmag_lim[1] is not None):
-            print(f'objmag_lim={objmag_lim} CUT:')
-            ixs_use = phot.ix_inrange('mag',objmag_lim[0],objmag_lim[1],indices=ixs_use)
-            print(f'{len(ixs_use)} left')
-        if (delta_mag_lim[0] is not None) or (delta_mag_lim[1] is not None):
-            print(f'delta_mag_lim={delta_mag_lim} CUT:')
-            if phot.refcat_mainfilter is None:
-                raise RuntimeError('Cannot do delta_mag cut since the refcat_mainfilter is not defined!')
-            ixs_use = phot.ix_inrange('delta_mag',delta_mag_lim[0],delta_mag_lim[1],indices=ixs_use)
-            print(f'{len(ixs_use)} left')
-        if (refmag_lim[0] is not None) or (refmag_lim[1] is not None):
-            print(f'refmag_lim={refmag_lim} CUT:')
-            if phot.refcat_mainfilter is None:
-                raise RuntimeError('Cannot do refmag_lim cut since the refcat_mainfilter is not defined!')
-            ixs_use = phot.ix_inrange(phot.refcat_mainfilter,refmag_lim[0],refmag_lim[1],indices=ixs_use)
-            print(f'{len(ixs_use)} left')
-        if Nbright is not None:
-            print(f'Nbright={Nbright} CUT:')
-            ixs_sort = phot.ix_sort_by_cols(['mag'],indices=ixs_use)
-            ixs_use = ixs_sort[:Nbright]
-            print(f'{len(ixs_use)} left')
-            
-        print(f'# of matched objects that pass initial cuts: {len(ixs_use)}')
-        
-        ixs_notuse = AnotB(ixs,ixs_use)
-        phot.ixs_use = ixs_use
-        phot.ixs_notuse = ixs_notuse
-        return(phot.ixs_use)
+        return(self.outbasename)
         
     def run_align2refcat(self,imfilename,
+                         outputfits=None,
                          phot=None,
                          ixs=None,
 #                         refcat_short=None,
@@ -941,27 +893,39 @@ class st_wcs_align:
         tweakreg = tweakreg_hack.TweakRegStep()
         cal_image = datamodels.open(imfilename)
 
-        tweakregfilename = re.sub('_[a-zA-Z0-9]+\.fits$','_tweakregstep.fits',os.path.basename(imfilename))
-        if tweakregfilename == imfilename:
-            raise RuntimeError('could not determine tweakreg filename for {imfilename}')
-        tweakregfilename = f'{outdir}/{tweakregfilename}'
-        print(f'{tweakregfilename}')
-        print(f'Setting output directory for tweakregstep.fits file to {outdir}')
+        if outputfits is None:
+            shortoutputfits = re.sub('_[a-zA-Z0-9]+\.fits$','_jhat.fits',os.path.basename(imfilename))
+            if shortoutputfits == os.path.basename(imfilename):
+                raise RuntimeError('could not determine output filename for {imfilename}')
+            # if outdir is None, try to determine it!
+            if outdir is None:
+                outdir = self.outdir
+            if outdir is None:
+                outdir = os.path.dirname(imfilename)
+            if outdir is None:
+                raise RuntimeError('Could not determine outdir!')
+            outputfits = f'{outdir}/{shortoutputfits}'
+        else:
+            (outdir,shortoutputfits) = os.path.split(outputfits)
+            
+            
+            
+        print(f'Setting output directory for {outputfits} file to {outdir}')
         tweakreg.output_dir = outdir
         if not os.path.isdir(outdir):
             makepath(outdir)
         
-        if os.path.isfile(tweakregfilename):
+        if os.path.isfile(outputfits):
             if not overwrite:
                 if skip_if_exists:
                     # return False means that rate2cal did not run
-                    print(f'Image {tweakregfilename} already exists, skipping recreating it...')
-                    return(False,tweakregfilename)
+                    print(f'Image {outputfits} already exists, skipping recreating it...')
+                    return(False,outputfits)
                 else:
-                    raise RuntimeError(f'Image {tweakregfilename} already exists! exiting. If you want to overwrite or skip rate2cal reduction, you can use "overwrite" or "skip_if_exists"')
+                    raise RuntimeError(f'Image {outputfits} already exists! exiting. If you want to overwrite or skip rate2cal reduction, you can use "overwrite" or "skip_if_exists"')
             else:
                 # make sure output filename is deleted
-                rmfile(tweakregfilename)
+                rmfile(outputfits)
 
 
         # It is important to set fitgeometry to rshift
@@ -978,11 +942,10 @@ class st_wcs_align:
             tweakreg.snr_threshold = 50
             tweakreg.separation = 9
             tweakreg.searchrad = 0.5
-            tweakreg.minobj = 4
             tweakreg.min_gaia = 30
             tweakreg.xoffset = 0
             tweakreg.yoffset = 0
-            tweakreg.brightest = 1000        
+            tweakreg.brightest = 4000        
         
         tweakreg.already_matched = True
         # phot_cal.t.loc[ixs_cal_good] is the table with the good matches!
@@ -1003,20 +966,20 @@ class st_wcs_align:
         
         cal_data = [datamodels.open(cal_image)]
         tweakreg.input_file = imfilename
-        tweakreg.output_file = tweakregfilename
+        tweakreg.output_file = shortoutputfits
         tweakreg.run(cal_data)
 
-        if not os.path.isfile(tweakregfilename):
-            raise RuntimeError(f'Image {tweakregfilename} did not get created!!')
+        if not os.path.isfile(outputfits):
+            raise RuntimeError(f'Image {outputfits} did not get created!!')
         if self.replace_sip:
             if self.telescope.lower()=='jwst':
-                dm = datamodels.open(tweakregfilename)
+                dm = datamodels.open(outputfits)
                 gwcs_header = dm.meta.wcs.to_fits_sip(max_pix_error=self.sip_err,
                                                        max_inv_pix_error=self.sip_err,
                                                        degree=self.sip_degree,
                                                        npoints=self.sip_points)
                 from astropy.io import fits
-                dm_fits = fits.open(tweakregfilename)
+                dm_fits = fits.open(outputfits)
 
                 for key,value in dict(gwcs_header).items():
                     for k in dm_fits['SCI',1].header.keys():
@@ -1024,7 +987,7 @@ class st_wcs_align:
                             dm_fits['SCI',1].header[key] = value
                             break
                     #astropy.wcs.WCS(header=gwcs_header)
-                dm_fits.writeto(tweakregfilename,overwrite=True)
+                dm_fits.writeto(outputfits,overwrite=True)
         #print(imcat.meta['image_model'].wcs)
         #print(gwcs_header)
         #imcat.meta['image_model'].wcs = astropy.wcs.WCS(header=gwcs_header)
@@ -1032,11 +995,12 @@ class st_wcs_align:
         
 
         # return True means that tweakrun did run
-        return(True,tweakregfilename)
+        return(True,outputfits)
     
 
     def find_good_refcat_matches(self,
                                  phot=None,
+                                 ixs=None,
                                  refcat_xcol=None,
                                  refcat_ycol=None,
                                  xcol='x',
@@ -1049,7 +1013,6 @@ class st_wcs_align:
                                  objmag_lim = (None,None), # limits on mag, the magnitude of the objects in the image
                                  refmag_lim = (None,None), # limits on refcat_mainfilter, the magnitude of the reference catalog                    
                                  Nbright=None,
-                                 ixs=None,
                                  showplots=1,
                                  saveplots=1,
                                  savephottable=1,
@@ -1087,19 +1050,12 @@ class st_wcs_align:
         else:
             phot.t['delta_mag'] = np.nan
         
-        # do some first very rough cuts.
-        # sets phot.ixs_use and phot.ixs_notuse
-        # returns phot.ixs_use
-        ixs = self.initial_cut(phot=phot,
-                               d2d_max=d2d_max,
-                               dmag_max=dmag_max,
-                               sharpness_lim = sharpness_lim, # sharpness limits
-                               roundness1_lim = roundness1_lim, # roundness1 limits 
-                               delta_mag_lim = delta_mag_lim, # limits on mag-refcat_mainfilter
-                               objmag_lim = objmag_lim, # limits on mag, the magnitude of the objects in the image
-                               refmag_lim = refmag_lim, # limits on refcat_mainfilter, the magnitude of the reference catalog
-                               Nbright=Nbright,
-                               ixs=ixs)
+        # do some first very rough cuts on matches
+        ixs = self.phot.initial_cut_matches(d2d_max=d2d_max,
+                                            delta_mag_lim = delta_mag_lim, # limits on mag-refcat_mainfilter
+                                            Nbright=Nbright,
+                                            ixs=ixs)
+        
         if len(ixs)<4:
             raise RuntimeError(f'Only {len(ixs)} objects pass the initial cut, at least 3 required!')
         
@@ -1171,11 +1127,11 @@ class st_wcs_align:
 
 
         if savephottable:
-            print(f'Saving {outbasename}.good.phot.txt')
-            phot.write(f'{outbasename}.good.phot.txt',indices=ixs_cut2)
+            #print(f'Saving {outbasename}.good.phot.txt')
+            phot.write(f'{outbasename}.goodmatches.phot.txt',indices=ixs_cut2,verbose=1)
             if savephottable>1:
-                print(f'Saving {outbasename}.all.phot.txt')
-                phot.write(f'{outbasename}.all.phot.txt')
+                #print(f'Saving {outbasename}.all.phot.txt')
+                phot.write(f'{outbasename}.allmatches.phot.txt',verbose=1)
 
         #if showplots>1:
             # get the bad data points
@@ -1184,7 +1140,7 @@ class st_wcs_align:
 
         return(ixs_cut2)
                 
-    def update_phottable_final_wcs(self,tweakregfilename,
+    def update_phottable_final_wcs(self,outputfits,
                                    ixs_bestmatch,
                                    phot=None,
                                    refcat_racol=None,
@@ -1195,8 +1151,8 @@ class st_wcs_align:
                                    saveplots=1,
                                    savephottable=1,
                                    overwrite=False):
-        outbasename = re.sub('\.fits$','',tweakregfilename)
-        if (outbasename == tweakregfilename): raise RuntimeError(f'Could not remove .fits from {tweakregfilename}')        
+        outbasename = re.sub('\.fits$','',outputfits)
+        if (outbasename == outputfits): raise RuntimeError(f'Could not remove .fits from {outputfits}')        
         if phot is None:
             phot=self.phot
 
@@ -1231,7 +1187,7 @@ class st_wcs_align:
             phot.t.drop(columns=[f'{phot.refcatshort}_d2d'],inplace=True)    
             
         
-        image_model = datamodels.ImageModel(tweakregfilename)
+        image_model = datamodels.ImageModel(outputfits)
         # recalculate the x,y of the ref cat objects
         world_to_detector = image_model.meta.wcs.get_transform('world', 'detector')
         phot.t[refcat_xcol], phot.t[refcat_ycol] = world_to_detector(phot.t[refcat_racol],phot.t[refcat_deccol])
@@ -1284,6 +1240,8 @@ class st_wcs_align:
     def run_all(self,input_image,
                 telescope=None,
                 #distortion_file=None,
+                outrootdir = None,
+                outsubdir = None,
                 overwrite = False,
                 skip_if_exists = False,
                 #skip_applydistortions_if_exists = False,
@@ -1333,126 +1291,84 @@ class st_wcs_align:
         #else:
         
         calimname = input_image
-            
+        
+        self.set_outbasename(outrootdir=outrootdir,outsubdir=outsubdir,inputname=input_image)
+        
         # set the telescope
         self.set_telescope(telescope=telescope,imname=calimname)
             
         # do the photometry
         self.phot.verbose = self.verbose
-        self.phot.run_phot(calimname,
-                              use_dq=use_dq,
-                              refcatname=refcatname,
-                              refcat_racol=refcat_racol,
-                              refcat_deccol=refcat_deccol,
-                              refcat_magcol=refcat_magcol,
-                              refcat_magerrcol=refcat_magerrcol,
-                              refcat_colorcol=refcat_colorcol,
-                              pmflag=pmflag,
-                              pm_median=pm_median,
-                              outrootdir=self.outdir,
-                              photfilename=photfilename,
-                              load_photcat_if_exists=load_photcat_if_exists,
-                              rematch_refcat=rematch_refcat,
-                              overwrite=overwrite,
-                              Nbright4match=Nbright4match,
-                              SNR_min=SNR_min,
-                              xshift=xshift,
-                              yshift=yshift,
-                              ee_radius=ee_radius)
-
-        matching_outbasename = re.sub('\.fits$','',calimname)
-        if (matching_outbasename == calimname): raise RuntimeError(f'Could not remove .fits from {calimname}')        
-        # make sure the output files are in the self.outdir if set...
-        if self.outdir is not None:
-            matching_outbasename = f'{self.outdir}/{os.path.basename(matching_outbasename)}'
-
-        ixs_bestmatch= self.find_good_refcat_matches(d2d_max = d2d_max,
-                                                 dmag_max = dmag_max,
-                                                 sharpness_lim = sharpness_lim, # sharpness limits
-                                                 roundness1_lim = roundness1_lim, # roundness1 limits 
-                                                 delta_mag_lim = delta_mag_lim, # limits on mag-refcat_mainfilter
-                                                 objmag_lim = objmag_lim, # limits on mag, the magnitude of the objects in the image
-                                                 refmag_lim = refmag_lim, # limits on refcat_mainfilter, the magnitude of the reference catalog
-                                                 Nbright = Nbright,
-                                                 histocut_order=histocut_order,
-                                                 slope_min=slope_min, 
-                                                 slope_Nsteps = slope_Nsteps, # slope_max=-slope_min, slope_stepsize=(slope_max-slope_min)/slope_Nsteps
-                                                 Nfwhm = Nfwhm,
-                                                 showplots=showplots,
-                                                 saveplots=saveplots,
-                                                 savephottable=savephottable,
-                                                 outbasename=matching_outbasename
-                                                 )        
-
-        (runflag,tweakregfilename) = self.run_align2refcat(calimname,ixs=ixs_bestmatch,
-                                                           overwrite=overwrite,skip_if_exists=skip_if_exists)
-        if self.telescope.lower()=='jwst':
-            self.update_phottable_final_wcs(tweakregfilename,
-                                        ixs_bestmatch = ixs_bestmatch,
-                                        showplots=showplots,
-                                        saveplots=saveplots,
-                                        savephottable=savephottable,
-                                        overwrite=overwrite
+        photfilename = f'{self.outbasename}.phot.txt'
+        (photfilename_4check,photcat_loaded) = self.phot.run_phot(calimname,
+                                                                  use_dq=use_dq,
+                                                                  photfilename=photfilename,
+                                                                  load_photcat_if_exists=load_photcat_if_exists,
+                                                                  overwrite=overwrite,
+                                                                  Nbright4match=Nbright4match,
+                                                                  SNR_min=SNR_min,
+                                                                  xshift=xshift,
+                                                                  yshift=yshift,
+                                                                  ee_radius=ee_radius)
+            
+        # make the initial cut on the image photometry catalog on magnitudes, sharpness, roundness etc
+        ixs_use = self.phot.initial_cut_photcat(dmag_max = dmag_max,
+                                                sharpness_lim = sharpness_lim, # sharpness limits
+                                                roundness1_lim = roundness1_lim, # roundness1 limits 
+                                                objmag_lim = objmag_lim, # limits on mag, the magnitude of the objects in the image
+                                                Nbright = Nbright)
+        
+        # initialize an (existing!) matched refcat only, instead of loading
+        # and matching the refcat for the following reasons:
+        # if the photcat is loaded (assuming this means that the loaded
+        # photcat has already a matched refcat), and if rematch_refcat=False
+        initialize_refcat_only = (not rematch_refcat) and photcat_loaded
+        # load the refcat and match it
+        self.phot.load_and_match_refcat(ixs_obj=ixs_use,
+                                        refcatname=refcatname,
+                                        refcat_racol=refcat_racol,
+                                        refcat_deccol=refcat_deccol,
+                                        refcat_magcol=refcat_magcol,
+                                        refcat_magerrcol=refcat_magerrcol,
+                                        refcat_colorcol=refcat_colorcol,
+                                        refmag_lim=refmag_lim, # limits for initial cut
+                                        refmagerr_lim=(None,None), # limits for initial cut, needs to be added to options
+                                        refcolor_lim=(None,None), # limits for initial cut, needs to be added to options
+                                        pmflag = pmflag, 
+                                        pm_median=pm_median,
+                                        initialize_only=initialize_refcat_only
                                         )
+
+        ixs_bestmatch= self.find_good_refcat_matches(ixs=ixs_use,
+                                                     d2d_max = d2d_max,
+                                                     delta_mag_lim = delta_mag_lim, # limits on mag-refcat_mainfilter
+                                                     refmag_lim = refmag_lim, # limits on refcat_mainfilter, the magnitude of the reference catalog
+                                                     histocut_order=histocut_order,
+                                                     slope_min=slope_min, 
+                                                     slope_Nsteps = slope_Nsteps, # slope_max=-slope_min, slope_stepsize=(slope_max-slope_min)/slope_Nsteps
+                                                     Nfwhm = Nfwhm,
+                                                     showplots=showplots,
+                                                     saveplots=saveplots,
+                                                     savephottable=savephottable,
+                                                     outbasename=self.outbasename
+                                                     )        
+
+        jhatfits = f'{self.outbasename}.jhat.fits'
+        (runflag,jhatfits) = self.run_align2refcat(calimname,
+                                                   outputfits=jhatfits,
+                                                   ixs=ixs_bestmatch,
+                                                   overwrite=overwrite,skip_if_exists=skip_if_exists)
+        if self.telescope.lower()=='jwst':
+            self.update_phottable_final_wcs(jhatfits,
+                                            ixs_bestmatch = ixs_bestmatch,
+                                            showplots=showplots,
+                                            saveplots=saveplots,
+                                            savephottable=savephottable,
+                                            overwrite=overwrite
+                                            )
 
         if showplots: 
             plt.show()
 
         return(0)
 
-if __name__ == '__main__':
-    wcs_align = st_wcs_align()
-    parser = wcs_align.define_options()
-    args = parser.parse_args()
-    
-    wcs_align.verbose=args.verbose
-    wcs_align.replace_sip = args.replace_sip
-    wcs_align.sip_err = args.sip_err
-    wcs_align.sip_degree = args.sip_degree
-    wcs_align.sip_points = args.sip_points
-    wcs_align.rough_cut_px_min = args.rough_cut_px_min
-    wcs_align.rough_cut_px_max = args.rough_cut_px_max
-    wcs_align.d_rotated_Nsigma = args.d_rotated_Nsigma
-    
-    
-    #wcs_align.calphot=jwst_photclass()
-    
-    wcs_align.set_outdir(args.outrootdir, args.outsubdir)
-    
-    wcs_align.run_all(args.cal_image,
-                     telescope = args.telescope,
-                     #distortion_file = args.distortion_file,
-                     overwrite = args.overwrite,
-                     #skip_applydistortions_if_exists=args.skip_applydistortions_if_exists,
-                     use_dq = args.use_dq,
-                     refcatname = args.refcat,
-                     refcat_racol = args.refcat_racol,
-                     refcat_deccol = args.refcat_deccol,
-                     refcat_magcol = args.refcat_magcol,
-                     refcat_magerrcol = args.refcat_magerrcol,
-                     refcat_colorcol = args.refcat_colorcol,
-                     pmflag = args.refcat_pmflag,
-                     pm_median = args.refcat_pmmedian,
-                     photfilename = args.photfilename,
-                     load_photcat_if_exists=args.load_photcat_if_exists,
-                     rematch_refcat=args.rematch_refcat,
-                     SNR_min = args.SNR_min,
-                     d2d_max = args.d2d_max, # maximum distance refcat to source in image
-                     dmag_max = args.dmag_max, # maximum uncertainty of source 
-                     sharpness_lim = args.sharpness_lim, # sharpness limits
-                     roundness1_lim = args.roundness1_lim, # roundness1 limits 
-                     delta_mag_lim =  args.delta_mag_lim, # limits on mag-refcat_mainfilter
-                     objmag_lim = args.objmag_lim, # limits on mag, the magnitude of the objects in the image
-                     refmag_lim = args.refmag_lim, # limits on refcat_mainfilter, the magnitude of the reference catalog
-                     slope_min = args.slope_min,
-                     Nbright4match=args.Nbright4match, # Use only the the brightest  Nbright sources from image for the matching with the ref catalog
-                     Nbright=args.Nbright,    # U/se only the brightest Nbright sources from image
-                     histocut_order=args.histocut_order, # histocut_order defines whether the histogram cut is first done for dx or first for dy
-                     xshift=args.xshift,# added to the x coordinate before calculating ra,dec (only impacts ra,dec, not x). This can be used to correct for large shifts before matching!
-                     yshift=args.yshift, # added to the y coordinate before calculating ra,dec (only impacts ra,dec, not y). This can be used to correct for large shifts before matching!
-                     showplots=args.showplots,
-                     saveplots=args.saveplots,# 
-                     savephottable=args.savephottable,
-                     ee_radius=args.ee_radius
-                     )
-    

@@ -229,6 +229,8 @@ class align_wcs_batch(pdastroclass):
                 self.wcs_align.run_all(inputfile,
                                        #distortion_file=distfile,  
                                        telescope = telescope,
+                                       outrootdir = args.outrootdir,
+                                       outsubdir = args.outsubdir,
                                        overwrite = overwrite,
                                        skip_if_exists = skip_if_exists,
                                        #skip_applydistortions_if_exists=skip_applydistortions_if_exists,
