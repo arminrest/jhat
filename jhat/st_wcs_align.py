@@ -828,6 +828,7 @@ class st_wcs_align:
             self.phot=jwst_photclass()
         elif telescope.lower() == 'hst':
             self.phot=hst_photclass()
+            self.replace_sip = True
         else:
             raise RuntimeError(f'unknown telescope {telescope}')
         self.phot.ixs4use=None            

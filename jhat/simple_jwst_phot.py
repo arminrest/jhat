@@ -910,10 +910,11 @@ class jwst_photclass(pdastrostatsclass):
             phot['aper_bkg'] = local_sky_median * aperture.area
             phot['aper_sum_bkgsub'] = phot['aperture_sum'] - phot['aper_bkg']
             if self.err is None:
+                epadu = sci_header['XPOSURE']*sci_header['PHOTMJSR']
                 error_poisson = np.sqrt(phot['aperture_sum'])
                 error_scatter_sky = aperture.area * local_sky_stdev**2
                 error_mean_sky = local_sky_stdev**2 * aperture.area**2 / annulus_aperture.area
-                fluxerr = np.sqrt(error_poisson**2 + error_scatter_sky + error_mean_sky)
+                fluxerr = np.sqrt(error_poisson**2/epadu + error_scatter_sky + error_mean_sky)
             else:
                 fluxerr = phot['aperture_sum_err']
             
