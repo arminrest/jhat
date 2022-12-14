@@ -16,7 +16,7 @@ import numpy as np
 
 import urllib
 import scipy
-
+import warnings
 from astropy.io import fits
 from astropy.stats import sigma_clipped_stats, SigmaClip
 from astropy.table import Table,vstack
@@ -47,7 +47,7 @@ from astropy.coordinates import SkyCoord, match_coordinates_sky
 from stsci.skypac import pamutils
 from .pdastro import pdastroclass,pdastrostatsclass,makepath4file,unique,AnotB,AorB,AandB,rmfile
 
-
+warnings.simplefilter('ignore')
 __all__ = ['jwst_photclass','hst_photclass']
 def hst_get_ee_corr(ap,filt,inst):
     if inst.lower()=='ir':
@@ -129,7 +129,6 @@ def get_hawki_cat(ra0,dec0,radius_deg,radius_factor=1.1,
     pos0 = SkyCoord(ra=ra0, dec=dec0, unit=(u.deg,u.deg), frame='icrs')
     pos1 = SkyCoord(ra=cat['ra'], dec=cat['dec'], unit=(u.deg,u.deg), frame='icrs')
     sep = pos0.separation(pos1)
-    print(sep.degree)
     cat['sep_deg'] = sep
     cat['sep_arcmin'] = sep/60.0
     cat['J2_K2'] = cat['J2mag'] - cat['K2mag']
@@ -141,6 +140,7 @@ def get_hawki_cat(ra0,dec0,radius_deg,radius_factor=1.1,
     Ntot=len(ixs)
     (keep,) = np.where(df.loc[ixs,'sep_deg'].le(radius_deg*radius_factor))
     ixs = ixs[keep]
+    
     print(f'Keeping {len(ixs)} out of {Ntot} of hawkI sources: all positions within {radius_deg*radius_factor:.4f} deg of RA/Dec=({ra0},{dec0})')
     df = df.loc[ixs]
      
@@ -235,7 +235,7 @@ def get_GAIA_sources(ra0,dec0,radius_deg,radius_factor=1.1,
     query ="SELECT * FROM {}.gaia_source WHERE CONTAINS(POINT('ICRS',\
             {}.gaia_source.ra,{}.gaia_source.dec),\
             CIRCLE('ICRS',{},{} ,{}))=1;".format(dr,dr,dr,ra0,dec0,radius_deg)
-    print(f'query:{query}')
+    
     job5 = Gaia.launch_job_async(query)
     tb_gaia = job5.get_results() 
     print("Number of stars:",len(tb_gaia))
@@ -341,7 +341,7 @@ def get_image_siaf_aperture(aperturename, primaryhdr, scihdr):
 
     instrument = primaryhdr['INSTRUME']
     apername = primaryhdr['APERNAME']
-    print('GGGGGGGGGGGG',apername,aperturename)
+    
     
     ra_ref_orig = scihdr['RA_REF']
     dec_ref_orig = scihdr['DEC_REF']
@@ -407,7 +407,7 @@ def xy_to_idl(x,y, primaryhdr, scihdr,aperturename='APERNAME',instrument='INSTRU
 class jwst_photclass(pdastrostatsclass):
     """The photometry class for JWST images.
     """
-    def __init__(self):
+    def __init__(self,verbose=0):
         """
         Constructor for JWST photometry class
 
@@ -448,6 +448,7 @@ class jwst_photclass(pdastrostatsclass):
         self.data_bkgsub=None
         self.mask=None
         self.found_stars=None
+
         
         # define the radii of the aperture in units of fwhm
         self.radii_Nfwhm = [2.0]
@@ -521,7 +522,7 @@ class jwst_photclass(pdastrostatsclass):
         self.subarray = self.dm.meta.subarray.name
         self.aperture  = self.dm.meta.aperture.name
         
-        print(self.instrument,self.detector,self.filtername,self.pupil,self.subarray,self.aperture)
+        
         if self.verbose: print(f'Instrument: {self.instrument}, aperture:{self.aperture}')
         
         if imagetype is None:
@@ -628,7 +629,8 @@ class jwst_photclass(pdastrostatsclass):
        
         
         if var_bkg:
-            print('Using 2D Background')
+            if self.verbose:
+                print('Using 2D Background')
             sigma_clip = SigmaClip(sigma=3.)
             
             boolmask = self.get_bool_mask(data,mask=mask)
@@ -706,13 +708,13 @@ class jwst_photclass(pdastrostatsclass):
         else:  
             filt = self.filtername
             pupil = self.pupil
-        
-        print('Finding stars --- Detector: {d}, Filter: {f}'.format(f=filt, d=det))
+        if self.verbose:
+            print('Finding stars --- Detector: {d}, Filter: {f}'.format(f=filt, d=det))
         
         #sigma_psf = self.dict_utils[filt]['psf fwhm']
         fwhm_psf = self.get_fwhm_psf(filt,pupil)
-    
-        print('FWHM for the filter {f}:'.format(f=filt), fwhm_psf, "px")
+        if self.verbose:
+            print('FWHM for the filter {f}:'.format(f=filt), fwhm_psf, "px")
 
         zero_mask = np.where(self.data == 0.0,1,0)
         nan_mask  = np.where(np.isnan(self.data),1,0)
@@ -726,11 +728,11 @@ class jwst_photclass(pdastrostatsclass):
         daofind = DAOStarFinder(threshold=threshold * std, fwhm=fwhm_psf, exclude_border=True)
         self.found_stars = daofind(self.data_bkgsub, mask=bool_mask)
         #found_stars = daofind(data_bkgsub)
-                    
-        print('')
-        print('Number of sources found in the image:', len(self.found_stars))
-        print('-------------------------------------')
-        print('')
+        if self.verbose:            
+            print('')
+            print('Number of sources found in the image:', len(self.found_stars))
+            print('-------------------------------------')
+            print('')
         
         return self.found_stars, self.data_bkgsub
     
@@ -821,7 +823,8 @@ class jwst_photclass(pdastrostatsclass):
         table_aper = Table()
         
         for rad in self.radii_px:
-            print(f'Performing aperture photometry for radius r = {rad} px')
+            if self.verbose:
+                print(f'Performing aperture photometry for radius r = {rad} px')
             aperture = CircularAperture(positions, r=rad)
             
             annulus_aperture = CircularAnnulus(positions, 
@@ -914,7 +917,8 @@ class jwst_photclass(pdastrostatsclass):
         table_aper['roundness2'] = self.found_stars['roundness2']
         table_aper = table_aper[~np.isnan(table_aper['mag'])]
         toc = time.perf_counter()
-        print("Time Elapsed:", toc - tic)
+        if self.verbose:
+            print("Time Elapsed:", toc - tic)
     
         self.t = table_aper.to_pandas()
 
@@ -923,13 +927,15 @@ class jwst_photclass(pdastrostatsclass):
     def clean_phottable(self,SNR_min=3.0,indices=None):
         # remove nans
         ixs = self.ix_not_null(['mag','dmag'],indices=indices)
-        print(f'{len(ixs)} objects left after removing entries with NaNs in mag or dmag column')
+        if self.verbose:
+            print(f'{len(ixs)} objects left after removing entries with NaNs in mag or dmag column')
         #self.write()
         
         if SNR_min is not None:
             dmag_max = 1.086 * 1.0/SNR_min
             ixs = self.ix_inrange('dmag',None,dmag_max,indices=ixs)
-            print(f'SNR_min cut: {len(ixs)} objects left after removing entries dmag>{dmag_max} (SNR<{SNR_min})')
+            if self.verbose:
+                print(f'SNR_min cut: {len(ixs)} objects left after removing entries dmag>{dmag_max} (SNR<{SNR_min})')
 
         return(ixs)
 
@@ -985,7 +991,6 @@ class jwst_photclass(pdastrostatsclass):
             aperturename = self.aperture
 
         indices = self.getindices()
-        print(self.t.loc[indices,xcol])
         x_idl, y_idl      = xy_to_idl(self.t.loc[indices,xcol], 
                                       self.t.loc[indices,ycol],
                                       primaryhdr, scihdr)
@@ -1086,8 +1091,8 @@ class jwst_photclass(pdastrostatsclass):
         self.init_refcat(refcatname,mjd=mjd,
                          refcat_racol=refcat_racol,refcat_deccol=refcat_deccol,refcat_magcol=refcat_magcol,
                          refcat_magerrcol=refcat_magerrcol,refcat_colorcol=refcat_colorcol)
-
-        print('RA/Dec columns in reference catalog: ',self.refcat.racol,self.refcat.deccol)
+        if self.verbose:
+            print('RA/Dec columns in reference catalog: ',self.refcat.racol,self.refcat.deccol)
         
         if refcatname.lower()=='gaia':
             self.refcat.t,self.refcat.racol,self.refcat.deccol = get_GAIA_sources(ra0,dec0,radius_deg,mjd=mjd,pm_median=pm_median)
@@ -1103,7 +1108,8 @@ class jwst_photclass(pdastrostatsclass):
             self.refcat.t,self.refcat.racol,self.refcat.deccol = get_hawki_cat(ra0,dec0,radius_deg)
         else:
             if os.path.isfile(refcatname):
-                print(f'LOADING refcat {refcatname}')
+                if self.verbose:
+                    print(f'LOADING refcat {refcatname}')
                 self.refcat.t = Table.from_pandas(get_refcat_file(refcatname,racol=self.refcat.racol,deccol=self.refcat.deccol))
                 if ('ra' not in self.refcat.t.columns and self.refcat.racol is None) or\
                  ('dec' not in self.refcat.t.columns and self.refcat.deccol is None):
@@ -1200,7 +1206,8 @@ class jwst_photclass(pdastrostatsclass):
         None.
 
         """
-        print(f'Matching reference catalog {self.refcat.name}')
+        if self.verbose:
+            print(f'Matching reference catalog {self.refcat.name}')
 
         if refcatshort is None: refcatshort = self.refcat.short
 
@@ -1221,7 +1228,8 @@ class jwst_photclass(pdastrostatsclass):
         xmax = self.t.loc[ixs_obj,'x_idl'].max()
         ymin = self.t.loc[ixs_obj,'y_idl'].min()
         ymax = self.t.loc[ixs_obj,'y_idl'].max()
-        print(f'Using {len(ixs_obj)} image objects that are in x_idl=[{xmin:.2f},{xmax:.2f}] and y_idl=[{ymin:.2f},{ymax:.2f}] range')
+        if self.verbose:
+            print(f'Using {len(ixs_obj)} image objects that are in x_idl=[{xmin:.2f},{xmax:.2f}] and y_idl=[{ymin:.2f},{ymax:.2f}] range')
 
         #### gaia catalog
         # get ideal coords into table
@@ -1262,9 +1270,11 @@ class jwst_photclass(pdastrostatsclass):
         
         ixs_refcat = self.refcat.ix_inrange('x',xmin,xmax,indices=ixs_refcat)
         ixs_refcat = self.refcat.ix_inrange('y',ymin,ymax,indices=ixs_refcat)
-        print(f'Keeping {len(ixs_refcat)} out of {len(self.refcat.getindices())} catalog objects within x={xmin}-{xmax} and y={ymin}-{ymax}')
+        if self.verbose:
+            print(f'Keeping {len(ixs_refcat)} out of {len(self.refcat.getindices())} catalog objects within x={xmin}-{xmax} and y={ymin}-{ymax}')
         ixs_refcat = self.refcat.ix_not_null([self.refcat.racol,self.refcat.deccol],indices=ixs_refcat)
-        print(f'Keeping {len(ixs_refcat)}  after removing NaNs from ra/dec')
+        if self.verbose:
+            print(f'Keeping {len(ixs_refcat)}  after removing NaNs from ra/dec')
 
         if len(ixs_refcat) == 0:
             print('WARNING!!!! 0 sources from reference catalog within the image bounderies! skipping the rest of the steps calculating x,y of the Gaia sources etc... ')
@@ -1276,8 +1286,8 @@ class jwst_photclass(pdastrostatsclass):
         self.refcat.t.loc[ixs_refcat,'x'], self.refcat.t.loc[ixs_refcat,'y'] = world_to_detector(self.refcat.t.loc[ixs_refcat,self.refcat.racol],self.refcat.t.loc[ixs_refcat,self.refcat.deccol])
 
         refcatcoord = SkyCoord(self.refcat.t.loc[ixs_refcat,self.refcat.racol],self.refcat.t.loc[ixs_refcat,self.refcat.deccol], unit='deg')
-    
-        print(f'!! Matching {len(ixs_obj)} image objects to {len(ixs_refcat)} refcat objects!')
+        if self.verbose:
+            print(f'!! Matching {len(ixs_obj)} image objects to {len(ixs_refcat)} refcat objects!')
         #idx, d2d, _ = match_coordinates_sky(self.t.loc[ixs_obj,'coord'], self.refcat.t.loc[ixs_refcat,'coord'])
         idx, d2d, _ = match_coordinates_sky(objcoord,refcatcoord)
         # ixs_cat4obj has the same length as ixs_obj
@@ -1374,7 +1384,7 @@ class jwst_photclass(pdastrostatsclass):
                 radius_deg.append(coord0.separation(SkyCoord(ra,dec,unit=(u.deg, u.deg), frame='icrs')).deg)
         radius_deg = np.amax(radius_deg)
 
-        print(ra0,dec0,radius_deg)
+        
         return(ra0,dec0,radius_deg)
 
         
@@ -1393,7 +1403,8 @@ class jwst_photclass(pdastrostatsclass):
                  xshift=0.0,# added to the x coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
                  yshift=0.0, # added to the y coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
                  ee_radius=70):
-        print(f'\n### Doing photometry on {imagename}')
+        if self.verbose:
+            print(f'\n### Doing photometry on {imagename}')
         self.ee_radius = ee_radius
         
         # get the photfilename. photfilename='auto' removes fits from image name and replaces it with phot.txt
@@ -1402,21 +1413,25 @@ class jwst_photclass(pdastrostatsclass):
         # Load photcat if wanted
         photcat_loaded = False
         if (self.photfilename is not None):
-            print(f'photometry catalog filename: {self.photfilename}')
+            if self.verbose:
+                print(f'photometry catalog filename: {self.photfilename}')
             if os.path.isfile(self.photfilename):
                 if load_photcat_if_exists:
-                    print(f'photcat {self.photfilename} already exists, loading it instead of recreating it')
+                    if self.verbose:
+                        print(f'photcat {self.photfilename} already exists, loading it instead of recreating it')
                     self.load(self.photfilename)
                     photcat_loaded = True
                     # skip redoing the photometry
                     do_photometry_flag=False
                 elif overwrite:
-                    print(f'photcat {self.photfilename} already exists, but recreating it since overwrite=True')
+                    if self.verbose:
+                        print(f'photcat {self.photfilename} already exists, but recreating it since overwrite=True')
                     rmfile(self.photfilename)
                 else:
                     raise RuntimeError(f'photcat {self.photfilename} already exists, exiting! if you want to overwrite, use --overwrite option!')
         else:
-            print('NO photometry catalog filename')
+            if self.verbose:
+                print('NO photometry catalog filename')
         
         # load the image, and prepare it. The data and mask are saved in 
         # self.data and self.mask
@@ -1433,7 +1448,8 @@ class jwst_photclass(pdastrostatsclass):
         
         # get the indices of good stars
         ixs_clean = self.clean_phottable(SNR_min=SNR_min)
-        print(f'{len(ixs_clean)} out of {len(self.getindices())} entries remain in photometry table')
+        if self.verbose:
+            print(f'{len(ixs_clean)} out of {len(self.getindices())} entries remain in photometry table')
         if len(ixs_clean)<1:
             self.write()
             raise RuntimeError('NO  OBJECTS FOUND IN  IMAGE!!')
@@ -1445,7 +1461,8 @@ class jwst_photclass(pdastrostatsclass):
         if Nbright4match is not None:
             ixs_sort = self.ix_sort_by_cols(['mag'],indices=ixs_clean)
             ixs_clean = ixs_sort[:Nbright4match]
-            print(f'keeping the britghtest {Nbright4match} sources: {len(ixs_clean)} out of {len(self.getindices())} entries remain in photometry table')
+            if self.verbose:
+                print(f'keeping the britghtest {Nbright4match} sources: {len(ixs_clean)} out of {len(self.getindices())} entries remain in photometry table')
         
         # calculate the ra,dec
         self.xy_to_radec(indices=ixs_clean,xshift=xshift,yshift=yshift)
@@ -1458,7 +1475,8 @@ class jwst_photclass(pdastrostatsclass):
         # save the catalog
 
         if self.photfilename is not None:
-            print(f'Saving {self.photfilename}')
+            if self.verbose:
+                print(f'Saving {self.photfilename}')
             self.write(self.photfilename,indices=ixs_clean)
         return(self.photfilename,photcat_loaded)
 
@@ -1528,35 +1546,45 @@ class jwst_photclass(pdastrostatsclass):
                             Nbright=None, ixs=None):
         ixs = self.getindices(ixs)
         ixs_use = copy.deepcopy(ixs)
-        
-        print(f'########### !!!!!!!!!!  INITIAL CUT on image photometry cat: starting with {len(ixs)} objects')
+        if self.verbose:
+            print(f'########### !!!!!!!!!!  INITIAL CUT on image photometry cat: starting with {len(ixs)} objects')
         
         if dmag_max is not None:
-            print(f'dmag_max ={dmag_max} CUT:')
+            if self.verbose:
+                print(f'dmag_max ={dmag_max} CUT:')
             ixs_use = self.ix_inrange('dmag',None,dmag_max,indices=ixs_use)
-            print(f'{len(ixs_use)} left')
+            if self.verbose:
+                print(f'{len(ixs_use)} left')
         if (sharpness_lim[0] is not None) or (sharpness_lim[1] is not None):
-            print(f'SHARPNESS ={sharpness_lim} CUT:')
+            if self.verbose:
+                print(f'SHARPNESS ={sharpness_lim} CUT:')
             ixs_use = self.ix_inrange('sharpness',sharpness_lim[0],sharpness_lim[1],indices=ixs_use)
-            print(f'{len(ixs_use)} left')
+            if self.verbose:
+                print(f'{len(ixs_use)} left')
         if (roundness1_lim[0] is not None) or (roundness1_lim[1] is not None):
-            print(f'roundness1={roundness1_lim} CUT:')
+            if self.verbose:
+                print(f'roundness1={roundness1_lim} CUT:')
             ixs_use = self.ix_inrange('roundness1',roundness1_lim[0],roundness1_lim[1],indices=ixs_use)
-            print(f'{len(ixs_use)} left')
+            if self.verbose:
+                print(f'{len(ixs_use)} left')
         if (objmag_lim[0] is not None) or (objmag_lim[1] is not None):
-            print(f'objmag_lim={objmag_lim} CUT:')
+            if self.verbose:
+                print(f'objmag_lim={objmag_lim} CUT:')
             ixs_use = self.ix_inrange('mag',objmag_lim[0],objmag_lim[1],indices=ixs_use)
-            print(f'{len(ixs_use)} left')
+            if self.verbose:
+                print(f'{len(ixs_use)} left')
         if Nbright is not None:
-            print(f'Nbright={Nbright} CUT:')
+            if self.verbose:
+                print(f'Nbright={Nbright} CUT:')
             ixs_sort = self.ix_sort_by_cols(['mag'],indices=ixs_use)
             ixs_use = ixs_sort[:Nbright]
-            print(f'{len(ixs_use)} left')
+            if self.verbose:
+                print(f'{len(ixs_use)} left')
             
         
         ixs_notuse = AnotB(ixs,ixs_use)
-
-        print(f'{len(ixs_use)} of image photometry objects pass initial cuts #1, {len(ixs_notuse)} cut')
+        if self.verbose:
+            print(f'{len(ixs_use)} of image photometry objects pass initial cuts #1, {len(ixs_notuse)} cut')
 
         self.ixs_use = ixs_use
         
@@ -1573,28 +1601,35 @@ class jwst_photclass(pdastrostatsclass):
                             ixs=None):
         ixs = self.getindices(ixs)
         ixs_use = copy.deepcopy(ixs)
-        
-        print(f'########### !!!!!!!!!!  INITIAL CUT on matched cat: starting with {len(ixs)} objects')
+        if self.verbose:
+            print(f'########### !!!!!!!!!!  INITIAL CUT on matched cat: starting with {len(ixs)} objects')
         if d2d_max is not None:
-            print(f'd2d ={d2d_max} CUT:')
+            if self.verbose:
+                print(f'd2d ={d2d_max} CUT:')
             d2d_colname = f'{self.refcat.short}_d2d'
             ixs_use = self.ix_inrange(d2d_colname,None,d2d_max,indices=ixs_use)
-            print(f'{len(ixs_use)} left')
+            if self.verbose:
+                print(f'{len(ixs_use)} left')
         if (delta_mag_lim[0] is not None) or (delta_mag_lim[1] is not None):
-            print(f'delta_mag_lim={delta_mag_lim} CUT:')
+            if self.verbose:
+                print(f'delta_mag_lim={delta_mag_lim} CUT:')
             if self.refcat_mainfilter is None:
                 raise RuntimeError('Cannot do delta_mag cut since the refcat_mainfilter is not defined!')
             ixs_use = self.ix_inrange('delta_mag',delta_mag_lim[0],delta_mag_lim[1],indices=ixs_use)
-            print(f'{len(ixs_use)} left')
+            if self.verbose:
+                print(f'{len(ixs_use)} left')
         if Nbright is not None:
-            print(f'Nbright={Nbright} CUT:')
+            if self.verbose:
+                print(f'Nbright={Nbright} CUT:')
             ixs_sort = self.ix_sort_by_cols(['mag'],indices=ixs_use)
             ixs_use = ixs_sort[:Nbright]
-            print(f'{len(ixs_use)} left')
+            if self.verbose:
+                print(f'{len(ixs_use)} left')
             
         
         ixs_notuse = AnotB(ixs,ixs_use)
-        print(f'{len(ixs_use)} of image photometry objects pass initial cuts #1, {len(ixs_notuse)} cut')
+        if self.verbose:
+            print(f'{len(ixs_use)} of image photometry objects pass initial cuts #1, {len(ixs_notuse)} cut')
 
         self.ixs_use = ixs_use
         
@@ -1616,30 +1651,36 @@ class jwst_photclass(pdastrostatsclass):
     
         ixs_refcat = self.refcat.getindices(ixs_refcat)
         ixs_use_refcat = copy.deepcopy(ixs_refcat)
-        
-        print(f'########### !!!!!!!!!!  INITIAL CUT on reference catalog: starting with {len(ixs_refcat)} objects')
+        if self.verbose:
+            print(f'########### !!!!!!!!!!  INITIAL CUT on reference catalog: starting with {len(ixs_refcat)} objects')
         if (refmag_lim[0] is not None) or (refmag_lim[1] is not None):
-            print(f'refmag_lim={refmag_lim} CUT:')
+            if self.verbose:
+                print(f'refmag_lim={refmag_lim} CUT:')
             if self.refcat.mainfilter is None:
                 raise RuntimeError('Cannot do refmag_lim cut since the mainfilter is not defined!')
             ixs_use_refcat = self.refcat.ix_inrange(self.refcat.mainfilter,refmag_lim[0],refmag_lim[1],indices=ixs_use_refcat)
-            print(f'{len(ixs_use_refcat)} left')
+            if self.verbose:
+                print(f'{len(ixs_use_refcat)} left')
         if (refmagerr_lim[0] is not None) or (refmagerr_lim[1] is not None):
-            print(f'refmagerr_lim={refmagerr_lim} CUT:')
+            if self.verbose:
+                print(f'refmagerr_lim={refmagerr_lim} CUT:')
             if self.refcat.mainfilter_err is None:
                 raise RuntimeError('Cannot do refmagerr_lim cut since the mainfilter_err is not defined!')
             ixs_use_refcat = self.refcat.ix_inrange(self.refcat.mainfilter_err,refmagerr_lim[0],refmagerr_lim[1],indices=ixs_use_refcat)
-            print(f'{len(ixs_use_refcat)} left')
+            if self.verbose:
+                print(f'{len(ixs_use_refcat)} left')
         if (refcolor_lim[0] is not None) or (refcolor_lim[1] is not None):
-            print(f'refcolor_lim={refcolor_lim} CUT:')
+            if self.verbose:
+                print(f'refcolor_lim={refcolor_lim} CUT:')
             if self.refcat.maincolor is None:
                 raise RuntimeError('Cannot do refcolor_lim cut since the maincolor is not defined!')
             ixs_use_refcat = self.refcat.ix_inrange(self.refcat.maincolor,refcolor_lim[0],refcolor_lim[1],indices=ixs_use_refcat)
-            print(f'{len(ixs_use_refcat)} left')
+            if self.verbose:
+                print(f'{len(ixs_use_refcat)} left')
 
         ixs_notuse_refcat = AnotB(ixs_refcat,ixs_use_refcat)
-
-        print(f'{len(ixs_use_refcat)} of image photometry objects pass initial cuts #1, {len(ixs_notuse_refcat)} cut')
+        if self.verbose:
+            print(f'{len(ixs_use_refcat)} of image photometry objects pass initial cuts #1, {len(ixs_notuse_refcat)} cut')
 
         self.ixs_use_refcat = ixs_use_refcat
         
@@ -1654,7 +1695,7 @@ class hst_photclass(jwst_photclass):
     """The photometry class for HST images.
     """
         
-    def __init__(self,psf_fwhm=2,aperture_radius = None):
+    def __init__(self,psf_fwhm=2,aperture_radius = None,verbose=0):
         """
         Constructor for HST photometry class
 
@@ -1803,7 +1844,7 @@ class hst_photclass(jwst_photclass):
             epadu = 1
         else:
             epadu = primaryhdr['EXPTIME']
-        print(filt)
+        
         try:
             zp = hst_get_zp(filt,'ab')
             inst = 'ir'
@@ -1826,7 +1867,8 @@ class hst_photclass(jwst_photclass):
         table_aper = Table()
         
         for rad in self.radii_px:
-            print(f'Performing aperture photometry for radius r = {rad} px')
+            if self.verbose:
+                print(f'Performing aperture photometry for radius r = {rad} px')
             aperture = CircularAperture(positions, r=rad)
             
             annulus_aperture = CircularAnnulus(positions, 
@@ -1924,7 +1966,8 @@ class hst_photclass(jwst_photclass):
         table_aper['roundness2'] = self.found_stars['roundness2']
         table_aper = table_aper[~np.isnan(table_aper['mag'])]
         toc = time.perf_counter()
-        print("Time Elapsed:", toc - tic)
+        if self.verbose:
+            print("Time Elapsed:", toc - tic)
     
         self.t = table_aper.to_pandas()
 
@@ -1948,7 +1991,7 @@ class hst_photclass(jwst_photclass):
         if scihdr is None: scihdr=self.scihdr
     
         indices = self.getindices()
-        print(self.t.loc[indices,xcol])
+        
         x_idl, y_idl = xy_to_idl(self.t.loc[indices,xcol], 
                                       self.t.loc[indices,ycol],
                                       primaryhdr, scihdr,
@@ -2004,7 +2047,8 @@ class hst_photclass(jwst_photclass):
         None.
 
         """
-        print(f'Matching reference catalog {self.refcat.name}')
+        if self.verbose:
+            print(f'Matching reference catalog {self.refcat.name}')
 
         if refcatshort is None: refcatshort = self.refcat.short
 
@@ -2025,7 +2069,8 @@ class hst_photclass(jwst_photclass):
         xmax = self.t.loc[ixs_obj,'x_idl'].max()
         ymin = self.t.loc[ixs_obj,'y_idl'].min()
         ymax = self.t.loc[ixs_obj,'y_idl'].max()
-        print(f'image objects are in x_idl=[{xmin:.2f},{xmax:.2f}] and y_idl=[{ymin:.2f},{ymax:.2f}] range')
+        if self.verbose:
+            print(f'image objects are in x_idl=[{xmin:.2f},{xmax:.2f}] and y_idl=[{ymin:.2f},{ymax:.2f}] range')
 
         #### gaia catalog
         # get ideal coords into table
@@ -2066,9 +2111,11 @@ class hst_photclass(jwst_photclass):
         
         ixs_refcat = self.refcat.ix_inrange('x',xmin,xmax,indices=ixs_refcat)
         ixs_refcat = self.refcat.ix_inrange('y',ymin,ymax,indices=ixs_refcat)
-        print(f'Keeping {len(ixs_refcat)} out of {len(self.refcat.getindices())} catalog objects within x={xmin}-{xmax} and y={ymin}-{ymax}')
+        if self.verbose:
+            print(f'Keeping {len(ixs_refcat)} out of {len(self.refcat.getindices())} catalog objects within x={xmin}-{xmax} and y={ymin}-{ymax}')
         ixs_refcat = self.refcat.ix_not_null([self.refcat.racol,self.refcat.deccol],indices=ixs_refcat)
-        print(f'Keeping {len(ixs_refcat)}  after removing NaNs from ra/dec')
+        if self.verbose:
+            print(f'Keeping {len(ixs_refcat)}  after removing NaNs from ra/dec')
 
         if len(ixs_refcat) == 0:
             print('WARNING!!!! 0 Gaia sources from catalog within the image bounderies! skipping the rest of the steps calculating x,y of the Gaia sources etc... ')
@@ -2080,8 +2127,8 @@ class hst_photclass(jwst_photclass):
                                                                                                             unit=u.deg))
 
         refcatcoord = SkyCoord(self.refcat.t.loc[ixs_refcat,self.refcat.racol],self.refcat.t.loc[ixs_refcat,self.refcat.deccol], unit='deg')
-    
-        print(f'!! Matching {len(ixs_obj)} image objects to {len(ixs_refcat)} refcat objects!')
+        if self.verbose:
+            print(f'!! Matching {len(ixs_obj)} image objects to {len(ixs_refcat)} refcat objects!')
         #idx, d2d, _ = match_coordinates_sky(self.t.loc[ixs_obj,'coord'], self.refcat.t.loc[ixs_refcat,'coord'])
         idx, d2d, _ = match_coordinates_sky(objcoord,refcatcoord)
         # ixs_cat4obj has the same length as ixs_obj

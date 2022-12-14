@@ -176,7 +176,6 @@ class pdastroclass:
             s+=' %s' % cmphdr['COLTBL%d' % i]
         s = re.sub('Xpos','X',s)
         s = re.sub('Ypos','Y',s)
-        print(s)
         lines = open(filename,'r').readlines()
         lines[0]=s
         errorflag = self.load_spacesep(io.StringIO('\n'.join(lines)))

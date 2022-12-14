@@ -13,6 +13,7 @@ Welcome to the JWST/HST Alignment Tool (JHAT)
 
    install
    params
+   improve
    batch
    plots
 
