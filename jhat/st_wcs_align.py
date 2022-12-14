@@ -966,7 +966,7 @@ class st_wcs_align:
         
         cal_data = [datamodels.open(cal_image)]
         tweakreg.input_file = imfilename
-        tweakreg.output_file = shortoutputfits
+        tweakreg.output_file = os.path.join(outdir,shortoutputfits)
         tweakreg.run(cal_data)
 
         if not os.path.isfile(outputfits):
