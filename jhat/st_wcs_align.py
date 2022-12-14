@@ -138,7 +138,7 @@ def plot_rotated(phot,ixs,d_col,col,
 
 
 def initial_dxdy_plot(phot, ixs_use, ixs_notuse, 
-                      plots_dxdy_delta_pix_ylim=7,
+                      plots_dxdy_delta_pix_ylim=20,
                       refcat_mainfilter=None,refcat_mainfilter_err=None,refcat_maincolor=None,
                       d2d_max=None,dmag_max=None,Nbright=None,delta_mag_lim=None):
     
@@ -181,6 +181,7 @@ def initial_dxdy_plot(phot, ixs_use, ixs_notuse,
         for i in range(4): sp[i].get_legend().remove()
 
     plt.tight_layout()
+    print('*** Note: close plot to continue!')
     plt.show()
     
     return(sp)
@@ -436,7 +437,7 @@ def rotate_d_and_find_binmax(phot,ixs,d_col,col,
     print(f'slope min: {slope_min}, slope max: {slope_max}, slope stepsize: slope_stepsize')
     slopes = np.arange(slope_min,slope_max,slope_stepsize)
     for counter in range(len(slopes)):
-        print(f'iteration {counter} out of {len(slopes)}: slope = {slopes[counter]:.6f}')
+        #print(f'iteration {counter} out of {len(slopes)}: slope = {slopes[counter]:.6f}')
 
         find_binmax_for_slope(slopes[counter],phot,ixs,d_col,col,
                               Naxis_px,
@@ -685,6 +686,8 @@ class st_wcs_align:
             added to the x coordinate before calculating ra,dec (only impacts ra,dec, not x). This can be used to correct for large shifts before matching!
     yshift : float
             added to the y coordinate before calculating ra,dec (only impacts ra,dec, not y). This can be used to correct for large shifts before matching! 
+    iterate_with_xyshifts: bool
+            After the first histogram fit, redo the match with refcat with x/yshift=median(dx/dy) and redo histofit. Use this if the offsets are big, since the second iteration will give you better matching with the refcat
     showplots : int 
             showplots=1: most important plots. showplots=2: all plots (debug/test/finetune)
     saveplots : int 
@@ -793,6 +796,7 @@ class st_wcs_align:
         parser.add_argument('--histocut_order', default='dxdy', choices=['dxdy','dydx'], help='histocut_order defines whether the histogram cut is first done for dx or first for dy (default=%(default)s)')
         parser.add_argument('--xshift', default=0.0, type=float, help='added to the x coordinate before calculating ra,dec (only impacts ra,dec, not x). This can be used to correct for large shifts before matching! (default=%(default)s)')
         parser.add_argument('--yshift', default=0.0, type=float, help='added to the y coordinate before calculating ra,dec (only impacts ra,dec, not y). This can be used to correct for large shifts before matching! (default=%(default)s)')
+        parser.add_argument('--iterate_with_xyshifts', default=False, action='store_true',help='After the first histogram fit, redo the match with refcat with x/yshift=median(dx/dy) and redo histofit. Use this if the offsets are big, since the second iteration will give you better matching with the refcat')
         parser.add_argument('-p','--showplots', default=0, action='count',help='showplots=1: most important plots. showplots=2: all plots (debug/test/finetune)')
         parser.add_argument('--saveplots', default=0, action='count',help='saveplots=1: most important plots. saveplots=2: all plots (debug/test/finetune)')
         parser.add_argument('-t','--savephottable', default=0, action='count',help='Save the final photometry table')
@@ -833,26 +837,31 @@ class st_wcs_align:
         self.phot.ixs4use=None            
         if self.verbose: print(f'telescope set to {self.telescope}')
 
-    def set_outbasename(self,outrootdir=None,outsubdir=None,outbasename=None,inputname=None):
+    def set_outdir(self,outrootdir=None,outsubdir=None):
         self.outdir = outrootdir
         if self.outdir is None: self.outdir = '.'
         
         if outsubdir is not None:
             self.outdir+=f'/{outsubdir}'
-        
-        self.outbasename = self.outdir
-        
+        return(self.outdir) 
+         
+    def set_outbasename(self,outrootdir=None,outsubdir=None,outbasename=None,inputname=None):
+
         if outbasename is not None:
-            self.outbasename += f'/{os.path.basename(outbasename)}'
+            if outrootdir is not None or outsubdir is not None:
+                raise RuntimeError(f'Cannot specify both, outbasename={outbasename} and outrootdir/outsubdir={outrootdir}/{outsubdir}')
+            self.set_outdir(outrootdir=os.path.dirname(outbasename))
+            self.outbasename = f'{self.outdir}/{os.path.basename(outbasename)}'
         else:
             if inputname is not None:
                 inputname = os.path.basename(inputname)
-                inputbasename = re.sub('\.fits$','',inputname)
-                if inputbasename == inputname:
-                    raise RuntimeError(f'Cound not strip ".fits" from {inputname}')
-                self.outbasename += f'/{inputbasename}'
+                inputbasename = re.sub('_([a-zA-Z0-9]+)\.fits$','',inputname)
+                #if inputbasename == inputname:
+                #    raise RuntimeError(f'Cound not strip ".fits" from {inputname}')
+                self.set_outdir(outrootdir=outrootdir,outsubdir=outsubdir)
+                self.outbasename = f'{self.outdir}/{inputbasename}'
             else:
-                RuntimeError('Could not determinev outputbasename, neither image nor basename passed to routine')
+                RuntimeError('Could not determine outputbasename, neither image nor basename passed to routine')
         
         return(self.outbasename)
         
@@ -908,8 +917,7 @@ class st_wcs_align:
             (outdir,shortoutputfits) = os.path.split(outputfits)
             
             
-            
-        print(f'Setting output directory for {outputfits} file to {outdir}')
+        print(f'Setting output directory for {shortoutputfits} file to {outdir}')
         tweakreg.output_dir = outdir
         if not os.path.isdir(outdir):
             makepath(outdir)
@@ -1012,11 +1020,11 @@ class st_wcs_align:
                                  objmag_lim = (None,None), # limits on mag, the magnitude of the objects in the image
                                  refmag_lim = (None,None), # limits on refcat_mainfilter, the magnitude of the reference catalog                    
                                  Nbright=None,
-                                 showplots=1,
-                                 saveplots=1,
+                                 show_initial_plot=1,
+                                 show_histofit_plots=1,
                                  savephottable=1,
                                  outbasename=None,
-                                 plots_dxdy_delta_pix_ylim=7,
+                                 plots_dxdy_delta_pix_ylim=20,
                                  # histogram cut parameters
                                  histocut_order = 'dxdy', # this can only be 'dxdy' or 'dydx'
                                  binsize_px = 0.2, # this is the binsize of the dx/dy histograms
@@ -1030,7 +1038,7 @@ class st_wcs_align:
         if phot is None:
             phot=self.phot
             
-        if (saveplots or savephottable) and (outbasename is None):
+        if savephottable and (outbasename is None):
             raise RuntimeError('Trying to save plots and/or phot tables, but outbasename is None!')
 
         if refcat_xcol is None: refcat_xcol = phot.refcat_xcol
@@ -1060,7 +1068,7 @@ class st_wcs_align:
         
         # do the initial dx,dy plot and other important plots
         # it shows the initial cut.
-        if showplots>1:
+        if show_initial_plot:
             initial_dxdy_plot(phot, phot.ixs_use, phot.ixs_notuse,
                               plots_dxdy_delta_pix_ylim=plots_dxdy_delta_pix_ylim,
                               refcat_mainfilter=phot.refcat_mainfilter,refcat_mainfilter_err=phot.refcat_mainfilter_err,refcat_maincolor=phot.refcat_maincolor,
@@ -1109,7 +1117,7 @@ class st_wcs_align:
                                                 rough_cut_px_min=self.rough_cut_px_min,
                                                 rough_cut_px_max=self.rough_cut_px_max,
                                                 Nsigma=self.d_rotated_Nsigma,
-                                                showplots=showplots)
+                                                showplots=show_histofit_plots)
 
         # Do the histogram cut on the second dcol (dx or dy, as selected)
         (ixs_cut2,rot_results2) = histogram_cut(phot,ixs_cut1,d_col2,col2,Naxis2_px,
@@ -1122,7 +1130,7 @@ class st_wcs_align:
                                                 rough_cut_px_min=self.rough_cut_px_min,
                                                 rough_cut_px_max=self.rough_cut_px_max,
                                                 Nsigma=self.d_rotated_Nsigma,
-                                                showplots=showplots)
+                                                showplots=show_histofit_plots)
 
 
         if savephottable:
@@ -1132,7 +1140,11 @@ class st_wcs_align:
                 #print(f'Saving {outbasename}.all.phot.txt')
                 phot.write(f'{outbasename}.allmatches.phot.txt',verbose=1)
 
-        #if showplots>1:
+        if show_histofit_plots>1:
+            plt.tight_layout()
+            print('*** Note: close plots to continue!')
+            plt.show()
+
             # get the bad data points
         #    infoplots(phot,ixs_dy_cut,dy_plotlim=dy_plotlim,dx_plotlim=dx_plotlim)
             
@@ -1274,32 +1286,23 @@ class st_wcs_align:
                 Nfwhm = 2.5,
                 xshift=0.0,# added to the x coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
                 yshift=0.0, # added to the y coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
+                iterate_with_xyshifts = False,
                 showplots=0,
                 saveplots=0,
                 savephottable=0,
                 ee_radius=70                ):
             
         
-        # apply distortion coefficients if wanted.
-        #if distortion_file is not None:
-            # apply distortion terms
-        #    (runflag,calimname) = self.run_applydistortions(input_image,
-        #                                                    distortion_file,
-        #                                                    overwrite = overwrite, 
-        #                                                    skip_if_exists = (skip_applydistortions_if_exists |  skip_if_exists))
-        #else:
-        
-        calimname = input_image
-        
+        # set self.outbasename based on option
         self.set_outbasename(outrootdir=outrootdir,outsubdir=outsubdir,inputname=input_image)
         
         # set the telescope
-        self.set_telescope(telescope=telescope,imname=calimname)
+        self.set_telescope(telescope=telescope,imname=input_image)
             
         # do the photometry
         self.phot.verbose = self.verbose
         photfilename = f'{self.outbasename}.phot.txt'
-        (photfilename_4check,photcat_loaded) = self.phot.run_phot(calimname,
+        (photfilename_4check,photcat_loaded) = self.phot.run_phot(input_image,
                                                                   use_dq=use_dq,
                                                                   photfilename=photfilename,
                                                                   load_photcat_if_exists=load_photcat_if_exists,
@@ -1309,6 +1312,8 @@ class st_wcs_align:
                                                                   xshift=xshift,
                                                                   yshift=yshift,
                                                                   ee_radius=ee_radius)
+        if (photfilename!=photfilename_4check):
+            raise RuntimeError(f'BUG!!! {photfilename}!={photfilename_4check}')
             
         # make the initial cut on the image photometry catalog on magnitudes, sharpness, roundness etc
         ixs_use = self.phot.initial_cut_photcat(dmag_max = dmag_max,
@@ -1346,14 +1351,52 @@ class st_wcs_align:
                                                      slope_min=slope_min, 
                                                      slope_Nsteps = slope_Nsteps, # slope_max=-slope_min, slope_stepsize=(slope_max-slope_min)/slope_Nsteps
                                                      Nfwhm = Nfwhm,
-                                                     showplots=showplots,
-                                                     saveplots=saveplots,
+                                                     show_initial_plot=showplots,
+                                                     show_histofit_plots=showplots,
                                                      savephottable=savephottable,
                                                      outbasename=self.outbasename
-                                                     )        
+                                                     )     
+        
+        # If iterate with x/yshift
+        if iterate_with_xyshifts:
+            # get the median of dx and dy of the best matched objects from the first iteration!
+            dx_median = self.phot.t.loc[ixs_bestmatch,'dx'].median()
+            dy_median = self.phot.t.loc[ixs_bestmatch,'dy'].median()
+            print(f'dx median of best matched objects of 1st iteration: {dx_median}',
+                  f'dy median of best matched objects of 1st iteration: {dy_median}')
+            
+            # remove all columns from previous iteration in the main table
+            refcatcols = ['dx','dy','delta_mag']
+            for col in self.phot.t.columns:
+                if re.search(f'^{self.phot.refcat.short}_',col):
+                    refcatcols.append(col)
+            self.phot.t.drop(refcatcols,axis=1)
+    
+            # re-calculate the ra,dec, now with the xy shifts from the first iteration
+            self.phot.xy_to_radec(indices=ixs_use,xshift=dx_median,yshift=dy_median)
+            
+            # rematch the refcat 
+            self.phot.match_refcat(ixs_obj=ixs_use,
+                                   ixs_refcat=self.phot.ixs_use_refcat)
 
-        jhatfits = f'{self.outbasename}.jhat.fits'
-        (runflag,jhatfits) = self.run_align2refcat(calimname,
+            # find again the best matches
+            ixs_bestmatch= self.find_good_refcat_matches(ixs=ixs_use,
+                                                         d2d_max = d2d_max,
+                                                         delta_mag_lim = delta_mag_lim, # limits on mag-refcat_mainfilter
+                                                         refmag_lim = refmag_lim, # limits on refcat_mainfilter, the magnitude of the reference catalog
+                                                         histocut_order=histocut_order,
+                                                         slope_min=slope_min, 
+                                                         slope_Nsteps = slope_Nsteps, # slope_max=-slope_min, slope_stepsize=(slope_max-slope_min)/slope_Nsteps
+                                                         Nfwhm = Nfwhm,
+                                                         show_initial_plot=0,
+                                                         show_histofit_plots=showplots,
+                                                         savephottable=savephottable,
+                                                         outbasename=self.outbasename
+                                                         )     
+
+        jhatfits = f'{self.outbasename}_jhat.fits'
+        jhatfits = f'{self.outbasename}_tweakregstep.fits'
+        (runflag,jhatfits) = self.run_align2refcat(input_image,
                                                    outputfits=jhatfits,
                                                    ixs=ixs_bestmatch,
                                                    overwrite=overwrite,skip_if_exists=skip_if_exists)
@@ -1367,6 +1410,7 @@ class st_wcs_align:
                                             )
 
         if showplots: 
+            print('*** Note: close plots to continue!')
             plt.show()
 
         return(0)

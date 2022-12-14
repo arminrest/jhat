@@ -72,20 +72,26 @@ class align_wcs_batch(pdastroclass):
         return(parser)
     
     #def get_output_filenames(self, suffixmapping = {'cal':'tweakregstep','rate':'tweakregstep'},ixs=None):
-    def get_output_filenames(self, outputsuffix = 'tweakregstep',ixs=None):
+    def get_output_filenames(self, outputsuffix = 'tweakregstep',ixs=None,outrootdir=None,outsubdir=None):
         ixs = self.getindices(ixs)
         ixs_exists=[]
         ixs_notexists=[]
         for ix in ixs:
-            pattern = '(.*)_([a-zA-Z0-9]+)\.fits$'
-            m = re.search(pattern,self.t.loc[ix,'filename'])
-            if m is None:
-                raise RuntimeError(f'cannot determine suffix for file {self.t.loc[ix,"filename"]} with pattern {pattern}!')
-            (inputbasename,inputsuffix)=m.groups()
-            inputbasename = os.path.basename(inputbasename)
+            #pattern = '(.*)_([a-zA-Z0-9]+)\.fits$'
+            #m = re.search(pattern,self.t.loc[ix,'filename'])
+            #if m is None:
+            #    raise RuntimeError(f'cannot determine suffix for file {self.t.loc[ix,"filename"]} with pattern {pattern}!')
+            #(inputname_nosuffix,inputsuffix)=m.groups()
+            #inputbasename = os.path.basename(inputname_nosuffix)
+            
+            outfilebasename = self.wcs_align.set_outbasename(outrootdir=outrootdir,
+                                                         outsubdir=outsubdir,
+                                                         inputname=self.t.loc[ix,'filename'])
+            
+            outfilename = f'{outfilebasename}_{outputsuffix}.fits'
             
             #outfilename = f'{self.outdir}/{inputbasename}_{suffixmapping[inputsuffix]}.fits'
-            outfilename = f'{self.outdir}/{inputbasename}_{outputsuffix}.fits'
+            #outfilename = f'{self.outdir}/{inputbasename}_{outputsuffix}.fits'
             self.t.loc[ix,'outfilename']=outfilename
             if os.path.isfile(outfilename):
                 self.t.loc[ix,'outfile_exists']='yes'
@@ -99,9 +105,9 @@ class align_wcs_batch(pdastroclass):
         return(ixs_exists,ixs_notexists)
 
 
-    def set_outdir(self,outrootdir=None,outsubdir=None):
-        self.outdir = self.wcs_align.set_outdir(outrootdir,outsubdir)
-        return(self.outdir)
+    #def set_outdir(self,outrootdir=None,outsubdir=None):
+    #    self.outdir = self.wcs_align.set_outdir(outrootdir,outsubdir)
+    #    return(self.outdir)
 
     def get_files(self,filepatterns,directory=None):
         filenames=[]
@@ -142,7 +148,9 @@ class align_wcs_batch(pdastroclass):
         
         if self.verbose:
             print(f'##################\n### Found {len(ixs)} input files with the correct filepatterns {filepatterns}')
-            
+        if len(ixs)<1:
+            return(1)
+        
         # if specified, select on filters
         if filters is not None:
             ixs_filters = []
@@ -165,8 +173,8 @@ class align_wcs_batch(pdastroclass):
 
     
     def align_wcs(self, ixs, 
-                  #outrootdir=None, 
-                  #outsubdir=None,
+                  outrootdir=None, 
+                  outsubdir=None,
                   overwrite = False,
                   skip_if_exists = False,
                   telescope = None,
@@ -197,6 +205,7 @@ class align_wcs_batch(pdastroclass):
                   histocut_order='dxdy', # histocut_order defines whether the histogram cut is first done for dx or first for dy
                   xshift=0.0,# added to the x coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
                   yshift=0.0, # added to the y coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
+                  iterate_with_xyshifts = False, # After the first histogram fit, redo the match with refcat with x/yshift=median(dx/dy) and redo histofit. Use this if the offsets are big, since the second iteration will give you better matching with the refcat
                   showplots=0,
                   saveplots=0,
                   savephottable=0):
@@ -212,7 +221,7 @@ class align_wcs_batch(pdastroclass):
 
             self.wcs_align = st_wcs_align()
             self.wcs_align.calphot=jwst_photclass()
-            self.wcs_align.outdir = self.outdir
+            #self.wcs_align.outdir = self.outdir
 
             self.wcs_align.verbose = self.verbose
             self.wcs_align.replace_sip = self.replace_sip
@@ -229,8 +238,8 @@ class align_wcs_batch(pdastroclass):
                 self.wcs_align.run_all(inputfile,
                                        #distortion_file=distfile,  
                                        telescope = telescope,
-                                       outrootdir = args.outrootdir,
-                                       outsubdir = args.outsubdir,
+                                       outrootdir = outrootdir,
+                                       outsubdir = outsubdir,
                                        overwrite = overwrite,
                                        skip_if_exists = skip_if_exists,
                                        #skip_applydistortions_if_exists=skip_applydistortions_if_exists,
@@ -258,6 +267,7 @@ class align_wcs_batch(pdastroclass):
                                        histocut_order=histocut_order, # histocut_order defines whether the histogram cut is first done for dx or first for dy
                                        xshift=xshift,# added to the x coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
                                        yshift=yshift, # added to the y coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
+                                       iterate_with_xyshifts=iterate_with_xyshifts, # After the first histogram fit, redo the match with refcat with x/yshift=median(dx/dy) and redo histofit. Use this if the offsets are big, since the second iteration will give you better matching with the refcat
                                        showplots=showplots,
                                        saveplots=saveplots,# 
                                        savephottable=savephottable)
@@ -267,6 +277,8 @@ class align_wcs_batch(pdastroclass):
                     self.wcs_align.run_all(inputfile,
                                            #distortion_file=distfile,                     
                                            telescope = telescope,
+                                           outrootdir = outrootdir,
+                                           outsubdir = outsubdir,
                                            overwrite = overwrite,
                                            skip_if_exists = skip_if_exists,
                                            #skip_applydistortions_if_exists=skip_applydistortions_if_exists,
@@ -294,6 +306,7 @@ class align_wcs_batch(pdastroclass):
                                            histocut_order=histocut_order, # histocut_order defines whether the histogram cut is first done for dx or first for dy
                                            xshift=xshift,# added to the x coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
                                            yshift=yshift, # added to the y coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
+                                           iterate_with_xyshifts=iterate_with_xyshifts, # After the first histogram fit, redo the match with refcat with x/yshift=median(dx/dy) and redo histofit. Use this if the offsets are big, since the second iteration will give you better matching with the refcat
                                            showplots=showplots,
                                            saveplots=saveplots,# 
                                            savephottable=savephottable)
@@ -321,8 +334,8 @@ if __name__ == '__main__':
 
 
     # set the output directory
-    align_batch.set_outdir(outrootdir=args.outrootdir,
-                           outsubdir=args.outsubdir)
+    #align_batch.set_outdir(outrootdir=args.outrootdir,
+    #                       outsubdir=args.outsubdir)
 
     # get the input files
     align_batch.get_input_files(args.input_files,directory=args.input_dir,
@@ -346,8 +359,13 @@ if __name__ == '__main__':
         print('NO IMAGES FOUND!! exiting...')
         sys.exit(0)
         
+    # set the output directory based on outrootdir and outsubdir
+    # align_batch.set_outdir(outrootdir=args.outrootdir,outsubdir=args.outsubdir)
+        
     # get the output filenames
-    ixs_exists,ixs_notexists = align_batch.get_output_filenames(ixs=ixs_all)    
+    ixs_exists,ixs_notexists = align_batch.get_output_filenames(ixs=ixs_all,
+                                                                outrootdir=args.outrootdir,
+                                                                outsubdir=args.outsubdir)    
     
     
     ixs_todo = ixs_notexists[:]
@@ -362,7 +380,7 @@ if __name__ == '__main__':
                raise RuntimeError(f'{len(ixs_exists)} output images already exist, exiting! if you want to overwrite them, use the --overwrite option, or if you want to skip them, use the --skip_if_exists option!')
 
 
-    print(f'Output directory:{align_batch.outdir}')
+    print(f'Output directory:{os.path.dirname(align_batch.t.loc[0,"filename"])}')
     do_it = input(f'Do you want to continue and align the wcs for {len(ixs_todo)} images [y/n]?  ')
     if do_it.lower() in ['y','yes']:
         pass

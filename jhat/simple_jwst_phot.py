@@ -1550,16 +1550,11 @@ class jwst_photclass(pdastrostatsclass):
             print(f'{len(ixs_use)} left')
             
         
-        ixs_notuse = AnotB(ixs,ixs_use)
-
-        print(f'{len(ixs_use)} of image photometry objects pass initial cuts #1, {len(ixs_notuse)} cut')
+        print(f'{len(ixs_use)} of image photometry objects pass initial cuts #1, {len(ixs)-len(ixs_use)} cut')
 
         self.ixs_use = ixs_use
-        
-        if self.ixs_notuse is None:
-            self.ixs_notuse = ixs_notuse
-        else:
-            self.ixs_notuse = AorB(ixs_notuse,self.ixs_notuse)         
+        self.ixs_notuse = AorB(self.getindices(),ixs_use) 
+
         return(self.ixs_use)
 
     def initial_cut_matches(self, 
@@ -1587,17 +1582,13 @@ class jwst_photclass(pdastrostatsclass):
             ixs_sort = self.ix_sort_by_cols(['mag'],indices=ixs_use)
             ixs_use = ixs_sort[:Nbright]
             print(f'{len(ixs_use)} left')
-            
-        
-        ixs_notuse = AnotB(ixs,ixs_use)
-        print(f'{len(ixs_use)} of image photometry objects pass initial cuts #1, {len(ixs_notuse)} cut')
+                    
+        print(f'{len(ixs_use)} of image photometry objects pass initial cuts #1, {len(ixs)-len(ixs_use)} cut')
 
         self.ixs_use = ixs_use
-        
-        if self.ixs_notuse is None:
-            self.ixs_notuse = ixs_notuse
-        else:
-            self.ixs_notuse = AorB(ixs_notuse,self.ixs_notuse)         
+        self.ixs_notuse = AorB(self.getindices(),ixs_use) 
+
+
         return(self.ixs_use)
     
 
@@ -1633,16 +1624,11 @@ class jwst_photclass(pdastrostatsclass):
             ixs_use_refcat = self.refcat.ix_inrange(self.refcat.maincolor,refcolor_lim[0],refcolor_lim[1],indices=ixs_use_refcat)
             print(f'{len(ixs_use_refcat)} left')
 
-        ixs_notuse_refcat = AnotB(ixs_refcat,ixs_use_refcat)
-
-        print(f'{len(ixs_use_refcat)} of image photometry objects pass initial cuts #1, {len(ixs_notuse_refcat)} cut')
+        print(f'{len(ixs_use_refcat)} of image photometry objects pass initial cuts #1, {len(ixs_refcat)-len(ixs_use_refcat)} cut')
 
         self.ixs_use_refcat = ixs_use_refcat
-        
-        if self.ixs_notuse_refcat is None:
-            self.ixs_notuse_refcat = ixs_notuse_refcat
-        else:
-            self.ixs_notuse_refcat = AorB(ixs_notuse_refcat,self.ixs_notuse_refcat)         
+        self.ixs_notuse_refcat = AorB(self.refcat.getindices(),ixs_use_refcat) 
+
         return(self.ixs_use_refcat)
 
 
