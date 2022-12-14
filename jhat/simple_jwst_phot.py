@@ -514,7 +514,6 @@ class jwst_photclass(pdastrostatsclass):
             self.err = None
         self.pixel_scale = wcs.utils.proj_plane_pixel_scales(self.sci_wcs)[0]  *\
          self.sci_wcs.wcs.cunit[0].to('arcsec')
-        print(self.im.info())
         self.instrument = self.dm.meta.instrument.name
         self.detector = self.dm.meta.instrument.detector
         self.filtername = self.dm.meta.instrument.filter
@@ -588,7 +587,6 @@ class jwst_photclass(pdastrostatsclass):
                 raise RuntimeError(f'imhdr["BUNIT"]={imhdr["BUNIT"]} is not MJy/sr!')
             if self.verbose: print(f'Converting units from {imhdr["BUNIT"]} to DN/s')
             data = data_pam / imhdr['PHOTMJSR']
-            
         else:
             data = data_pam
         
@@ -874,22 +872,28 @@ class jwst_photclass(pdastrostatsclass):
             phot['annulus_median'] = local_sky_median
             phot['aper_bkg'] = local_sky_median * aperture.area
             phot['aper_sum_bkgsub'] = phot['aperture_sum'] - phot['aper_bkg']
+            epadu = scihdr['XPOSURE']*scihdr['PHOTMJSR']
             if self.err is None:
-                error_poisson = np.sqrt(phot['aperture_sum'])
+                error_poisson = np.sqrt(phot['aper_sum_bkgsub'])
                 error_scatter_sky = aperture.area * local_sky_stdev**2
                 error_mean_sky = local_sky_stdev**2 * aperture.area**2 / annulus_aperture.area
-                fluxerr = np.sqrt(error_poisson**2 + error_scatter_sky + error_mean_sky)
+                fluxerr = np.sqrt(error_poisson**2/epadu + error_scatter_sky + error_mean_sky)
             else:
                 fluxerr = phot['aperture_sum_err']
-            
-        
+
+
+
             phot['aper_sum_bkgsub']*=self.apcorr
             fluxerr*=self.apcorr
-            phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-            
             flux_units = u.MJy / u.sr * (self.pixel_scale * u.arcsec)**2
             flux = phot['aper_sum_bkgsub']*flux_units
+            fluxerr = fluxerr*flux_units
+            fluxerr = fluxerr.value
+            
             phot['mag'] = flux.to(u.ABmag).value
+            flux = flux.value
+            phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/flux))
+
             table_aper.add_column(phot['aperture_sum'], name=self.colname('aper_sum',rad))
             table_aper.add_column(phot['annulus_median'], name=self.colname('annulus_median',rad))
             table_aper.add_column(phot['aper_bkg'], name=self.colname('aper_bkg',rad))
@@ -1381,7 +1385,7 @@ class jwst_photclass(pdastrostatsclass):
                  overwrite=False,                
                  load_photcat_if_exists=False,
                  use_dq = False,
-                 DNunits=True, 
+                 DNunits=False, 
                  SNR_min=3.0,
                  do_photometry_flag=True,
                  photcat_loaded = False,
@@ -2131,7 +2135,7 @@ if __name__ == '__main__':
                   outsubdir=args.outsubdir,
                   overwrite=args.overwrite,
                   load_photcat_if_exists=True,
-                  DNunits=True,
+                  DNunits=False,
                   use_dq=False,
                   SNR_min=args.SNR_min,
                   xshift=args.xshift,# added to the x coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!

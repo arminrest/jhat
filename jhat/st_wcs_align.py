@@ -832,6 +832,7 @@ class st_wcs_align:
             self.phot=jwst_photclass()
         elif telescope.lower() == 'hst':
             self.phot=hst_photclass()
+            self.replace_sip = True
         else:
             raise RuntimeError(f'unknown telescope {telescope}')
         self.phot.ixs4use=None            
@@ -973,7 +974,7 @@ class st_wcs_align:
         
         cal_data = [datamodels.open(cal_image)]
         tweakreg.input_file = imfilename
-        tweakreg.output_file = shortoutputfits
+        tweakreg.output_file = os.path.join(outdir,shortoutputfits)
         tweakreg.run(cal_data)
 
         if not os.path.isfile(outputfits):
