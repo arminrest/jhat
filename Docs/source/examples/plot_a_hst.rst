@@ -109,7 +109,7 @@ the same filter and same field, just separated in time.
 
     <div class="output_subarea output_html rendered_html output_result">
     <div><i>Table length=1</i>
-    <table id="table140678082255776" class="table-striped table-bordered table-condensed">
+    <table id="table140438358616256" class="table-striped table-bordered table-condensed">
     <thead><tr><th>Local Path</th><th>Status</th><th>Message</th><th>URL</th></tr></thead>
     <thead><tr><th>str95</th><th>str8</th><th>object</th><th>object</th></tr></thead>
     <tr><td>./mastDownload/HST/hst_16264_15_wfc3_ir_f110w_iebc15/hst_16264_15_wfc3_ir_f110w_iebc15_drz.fits</td><td>COMPLETE</td><td>None</td><td>None</td></tr>
@@ -245,11 +245,11 @@ create a catalog that we will use to align the other image.
 
     F110W
     Performing aperture photometry for radius r = 5 px
-    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1776: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1902: RuntimeWarning: invalid value encountered in log10
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
-    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1779: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1905: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 1.0696695380029269
+    Time Elapsed: 1.1279727760120295
     996 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 769 objects left after removing entries dmag>0.36200000000000004 (SNR<3.0)
     769 out of 996 entries remain in photometry table
@@ -309,11 +309,11 @@ subsequent correction needed for optimal alignment.
 
 
     wcs_align = st_wcs_align()
-    wcs_align.outdir = 'mastDownload'
 
 
     wcs_align.run_all(align_image,
     		  telescope='hst',
+    		  outsubdir='mastDownload',
               refcat_racol='ra',
               refcat_deccol='dec',
               refcat_magcol='mag',
@@ -339,7 +339,7 @@ subsequent correction needed for optimal alignment.
     *
 
       .. image-sg:: /examples/images/sphx_glr_plot_a_hst_003.png
-         :alt: Initial cut: d2d_max=0.5, dmag_max=1.0, Nbright=None, delta_mag_lim=(None, None)
+         :alt: Initial cut: d2d_max=0.5, dmag_max=None, Nbright=None, delta_mag_lim=(None, None)
          :srcset: /examples/images/sphx_glr_plot_a_hst_003.png
          :class: sphx-glr-multi-img
 
@@ -365,7 +365,7 @@ subsequent correction needed for optimal alignment.
     Warning: Setting aperture radius to twice the psf_fwhm (4.000000)
 
     ### Doing photometry on mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits
-    NO photometry catalog filename
+    photometry catalog filename: ./mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_drz.phot.txt
     Finding stars --- Detector: None, Filter: F110W
     FWHM for the filter F110W: 2 px
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
@@ -378,11 +378,11 @@ subsequent correction needed for optimal alignment.
 
     F110W
     Performing aperture photometry for radius r = 4 px
-    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1776: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1902: RuntimeWarning: invalid value encountered in log10
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
-    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1779: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1905: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 0.8952576949959621
+    Time Elapsed: 0.8950312440283597
     947 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 733 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     733 out of 947 entries remain in photometry table
@@ -398,6 +398,17 @@ subsequent correction needed for optimal alignment.
     945    647.708427
     946    696.459286
     Name: x, Length: 947, dtype: float64
+    Saving ./mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_drz.phot.txt
+    ########### !!!!!!!!!!  INITIAL CUT on image photometry cat: starting with 947 objects
+    dmag_max =1.0 CUT:
+    889 left
+    SHARPNESS =(0.3, 0.9) CUT:
+    844 left
+    roundness1=(-0.7, 0.7) CUT:
+    725 left
+    objmag_lim=(14, 24) CUT:
+    298 left
+    298 of image photometry objects pass initial cuts #1, 649 cut
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
     'WFC3' is not one of ['NIRCAM', 'NIRSPEC', 'MIRI', 'TFI', 'FGS', 'NIRISS', 'ANY', 'N/A']
 
@@ -508,22 +519,17 @@ subsequent correction needed for optimal alignment.
       warnings.warn(errmsg, ValidationWarning)
     RA/Dec columns in reference catalog:  ra dec
     LOADING refcat mastDownload/HST/hst_16264_15_wfc3_ir_f110w_iebc15/hst_16264_15_wfc3_ir_f110w_iebc15_drz.phot.txt
+    ########### !!!!!!!!!!  INITIAL CUT on reference catalog: starting with 769 objects
+    769 of image photometry objects pass initial cuts #1, 0 cut
     Matching reference catalog mastDownload/HST/hst_16264_15_wfc3_ir_f110w_iebc15/hst_16264_15_wfc3_ir_f110w_iebc15_drz.phot.txt
-    image objects are in x_idl=[-67.59,118.37] and y_idl=[-61.98,106.29] range
+    image objects are in x_idl=[-64.80,116.36] and y_idl=[-58.22,100.00] range
     Keeping 769 out of 769 catalog objects within x=-40.0-1499 and y=-40.0-1498
     Keeping 769  after removing NaNs from ra/dec
-    ########### !!!!!!!!!!  INITIAL CUT: starting with 947 objects
+    !! Matching 294 image objects to 769 refcat objects!
+    ########### !!!!!!!!!!  INITIAL CUT on matched cat: starting with 298 objects
     d2d =0.5 CUT:
-    534 left
-    dmag_max =1.0 CUT:
-    534 left
-    SHARPNESS =(0.3, 0.9) CUT:
-    529 left
-    roundness1=(-0.7, 0.7) CUT:
-    466 left
-    objmag_lim=(14, 24) CUT:
     248 left
-    # of matched objects that pass initial cuts: 248
+    248 of image photometry objects pass initial cuts #1, 50 cut
     dx median: 2.0992883163053477
     dy median: 1.9352848066388333
     ### Doing histogram cut for dx, slope_min:-0.004883 slope_max:0.004883 slope_stepsize:0.000049
@@ -1532,8 +1538,7 @@ subsequent correction needed for optimal alignment.
       warnings.warn(errmsg, ValidationWarning)
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jwst/datamodels/util.py:234: NoTypeWarning: model_type not found. Opening mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits as a ImageModel
       warnings.warn(f"model_type not found. Opening {file_name} as a {class_name}",
-    mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_tweakregstep.fits
-    Setting output directory for tweakregstep.fits file to mastDownload
+    Setting output directory for ./mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_drz.jhat.fits file to ./mastDownload
 
     0
 
@@ -1552,7 +1557,7 @@ subsequent correction needed for optimal alignment.
 .. code-block:: default
 
 
-    aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('drz.fits','tweakregstep.fits'))
+    aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('.fits','.jhat.fits'))
     aligned_fits = fits.open(aligned_image)
     aligned_data = fits.open(aligned_image)['SCI',1].data
     aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))
@@ -1598,7 +1603,7 @@ You can also align each image to the Gaia DR3 catalog, or you
 could replace the catalog created in step one with your own
 catalog of the field. 
 
-.. GENERATED FROM PYTHON SOURCE LINES 191-226
+.. GENERATED FROM PYTHON SOURCE LINES 191-227
 
 .. code-block:: default
 
@@ -1606,6 +1611,7 @@ catalog of the field.
 
     wcs_align.run_all(align_image,
     		  telescope='hst',
+    		  outsubdir='mastDownload',
               overwrite=True,
               d2d_max=.5,
               showplots=0,
@@ -1617,7 +1623,7 @@ catalog of the field.
                   dmag_max=1.0,
                   objmag_lim =(14,24))
 
-    aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('drz.fits','tweakregstep.fits'))
+    aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('.fits','.jhat.fits'))
     aligned_fits = fits.open(aligned_image)
     aligned_data = fits.open(aligned_image)['SCI',1].data
     aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))
@@ -1665,7 +1671,8 @@ catalog of the field.
     Warning: Setting aperture radius to twice the psf_fwhm (4.000000)
 
     ### Doing photometry on mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits
-    NO photometry catalog filename
+    photometry catalog filename: ./mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_drz.phot.txt
+    photcat ./mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_drz.phot.txt already exists, but recreating it since overwrite=True
     Finding stars --- Detector: None, Filter: F110W
     FWHM for the filter F110W: 2 px
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
@@ -1678,11 +1685,11 @@ catalog of the field.
 
     F110W
     Performing aperture photometry for radius r = 4 px
-    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1776: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1902: RuntimeWarning: invalid value encountered in log10
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
-    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1779: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1905: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 0.8877470020088367
+    Time Elapsed: 0.9012652729870752
     947 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 733 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     733 out of 947 entries remain in photometry table
@@ -1698,6 +1705,17 @@ catalog of the field.
     945    647.708427
     946    696.459286
     Name: x, Length: 947, dtype: float64
+    Saving ./mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_drz.phot.txt
+    ########### !!!!!!!!!!  INITIAL CUT on image photometry cat: starting with 947 objects
+    dmag_max =1.0 CUT:
+    889 left
+    SHARPNESS =(0.3, 0.9) CUT:
+    844 left
+    roundness1=(-0.7, 0.7) CUT:
+    725 left
+    objmag_lim=(14, 24) CUT:
+    298 left
+    298 of image photometry objects pass initial cuts #1, 649 cut
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
     'WFC3' is not one of ['NIRCAM', 'NIRSPEC', 'MIRI', 'TFI', 'FGS', 'NIRISS', 'ANY', 'N/A']
 
@@ -1807,29 +1825,24 @@ catalog of the field.
                       ...
       warnings.warn(errmsg, ValidationWarning)
     RA/Dec columns in reference catalog:  auto auto
-    query:SELECT * FROM gaiadr2.gaia_source WHERE CONTAINS(POINT('ICRS',            gaiadr2.gaia_source.ra,gaiadr2.gaia_source.dec),            CIRCLE('ICRS',322.42003890694355,0.09041324953462498 ,0.07348120684051437))=1;
+    query:SELECT * FROM gaiadr2.gaia_source WHERE CONTAINS(POINT('ICRS',            gaiadr2.gaia_source.ra,gaiadr2.gaia_source.dec),            CIRCLE('ICRS',322.42003890694355,0.09041324953462498 ,0.05511090513038578))=1;
     INFO: Query finished. [astroquery.utils.tap.core]
-    Number of stars: 164
+    Number of stars: 81
     ### NO propoer motion correction!!!
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/pandas/core/arraylike.py:397: RuntimeWarning: invalid value encountered in sqrt
       result = getattr(ufunc, method)(*inputs, **kwargs)
-    Number of stars after removing nan's: 164
+    Number of stars after removing nan's: 81
+    ########### !!!!!!!!!!  INITIAL CUT on reference catalog: starting with 81 objects
+    81 of image photometry objects pass initial cuts #1, 0 cut
     Matching reference catalog Gaia
-    image objects are in x_idl=[-67.59,118.37] and y_idl=[-61.98,106.29] range
-    Keeping 19 out of 164 catalog objects within x=-40.0-1499 and y=-40.0-1498
+    image objects are in x_idl=[-64.80,116.36] and y_idl=[-58.22,100.00] range
+    Keeping 19 out of 81 catalog objects within x=-40.0-1499 and y=-40.0-1498
     Keeping 19  after removing NaNs from ra/dec
-    ########### !!!!!!!!!!  INITIAL CUT: starting with 947 objects
+    !! Matching 294 image objects to 19 refcat objects!
+    ########### !!!!!!!!!!  INITIAL CUT on matched cat: starting with 298 objects
     d2d =0.5 CUT:
     9 left
-    dmag_max =1.0 CUT:
-    9 left
-    SHARPNESS =(0.3, 0.9) CUT:
-    9 left
-    roundness1=(-0.7, 0.7) CUT:
-    9 left
-    objmag_lim=(14, 24) CUT:
-    9 left
-    # of matched objects that pass initial cuts: 9
+    9 of image photometry objects pass initial cuts #1, 289 cut
     ### Doing histogram cut for dx, slope_min:-0.004883 slope_max:0.004883 slope_stepsize:0.000049
     Nfwhm=2.5, rough_cut_px_min=0.3, rough_cut_px_max=0.8, Nsigma=3.0
     ########################
@@ -2796,13 +2809,12 @@ catalog of the field.
       warnings.warn(errmsg, ValidationWarning)
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jwst/datamodels/util.py:234: NoTypeWarning: model_type not found. Opening mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits as a ImageModel
       warnings.warn(f"model_type not found. Opening {file_name} as a {class_name}",
-    mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_tweakregstep.fits
-    Setting output directory for tweakregstep.fits file to mastDownload
+    Setting output directory for ./mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_drz.jhat.fits file to ./mastDownload
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 227-234
+.. GENERATED FROM PYTHON SOURCE LINES 228-235
 
 -------------
 Large Offsets
@@ -2812,7 +2824,7 @@ Sometimes the initial images are so poorly aligned, that the code
 fails. Here we read in the same image as in the first example,
 and add an additional 3 pixel offset in the wcs. 
 
-.. GENERATED FROM PYTHON SOURCE LINES 235-287
+.. GENERATED FROM PYTHON SOURCE LINES 236-288
 
 .. code-block:: default
 
@@ -2845,11 +2857,11 @@ and add an additional 3 pixel offset in the wcs.
     plt.show()
 
     wcs_align = st_wcs_align()
-    wcs_align.outdir = 'mastDownload'
 
     try:
     	wcs_align.run_all(align_image,
     		  telescope='hst',
+    		  outsubdir='mastDownload',
               refcat_racol='ra',
               refcat_deccol='dec',
               refcat_magcol='mag',
@@ -2884,7 +2896,7 @@ and add an additional 3 pixel offset in the wcs.
     *
 
       .. image-sg:: /examples/images/sphx_glr_plot_a_hst_010.png
-         :alt: Initial cut: d2d_max=0.5, dmag_max=1.0, Nbright=None, delta_mag_lim=(None, None)
+         :alt: Initial cut: d2d_max=0.5, dmag_max=None, Nbright=None, delta_mag_lim=(None, None)
          :srcset: /examples/images/sphx_glr_plot_a_hst_010.png
          :class: sphx-glr-multi-img
 
@@ -2910,7 +2922,8 @@ and add an additional 3 pixel offset in the wcs.
     Warning: Setting aperture radius to twice the psf_fwhm (4.000000)
 
     ### Doing photometry on mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits
-    NO photometry catalog filename
+    photometry catalog filename: ./mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_drz.phot.txt
+    photcat ./mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_drz.phot.txt already exists, but recreating it since overwrite=True
     Finding stars --- Detector: None, Filter: F110W
     FWHM for the filter F110W: 2 px
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
@@ -2923,11 +2936,11 @@ and add an additional 3 pixel offset in the wcs.
 
     F110W
     Performing aperture photometry for radius r = 4 px
-    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1776: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1902: RuntimeWarning: invalid value encountered in log10
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
-    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1779: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1905: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 0.8645844390266575
+    Time Elapsed: 0.900825867021922
     947 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 733 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     733 out of 947 entries remain in photometry table
@@ -2943,6 +2956,17 @@ and add an additional 3 pixel offset in the wcs.
     945    647.708427
     946    696.459286
     Name: x, Length: 947, dtype: float64
+    Saving ./mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_drz.phot.txt
+    ########### !!!!!!!!!!  INITIAL CUT on image photometry cat: starting with 947 objects
+    dmag_max =1.0 CUT:
+    889 left
+    SHARPNESS =(0.3, 0.9) CUT:
+    844 left
+    roundness1=(-0.7, 0.7) CUT:
+    725 left
+    objmag_lim=(14, 24) CUT:
+    298 left
+    298 of image photometry objects pass initial cuts #1, 649 cut
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
     'WFC3' is not one of ['NIRCAM', 'NIRSPEC', 'MIRI', 'TFI', 'FGS', 'NIRISS', 'ANY', 'N/A']
 
@@ -3053,22 +3077,17 @@ and add an additional 3 pixel offset in the wcs.
       warnings.warn(errmsg, ValidationWarning)
     RA/Dec columns in reference catalog:  ra dec
     LOADING refcat mastDownload/HST/hst_16264_15_wfc3_ir_f110w_iebc15/hst_16264_15_wfc3_ir_f110w_iebc15_drz.phot.txt
+    ########### !!!!!!!!!!  INITIAL CUT on reference catalog: starting with 769 objects
+    769 of image photometry objects pass initial cuts #1, 0 cut
     Matching reference catalog mastDownload/HST/hst_16264_15_wfc3_ir_f110w_iebc15/hst_16264_15_wfc3_ir_f110w_iebc15_drz.phot.txt
-    image objects are in x_idl=[-67.59,118.37] and y_idl=[-61.98,106.29] range
+    image objects are in x_idl=[-64.80,116.36] and y_idl=[-58.22,100.00] range
     Keeping 769 out of 769 catalog objects within x=-40.0-1499 and y=-40.0-1498
     Keeping 769  after removing NaNs from ra/dec
-    ########### !!!!!!!!!!  INITIAL CUT: starting with 947 objects
+    !! Matching 294 image objects to 769 refcat objects!
+    ########### !!!!!!!!!!  INITIAL CUT on matched cat: starting with 298 objects
     d2d =0.5 CUT:
-    71 left
-    dmag_max =1.0 CUT:
-    71 left
-    SHARPNESS =(0.3, 0.9) CUT:
-    68 left
-    roundness1=(-0.7, 0.7) CUT:
-    57 left
-    objmag_lim=(14, 24) CUT:
     41 left
-    # of matched objects that pass initial cuts: 41
+    41 of image photometry objects pass initial cuts #1, 257 cut
     dx median: 0.29352029727829176
     dy median: 0.2340820555227765
     ### Doing histogram cut for dx, slope_min:-0.004883 slope_max:0.004883 slope_stepsize:0.000049
@@ -4031,31 +4050,30 @@ and add an additional 3 pixel offset in the wcs.
       warnings.warn(errmsg, ValidationWarning)
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jwst/datamodels/util.py:234: NoTypeWarning: model_type not found. Opening mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits as a ImageModel
       warnings.warn(f"model_type not found. Opening {file_name} as a {class_name}",
-    mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_tweakregstep.fits
-    Setting output directory for tweakregstep.fits file to mastDownload
+    Setting output directory for ./mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_drz.jhat.fits file to ./mastDownload
     Failed for not enough matches!
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 288-292
+.. GENERATED FROM PYTHON SOURCE LINES 289-293
 
 This is what a failure looks like (compare to the plots above).
 There are now a couple of options here. You can increase the 
 d2d_max parameter, which increases the allowed distance between 
 sources being matched in the reference and target images:
 
-.. GENERATED FROM PYTHON SOURCE LINES 293-338
+.. GENERATED FROM PYTHON SOURCE LINES 294-339
 
 .. code-block:: default
 
 
     wcs_align = st_wcs_align()
-    wcs_align.outdir = 'mastDownload'
 
 
     wcs_align.run_all(align_image,
     		  telescope='hst',
+    		  outsubdir='mastDownload',
               refcat_racol='ra',
               refcat_deccol='dec',
               refcat_magcol='mag',
@@ -4071,7 +4089,7 @@ sources being matched in the reference and target images:
                   dmag_max=1.0,
                   objmag_lim =(14,24))
 
-    aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('drz.fits','tweakregstep.fits'))
+    aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('.fits','.jhat.fits'))
     aligned_fits = fits.open(aligned_image)
     aligned_data = fits.open(aligned_image)['SCI',1].data
     aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))
@@ -4103,7 +4121,7 @@ sources being matched in the reference and target images:
     *
 
       .. image-sg:: /examples/images/sphx_glr_plot_a_hst_013.png
-         :alt: Initial cut: d2d_max=1, dmag_max=1.0, Nbright=None, delta_mag_lim=(None, None)
+         :alt: Initial cut: d2d_max=1, dmag_max=None, Nbright=None, delta_mag_lim=(None, None)
          :srcset: /examples/images/sphx_glr_plot_a_hst_013.png
          :class: sphx-glr-multi-img
 
@@ -4136,7 +4154,8 @@ sources being matched in the reference and target images:
     Warning: Setting aperture radius to twice the psf_fwhm (4.000000)
 
     ### Doing photometry on mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits
-    NO photometry catalog filename
+    photometry catalog filename: ./mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_drz.phot.txt
+    photcat ./mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_drz.phot.txt already exists, but recreating it since overwrite=True
     Finding stars --- Detector: None, Filter: F110W
     FWHM for the filter F110W: 2 px
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
@@ -4149,11 +4168,11 @@ sources being matched in the reference and target images:
 
     F110W
     Performing aperture photometry for radius r = 4 px
-    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1776: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1902: RuntimeWarning: invalid value encountered in log10
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
-    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1779: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1905: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 0.8630724939866923
+    Time Elapsed: 0.9033650840283372
     947 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 733 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     733 out of 947 entries remain in photometry table
@@ -4169,6 +4188,17 @@ sources being matched in the reference and target images:
     945    647.708427
     946    696.459286
     Name: x, Length: 947, dtype: float64
+    Saving ./mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_drz.phot.txt
+    ########### !!!!!!!!!!  INITIAL CUT on image photometry cat: starting with 947 objects
+    dmag_max =1.0 CUT:
+    889 left
+    SHARPNESS =(0.3, 0.9) CUT:
+    844 left
+    roundness1=(-0.7, 0.7) CUT:
+    725 left
+    objmag_lim=(14, 24) CUT:
+    298 left
+    298 of image photometry objects pass initial cuts #1, 649 cut
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
     'WFC3' is not one of ['NIRCAM', 'NIRSPEC', 'MIRI', 'TFI', 'FGS', 'NIRISS', 'ANY', 'N/A']
 
@@ -4279,22 +4309,17 @@ sources being matched in the reference and target images:
       warnings.warn(errmsg, ValidationWarning)
     RA/Dec columns in reference catalog:  ra dec
     LOADING refcat mastDownload/HST/hst_16264_15_wfc3_ir_f110w_iebc15/hst_16264_15_wfc3_ir_f110w_iebc15_drz.phot.txt
+    ########### !!!!!!!!!!  INITIAL CUT on reference catalog: starting with 769 objects
+    769 of image photometry objects pass initial cuts #1, 0 cut
     Matching reference catalog mastDownload/HST/hst_16264_15_wfc3_ir_f110w_iebc15/hst_16264_15_wfc3_ir_f110w_iebc15_drz.phot.txt
-    image objects are in x_idl=[-67.59,118.37] and y_idl=[-61.98,106.29] range
+    image objects are in x_idl=[-64.80,116.36] and y_idl=[-58.22,100.00] range
     Keeping 769 out of 769 catalog objects within x=-40.0-1499 and y=-40.0-1498
     Keeping 769  after removing NaNs from ra/dec
-    ########### !!!!!!!!!!  INITIAL CUT: starting with 947 objects
+    !! Matching 294 image objects to 769 refcat objects!
+    ########### !!!!!!!!!!  INITIAL CUT on matched cat: starting with 298 objects
     d2d =1 CUT:
-    567 left
-    dmag_max =1.0 CUT:
-    567 left
-    SHARPNESS =(0.3, 0.9) CUT:
-    556 left
-    roundness1=(-0.7, 0.7) CUT:
-    489 left
-    objmag_lim=(14, 24) CUT:
     259 left
-    # of matched objects that pass initial cuts: 259
+    259 of image photometry objects pass initial cuts #1, 39 cut
     dx median: 5.078511183688306
     dy median: 4.8931129903886585
     ### Doing histogram cut for dx, slope_min:-0.004883 slope_max:0.004883 slope_stepsize:0.000049
@@ -5278,28 +5303,27 @@ sources being matched in the reference and target images:
       warnings.warn(errmsg, ValidationWarning)
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jwst/datamodels/util.py:234: NoTypeWarning: model_type not found. Opening mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits as a ImageModel
       warnings.warn(f"model_type not found. Opening {file_name} as a {class_name}",
-    mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_tweakregstep.fits
-    Setting output directory for tweakregstep.fits file to mastDownload
+    Setting output directory for ./mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_drz.jhat.fits file to ./mastDownload
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 339-341
+.. GENERATED FROM PYTHON SOURCE LINES 340-342
 
 Or you can apply a rough guess for the offset, and then use a
 smaller d2d_max for matching:
 
-.. GENERATED FROM PYTHON SOURCE LINES 342-387
+.. GENERATED FROM PYTHON SOURCE LINES 343-388
 
 .. code-block:: default
 
 
     wcs_align = st_wcs_align()
-    wcs_align.outdir = 'mastDownload'
 
 
     wcs_align.run_all(align_image,
     		  telescope='hst',
+    		  outsubdir='mastDownload',
               refcat_racol='ra',
               refcat_deccol='dec',
               refcat_magcol='mag',
@@ -5317,7 +5341,7 @@ smaller d2d_max for matching:
                   dmag_max=1.0,
                   objmag_lim =(14,24))
 
-    aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('drz.fits','tweakregstep.fits'))
+    aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('.fits','.jhat.fits'))
     aligned_fits = fits.open(aligned_image)
     aligned_data = fits.open(aligned_image)['SCI',1].data
     aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))
@@ -5347,7 +5371,7 @@ smaller d2d_max for matching:
     *
 
       .. image-sg:: /examples/images/sphx_glr_plot_a_hst_017.png
-         :alt: Initial cut: d2d_max=0.25, dmag_max=1.0, Nbright=None, delta_mag_lim=(None, None)
+         :alt: Initial cut: d2d_max=0.25, dmag_max=None, Nbright=None, delta_mag_lim=(None, None)
          :srcset: /examples/images/sphx_glr_plot_a_hst_017.png
          :class: sphx-glr-multi-img
 
@@ -5380,7 +5404,8 @@ smaller d2d_max for matching:
     Warning: Setting aperture radius to twice the psf_fwhm (4.000000)
 
     ### Doing photometry on mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits
-    NO photometry catalog filename
+    photometry catalog filename: ./mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_drz.phot.txt
+    photcat ./mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_drz.phot.txt already exists, but recreating it since overwrite=True
     Finding stars --- Detector: None, Filter: F110W
     FWHM for the filter F110W: 2 px
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
@@ -5393,11 +5418,11 @@ smaller d2d_max for matching:
 
     F110W
     Performing aperture photometry for radius r = 4 px
-    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1776: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1902: RuntimeWarning: invalid value encountered in log10
       phot['mag'] = -2.5*np.log10(phot['aper_sum_bkgsub'])+ee_corr+zp
-    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat-0.0.3-py3.10.egg/jhat/simple_jwst_phot.py:1779: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:1905: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/phot['aper_sum_bkgsub']))
-    Time Elapsed: 0.8560110629769042
+    Time Elapsed: 0.935036749986466
     947 objects left after removing entries with NaNs in mag or dmag column
     SNR_min cut: 733 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
     733 out of 947 entries remain in photometry table
@@ -5413,6 +5438,17 @@ smaller d2d_max for matching:
     945    647.708427
     946    696.459286
     Name: x, Length: 947, dtype: float64
+    Saving ./mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_drz.phot.txt
+    ########### !!!!!!!!!!  INITIAL CUT on image photometry cat: starting with 947 objects
+    dmag_max =1.0 CUT:
+    889 left
+    SHARPNESS =(0.3, 0.9) CUT:
+    844 left
+    roundness1=(-0.7, 0.7) CUT:
+    725 left
+    objmag_lim=(14, 24) CUT:
+    298 left
+    298 of image photometry objects pass initial cuts #1, 649 cut
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/stdatamodels/validate.py:38: ValidationWarning: While validating meta.instrument.name the following error occurred:
     'WFC3' is not one of ['NIRCAM', 'NIRSPEC', 'MIRI', 'TFI', 'FGS', 'NIRISS', 'ANY', 'N/A']
 
@@ -5523,22 +5559,17 @@ smaller d2d_max for matching:
       warnings.warn(errmsg, ValidationWarning)
     RA/Dec columns in reference catalog:  ra dec
     LOADING refcat mastDownload/HST/hst_16264_15_wfc3_ir_f110w_iebc15/hst_16264_15_wfc3_ir_f110w_iebc15_drz.phot.txt
+    ########### !!!!!!!!!!  INITIAL CUT on reference catalog: starting with 769 objects
+    769 of image photometry objects pass initial cuts #1, 0 cut
     Matching reference catalog mastDownload/HST/hst_16264_15_wfc3_ir_f110w_iebc15/hst_16264_15_wfc3_ir_f110w_iebc15_drz.phot.txt
-    image objects are in x_idl=[-67.59,118.37] and y_idl=[-61.98,106.29] range
+    image objects are in x_idl=[-64.80,116.36] and y_idl=[-58.22,100.00] range
     Keeping 769 out of 769 catalog objects within x=-40.0-1499 and y=-40.0-1498
     Keeping 769  after removing NaNs from ra/dec
-    ########### !!!!!!!!!!  INITIAL CUT: starting with 947 objects
+    !! Matching 294 image objects to 769 refcat objects!
+    ########### !!!!!!!!!!  INITIAL CUT on matched cat: starting with 298 objects
     d2d =0.25 CUT:
-    514 left
-    dmag_max =1.0 CUT:
-    514 left
-    SHARPNESS =(0.3, 0.9) CUT:
-    510 left
-    roundness1=(-0.7, 0.7) CUT:
-    449 left
-    objmag_lim=(14, 24) CUT:
     235 left
-    # of matched objects that pass initial cuts: 235
+    235 of image photometry objects pass initial cuts #1, 63 cut
     dx median: 5.109163567529947
     dy median: 4.946400061837494
     ### Doing histogram cut for dx, slope_min:-0.004883 slope_max:0.004883 slope_stepsize:0.000049
@@ -6543,8 +6574,7 @@ smaller d2d_max for matching:
       warnings.warn(errmsg, ValidationWarning)
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jwst/datamodels/util.py:234: NoTypeWarning: model_type not found. Opening mastDownload/HST/hst_16264_12_wfc3_ir_f110w_iebc12/hst_16264_12_wfc3_ir_f110w_iebc12_drz.fits as a ImageModel
       warnings.warn(f"model_type not found. Opening {file_name} as a {class_name}",
-    mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_tweakregstep.fits
-    Setting output directory for tweakregstep.fits file to mastDownload
+    Setting output directory for ./mastDownload/hst_16264_12_wfc3_ir_f110w_iebc12_drz.jhat.fits file to ./mastDownload
 
 
 
@@ -6552,7 +6582,7 @@ smaller d2d_max for matching:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  37.737 seconds)
+   **Total running time of the script:** ( 0 minutes  45.047 seconds)
 
 
 .. _sphx_glr_download_examples_plot_a_hst.py:

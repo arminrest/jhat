@@ -9,7 +9,7 @@ This is the initial plot to check if things are going the right direction. Here 
     :height: 800px
     :alt: alternate text
 
-This is an example of the same set of plots for a case where the alignment has failed. No locus is apparent in dx or dy. If there is no relation to be seen in this initial plot, then cuts and params need to be changed/loosened (see :ref:`params:Useful Parameters`.)
+This is an example of the same set of plots for a case where the alignment has failed. No locus is apparent in dx or dy. If there is no relation to be seen in this initial plot, then cuts and params need to be changed/loosened (see :ref:`params:Useful Parameters`), in this case d2d_max should be increased.
 
 .. image:: _static/failed_cut.png
     :width: 1000px

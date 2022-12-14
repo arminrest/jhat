@@ -124,11 +124,11 @@ print(refcat)
 # subsequent correction needed for optimal alignment.
 
 wcs_align = st_wcs_align()
-wcs_align.outdir = 'mastDownload'
 
 
 wcs_align.run_all(align_image,
 		  telescope='jwst',
+		  outsubdir='mastDownload',
           refcat_racol='ra',
           refcat_deccol='dec',
           refcat_magcol='mag',
@@ -152,7 +152,7 @@ wcs_align.run_all(align_image,
 # aligned image and compare with the original. 
 # subsequent correction needed for optimal alignment.
 
-aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('cal.fits','tweakregstep.fits'))
+aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('.fits','.jhat.fits'))
 aligned_fits = fits.open(aligned_image)
 aligned_data = fits.open(aligned_image)['SCI',1].data
 aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))

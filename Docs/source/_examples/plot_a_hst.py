@@ -127,11 +127,11 @@ print(refcat)
 # subsequent correction needed for optimal alignment.
 
 wcs_align = st_wcs_align()
-wcs_align.outdir = 'mastDownload'
 
 
 wcs_align.run_all(align_image,
 		  telescope='hst',
+		  outsubdir='mastDownload',
           refcat_racol='ra',
           refcat_deccol='dec',
           refcat_magcol='mag',
@@ -155,7 +155,7 @@ wcs_align.run_all(align_image,
 # aligned image and compare with the original. 
 # subsequent correction needed for optimal alignment.
 
-aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('drz.fits','tweakregstep.fits'))
+aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('.fits','.jhat.fits'))
 aligned_fits = fits.open(aligned_image)
 aligned_data = fits.open(aligned_image)['SCI',1].data
 aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))
@@ -192,6 +192,7 @@ plt.show()
 
 wcs_align.run_all(align_image,
 		  telescope='hst',
+		  outsubdir='mastDownload',
           overwrite=True,
           d2d_max=.5,
           showplots=0,
@@ -203,7 +204,7 @@ wcs_align.run_all(align_image,
               dmag_max=1.0,
               objmag_lim =(14,24))
 
-aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('drz.fits','tweakregstep.fits'))
+aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('.fits','.jhat.fits'))
 aligned_fits = fits.open(aligned_image)
 aligned_data = fits.open(aligned_image)['SCI',1].data
 aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))
@@ -261,11 +262,11 @@ axes[1].tick_params(labelcolor='none',axis='both',color='none')
 plt.show()
 
 wcs_align = st_wcs_align()
-wcs_align.outdir = 'mastDownload'
 
 try:
 	wcs_align.run_all(align_image,
 		  telescope='hst',
+		  outsubdir='mastDownload',
           refcat_racol='ra',
           refcat_deccol='dec',
           refcat_magcol='mag',
@@ -292,11 +293,11 @@ except:
 # sources being matched in the reference and target images:
 
 wcs_align = st_wcs_align()
-wcs_align.outdir = 'mastDownload'
 
 
 wcs_align.run_all(align_image,
 		  telescope='hst',
+		  outsubdir='mastDownload',
           refcat_racol='ra',
           refcat_deccol='dec',
           refcat_magcol='mag',
@@ -312,7 +313,7 @@ wcs_align.run_all(align_image,
               dmag_max=1.0,
               objmag_lim =(14,24))
 
-aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('drz.fits','tweakregstep.fits'))
+aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('.fits','.jhat.fits'))
 aligned_fits = fits.open(aligned_image)
 aligned_data = fits.open(aligned_image)['SCI',1].data
 aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))
@@ -341,11 +342,11 @@ plt.show()
 # smaller d2d_max for matching:
 
 wcs_align = st_wcs_align()
-wcs_align.outdir = 'mastDownload'
 
 
 wcs_align.run_all(align_image,
 		  telescope='hst',
+		  outsubdir='mastDownload',
           refcat_racol='ra',
           refcat_deccol='dec',
           refcat_magcol='mag',
@@ -363,7 +364,7 @@ wcs_align.run_all(align_image,
               dmag_max=1.0,
               objmag_lim =(14,24))
 
-aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('drz.fits','tweakregstep.fits'))
+aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('.fits','.jhat.fits'))
 aligned_fits = fits.open(aligned_image)
 aligned_data = fits.open(aligned_image)['SCI',1].data
 aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))
