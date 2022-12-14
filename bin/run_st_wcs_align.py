@@ -17,10 +17,6 @@ wcs_align.rough_cut_px_max = args.rough_cut_px_max
 wcs_align.d_rotated_Nsigma = args.d_rotated_Nsigma
 
 
-#wcs_align.calphot=jwst_photclass()
-
-#wcs_align.set_outdir(args.outrootdir, args.outsubdir)
-
 wcs_align.run_all(args.cal_image,
                  telescope = args.telescope,
                  #distortion_file = args.distortion_file,
@@ -54,6 +50,7 @@ wcs_align.run_all(args.cal_image,
                  histocut_order=args.histocut_order, # histocut_order defines whether the histogram cut is first done for dx or first for dy
                  xshift=args.xshift,# added to the x coordinate before calculating ra,dec (only impacts ra,dec, not x). This can be used to correct for large shifts before matching!
                  yshift=args.yshift, # added to the y coordinate before calculating ra,dec (only impacts ra,dec, not y). This can be used to correct for large shifts before matching!
+                 iterate_with_xyshifts=args.iterate_with_xyshifts, # After the first histogram fit, redo the match with refcat with x/yshift=median(dx/dy) and redo histofit. Use this if the offsets are big, since the second iteration will give you better matching with the refcat 
                  showplots=args.showplots,
                  saveplots=args.saveplots,# 
                  savephottable=args.savephottable,

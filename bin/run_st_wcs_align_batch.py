@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from jhat import align_wcs_batch
-import sys
+import sys,os
 
 usagestring = """JHAT Batch file Alignment
 
@@ -25,35 +25,20 @@ align_batch.rough_cut_px_min = args.rough_cut_px_min
 align_batch.rough_cut_px_max = args.rough_cut_px_max
 align_batch.d_rotated_Nsigma = args.d_rotated_Nsigma
 
-
-# set the output directory
-align_batch.set_outdir(outrootdir=args.outrootdir,
-                       outsubdir=args.outsubdir)
-
 # get the input files
 align_batch.get_input_files(args.input_files,directory=args.input_dir,
                             filters=args.filters,pupils=args.pupils)
 
-# apply new distortions?
-#if args.distortion_files is not None:
-#    align_batch.get_distortion_files(args.distortion_files,directory=None)
-#    ixs_matches,ixs_not_matches = align_batch.match_distortion4inputfile(apertures=args.apertures, 
-#                                                                 filts=args.filters, 
-#                                                                 pupils=args.pupils)
-#else:
-    
-#align_batch.distortionfiles.t['filename']=None
-#align_batch.t['distortion_match']=None
 ixs_all = align_batch.getindices()
-
-#align_batch.get_output_filenames()
 
 if len(ixs_all)==0:
     print('NO IMAGES FOUND!! exiting...')
     sys.exit(0)
     
 # get the output filenames
-ixs_exists,ixs_notexists = align_batch.get_output_filenames(ixs=ixs_all)    
+ixs_exists,ixs_notexists = align_batch.get_output_filenames(ixs=ixs_all,
+                                                            outrootdir=args.outrootdir,
+                                                            outsubdir=args.outsubdir)    
 
 
 ixs_todo = ixs_notexists[:]
@@ -67,8 +52,11 @@ if len(ixs_exists)>0:
         else:
            raise RuntimeError(f'{len(ixs_exists)} output images already exist, exiting! if you want to overwrite them, use the --overwrite option, or if you want to skip them, use the --skip_if_exists option!')
 
+if len(ixs_todo)==0:
+    print(f'There are {len(ixs_all)} images, but none of them need to be done!')
+    sys.exit(0)
 
-print(f'Output directory:{align_batch.outdir}')
+print(f'Output directory:{os.path.dirname(align_batch.t.loc[ixs_todo[0],"outfilename"])}')
 do_it = input(f'Do you want to continue and align the wcs for {len(ixs_todo)} images [y/n]?  ')
 if do_it.lower() in ['y','yes']:
     pass
@@ -82,6 +70,8 @@ else:
 
 align_batch.align_wcs(ixs_todo,
                     overwrite = args.overwrite,
+                    outrootdir= args.outrootdir,
+                    outsubdir = args.outsubdir,
                     telescope = args.telescope,
                     #skip_applydistortions_if_exists=args.skip_applydistortions_if_exists,
                     refcatname = args.refcat,
@@ -108,7 +98,8 @@ align_batch.align_wcs(ixs_todo,
                     histocut_order=args.histocut_order, # histocut_order defines whether the histogram cut is first done for dx or first for dy
                     xshift=args.xshift, # added to the x coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
                     yshift=args.yshift, # added to the y coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
-                    showplots=args.showplots,
+                    iterate_with_xyshifts=args.iterate_with_xyshifts, # After the first histogram fit, redo the match with refcat with x/yshift=median(dx/dy) and redo histofit. Use this if the offsets are big, since the second iteration will give you better matching with the refcat 
+                    showplots=0,
                     saveplots=args.saveplots,# 
                     savephottable=args.savephottable
                     )
