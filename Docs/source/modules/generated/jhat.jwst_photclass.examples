@@ -14,6 +14,27 @@ Examples using ``jhat.jwst_photclass``
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="Aligning JWST/MIRI images with JHAT.">
+
+.. only:: html
+
+  .. image:: /examples/images/thumb/sphx_glr_plot_c_miri_thumb.png
+    :alt: JWST MIRI
+
+  :ref:`sphx_glr_examples_plot_c_miri.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">JWST MIRI</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr_examples_plot_c_miri.py`
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="Aligning JWST/NIRCAM images with JHAT.">
 
 .. only:: html

@@ -12,10 +12,10 @@ Welcome to the JWST/HST Alignment Tool (JHAT)
    :titlesonly:
 
    install
+   plots
    params
    improve
-   batch
-   plots
+   level3
 
 .. include:: examples/index.rst
    :start-after: :orphan:

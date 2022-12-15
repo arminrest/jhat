@@ -108,8 +108,8 @@ plt.show()
 # We choose one of the images to be the reference image, and then 
 # create a catalog that we will use to align the other image.
 
-hst_phot = jwst_photclass()
-hst_phot.run_phot(imagename=ref_image,photfilename='auto',overwrite=True,ee_radius=80)
+jwst_phot = jwst_photclass()
+jwst_phot.run_phot(imagename=ref_image,photfilename='auto',overwrite=True,ee_radius=80)
 ref_catname = ref_image.replace('.fits','.phot.txt') # the default
 refcat = Table.read(ref_catname,format='ascii')
 print(refcat)

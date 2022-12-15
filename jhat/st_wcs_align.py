@@ -6,7 +6,7 @@ Created on Thu Apr 21 14:32:42 2022
 @author: arest, bhilbert, mcorrenti, acanipe, jpierel
 """
 
-import os,re,sys,copy
+import os,re,sys,copy,warnings
 #from jwst.tweakreg import TweakRegStep
 import tweakreg_hack
 import argparse
@@ -19,6 +19,7 @@ from jwst import datamodels
 from .simple_jwst_phot import jwst_photclass,hst_photclass
 from .pdastro import *
 
+warnings.simplefilter('ignore')
 __all__ = ['st_wcs_align']
 
 plot_style={}

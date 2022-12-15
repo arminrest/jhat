@@ -97,15 +97,15 @@ the code will also work for level 3 data images.
 
  .. code-block:: none
 
-    Downloading URL https://mast.stsci.edu/api/v0.1/Download/file?uri=mast:JWST/product/jw02107041001_02101_00001_nrcb1_cal.fits to ./mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.fits ... [Done]
-    Downloading URL https://mast.stsci.edu/api/v0.1/Download/file?uri=mast:JWST/product/jw02107041001_02101_00001_nrcblong_cal.fits to ./mastDownload/JWST/jw02107041001_02101_00001_nrcblong/jw02107041001_02101_00001_nrcblong_cal.fits ... [Done]
+    INFO: Found cached file ./mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.fits with expected size 117538560. [astroquery.query]
+    INFO: Found cached file ./mastDownload/JWST/jw02107041001_02101_00001_nrcblong/jw02107041001_02101_00001_nrcblong_cal.fits with expected size 117538560. [astroquery.query]
 
 
 .. raw:: html
 
     <div class="output_subarea output_html rendered_html output_result">
     <div><i>Table length=1</i>
-    <table id="table140164398290624" class="table-striped table-bordered table-condensed">
+    <table id="table140641675343856" class="table-striped table-bordered table-condensed">
     <thead><tr><th>Local Path</th><th>Status</th><th>Message</th><th>URL</th></tr></thead>
     <thead><tr><th>str98</th><th>str8</th><th>object</th><th>object</th></tr></thead>
     <tr><td>./mastDownload/JWST/jw02107041001_02101_00001_nrcblong/jw02107041001_02101_00001_nrcblong_cal.fits</td><td>COMPLETE</td><td>None</td><td>None</td></tr>
@@ -232,8 +232,8 @@ create a catalog that we will use to align the other image.
 .. code-block:: default
 
 
-    hst_phot = jwst_photclass()
-    hst_phot.run_phot(imagename=ref_image,photfilename='auto',overwrite=True,ee_radius=80)
+    jwst_phot = jwst_photclass()
+    jwst_phot.run_phot(imagename=ref_image,photfilename='auto',overwrite=True,ee_radius=80)
     ref_catname = ref_image.replace('.fits','.phot.txt') # the default
     refcat = Table.read(ref_catname,format='ascii')
     print(refcat)
@@ -246,9 +246,6 @@ create a catalog that we will use to align the other image.
 
  .. code-block:: none
 
-
-    ### Doing photometry on mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.fits
-    photometry catalog filename: mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.phot.txt
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/wcs/wcs.py:725: FITSFixedWarning: 'datfix' made the change 'Set DATE-BEG to '2022-07-06T19:16:42.721' from MJD-BEG.
     Set DATE-AVG to '2022-07-06T19:17:14.932' from MJD-AVG.
     Set DATE-END to '2022-07-06T19:17:47.142' from MJD-END'.
@@ -257,39 +254,14 @@ create a catalog that we will use to align the other image.
     Set OBSGEO-B to   -38.353872 from OBSGEO-[XYZ].
     Set OBSGEO-H to 1740894174.999 from OBSGEO-[XYZ]'.
       warnings.warn(
-    NIRCAM NRCB1 F200W CLEAR FULL NRCB1_FULL
-    Finding stars --- Detector: NRCB1, Filter: F200W
-    FWHM for the filter F200W: 2.141 px
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
-
-    Number of sources found in the image: 4789
-    -------------------------------------
-
-    Performing aperture photometry for radius r = 5.677999973297119 px
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/units/function/logarithmic.py:47: RuntimeWarning: invalid value encountered in log10
       return dex.to(self._function_unit, np.log10(x))
-    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:895: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat/simple_jwst_phot.py:898: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/flux))
-    Time Elapsed: 2.6594094279571436
-    4099 objects left after removing entries with NaNs in mag or dmag column
-    SNR_min cut: 2751 objects left after removing entries dmag>0.36200000000000004 (SNR<3.0)
-    2751 out of 4099 entries remain in photometry table
-    0        462.442383
-    1        643.024846
-    2        936.505816
-    3       1067.341194
-    4       1591.720764
-               ...     
-    4094    1893.188953
-    4095     528.113531
-    4096     696.976467
-    4097    1302.093134
-    4098    1453.752426
-    Name: x, Length: 4099, dtype: float64
-    Saving mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.phot.txt
     aper_sum_5.7px annulus_median_5.7px aper_bkg_5.7px ...   x_idl      y_idl   
     -------------- -------------------- -------------- ... ---------- ----------
         119.323149             0.961823      97.417247 ...     1.3907 -31.375588
@@ -400,9 +372,6 @@ subsequent correction needed for optimal alignment.
 
  .. code-block:: none
 
-
-    ### Doing photometry on mastDownload/JWST/jw02107041001_02101_00001_nrcblong/jw02107041001_02101_00001_nrcblong_cal.fits
-    photometry catalog filename: ./mastDownload/jw02107041001_02101_00001_nrcblong_cal.phot.txt
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/wcs/wcs.py:725: FITSFixedWarning: 'datfix' made the change 'Set DATE-BEG to '2022-07-06T19:16:42.721' from MJD-BEG.
     Set DATE-AVG to '2022-07-06T19:17:14.932' from MJD-AVG.
     Set DATE-END to '2022-07-06T19:17:47.142' from MJD-END'.
@@ -411,272 +380,14 @@ subsequent correction needed for optimal alignment.
     Set OBSGEO-B to   -38.353872 from OBSGEO-[XYZ].
     Set OBSGEO-H to 1740894174.999 from OBSGEO-[XYZ]'.
       warnings.warn(
-    NIRCAM NRCBLONG F360M CLEAR FULL NRCB5_FULL
-    Finding stars --- Detector: NRCBLONG, Filter: F360M
-    FWHM for the filter F360M: 1.901 px
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
-
-    Number of sources found in the image: 4439
-    -------------------------------------
-
-    Performing aperture photometry for radius r = 2.9230000972747803 px
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/units/function/logarithmic.py:47: RuntimeWarning: invalid value encountered in log10
       return dex.to(self._function_unit, np.log10(x))
-    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:895: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat/simple_jwst_phot.py:898: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/flux))
-    Time Elapsed: 2.5850647169863805
-    4081 objects left after removing entries with NaNs in mag or dmag column
-    SNR_min cut: 3372 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
-    3372 out of 4081 entries remain in photometry table
-    0        772.450062
-    1        103.009572
-    2        534.976834
-    3       1656.493827
-    4        411.542888
-               ...     
-    4076     687.800123
-    4077    1896.908457
-    4078    1154.119186
-    4079    1168.525250
-    4080     926.912297
-    Name: x, Length: 4081, dtype: float64
-    Saving ./mastDownload/jw02107041001_02101_00001_nrcblong_cal.phot.txt
-    ########### !!!!!!!!!!  INITIAL CUT on image photometry cat: starting with 4081 objects
-    dmag_max =1.0 CUT:
-    3939 left
-    SHARPNESS =(0.3, 0.9) CUT:
-    3699 left
-    roundness1=(-0.7, 0.7) CUT:
-    3232 left
-    objmag_lim=(14, 24) CUT:
-    1446 left
-    1446 of image photometry objects pass initial cuts #1, 2635 cut
-    347.44397520687136 -43.43020560976671 0.025662132311264907
-    RA/Dec columns in reference catalog:  ra dec
-    LOADING refcat mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.phot.txt
-    ########### !!!!!!!!!!  INITIAL CUT on reference catalog: starting with 2751 objects
-    2751 of image photometry objects pass initial cuts #1, 0 cut
-    Matching reference catalog mastDownload/JWST/jw02107041001_02101_00001_nrcb1/jw02107041001_02101_00001_nrcb1_cal.phot.txt
-    Using 1446 image objects that are in x_idl=[-63.96,63.70] and y_idl=[-63.40,62.64] range
-    Keeping 2751 out of 2751 catalog objects within x=-40.0-2088 and y=-40.0-2088
-    Keeping 2751  after removing NaNs from ra/dec
-    !! Matching 1446 image objects to 2751 refcat objects!
-    ########### !!!!!!!!!!  INITIAL CUT on matched cat: starting with 1446 objects
-    d2d =1 CUT:
-    143 left
-    143 of image photometry objects pass initial cuts #1, 1303 cut
-    dx median: -0.5352881521228028
-    dy median: -0.5406991907941574
-    ### Doing histogram cut for dx, slope_min:-0.004883 slope_max:0.004883 slope_stepsize:0.000049
-    Nfwhm=2.5, rough_cut_px_min=0.3, rough_cut_px_max=0.8, Nsigma=3.0
-    ########################
-    ### rotate dx versus y
-    Applying rolling gaussian:
-    gaussian_sigma_px=0.22, binsize=0.2, gaussian_sigma(bins)=1.0999999999999999, windowsize(bins)=7 halfwindowsize(bins)=4
-    slope min: -0.0048828125, slope max: 0.0048828125, slope stepsize: slope_stepsize
-    iteration 0 out of 200: slope = -0.004883
-    iteration 1 out of 200: slope = -0.004834
-    iteration 2 out of 200: slope = -0.004785
-    iteration 3 out of 200: slope = -0.004736
-    iteration 4 out of 200: slope = -0.004688
-    iteration 5 out of 200: slope = -0.004639
-    iteration 6 out of 200: slope = -0.004590
-    iteration 7 out of 200: slope = -0.004541
-    iteration 8 out of 200: slope = -0.004492
-    iteration 9 out of 200: slope = -0.004443
-    iteration 10 out of 200: slope = -0.004395
-    iteration 11 out of 200: slope = -0.004346
-    iteration 12 out of 200: slope = -0.004297
-    iteration 13 out of 200: slope = -0.004248
-    iteration 14 out of 200: slope = -0.004199
-    iteration 15 out of 200: slope = -0.004150
-    iteration 16 out of 200: slope = -0.004102
-    iteration 17 out of 200: slope = -0.004053
-    iteration 18 out of 200: slope = -0.004004
-    iteration 19 out of 200: slope = -0.003955
-    iteration 20 out of 200: slope = -0.003906
-    iteration 21 out of 200: slope = -0.003857
-    iteration 22 out of 200: slope = -0.003809
-    iteration 23 out of 200: slope = -0.003760
-    iteration 24 out of 200: slope = -0.003711
-    iteration 25 out of 200: slope = -0.003662
-    iteration 26 out of 200: slope = -0.003613
-    iteration 27 out of 200: slope = -0.003564
-    iteration 28 out of 200: slope = -0.003516
-    iteration 29 out of 200: slope = -0.003467
-    iteration 30 out of 200: slope = -0.003418
-    iteration 31 out of 200: slope = -0.003369
-    iteration 32 out of 200: slope = -0.003320
-    iteration 33 out of 200: slope = -0.003271
-    iteration 34 out of 200: slope = -0.003223
-    iteration 35 out of 200: slope = -0.003174
-    iteration 36 out of 200: slope = -0.003125
-    iteration 37 out of 200: slope = -0.003076
-    iteration 38 out of 200: slope = -0.003027
-    iteration 39 out of 200: slope = -0.002979
-    iteration 40 out of 200: slope = -0.002930
-    iteration 41 out of 200: slope = -0.002881
-    iteration 42 out of 200: slope = -0.002832
-    iteration 43 out of 200: slope = -0.002783
-    iteration 44 out of 200: slope = -0.002734
-    iteration 45 out of 200: slope = -0.002686
-    iteration 46 out of 200: slope = -0.002637
-    iteration 47 out of 200: slope = -0.002588
-    iteration 48 out of 200: slope = -0.002539
-    iteration 49 out of 200: slope = -0.002490
-    iteration 50 out of 200: slope = -0.002441
-    iteration 51 out of 200: slope = -0.002393
-    iteration 52 out of 200: slope = -0.002344
-    iteration 53 out of 200: slope = -0.002295
-    iteration 54 out of 200: slope = -0.002246
-    iteration 55 out of 200: slope = -0.002197
-    iteration 56 out of 200: slope = -0.002148
-    iteration 57 out of 200: slope = -0.002100
-    iteration 58 out of 200: slope = -0.002051
-    iteration 59 out of 200: slope = -0.002002
-    iteration 60 out of 200: slope = -0.001953
-    iteration 61 out of 200: slope = -0.001904
-    iteration 62 out of 200: slope = -0.001855
-    iteration 63 out of 200: slope = -0.001807
-    iteration 64 out of 200: slope = -0.001758
-    iteration 65 out of 200: slope = -0.001709
-    iteration 66 out of 200: slope = -0.001660
-    iteration 67 out of 200: slope = -0.001611
-    iteration 68 out of 200: slope = -0.001563
-    iteration 69 out of 200: slope = -0.001514
-    iteration 70 out of 200: slope = -0.001465
-    iteration 71 out of 200: slope = -0.001416
-    iteration 72 out of 200: slope = -0.001367
-    iteration 73 out of 200: slope = -0.001318
-    iteration 74 out of 200: slope = -0.001270
-    iteration 75 out of 200: slope = -0.001221
-    iteration 76 out of 200: slope = -0.001172
-    iteration 77 out of 200: slope = -0.001123
-    iteration 78 out of 200: slope = -0.001074
-    iteration 79 out of 200: slope = -0.001025
-    iteration 80 out of 200: slope = -0.000977
-    iteration 81 out of 200: slope = -0.000928
-    iteration 82 out of 200: slope = -0.000879
-    iteration 83 out of 200: slope = -0.000830
-    iteration 84 out of 200: slope = -0.000781
-    iteration 85 out of 200: slope = -0.000732
-    iteration 86 out of 200: slope = -0.000684
-    iteration 87 out of 200: slope = -0.000635
-    iteration 88 out of 200: slope = -0.000586
-    iteration 89 out of 200: slope = -0.000537
-    iteration 90 out of 200: slope = -0.000488
-    iteration 91 out of 200: slope = -0.000439
-    iteration 92 out of 200: slope = -0.000391
-    iteration 93 out of 200: slope = -0.000342
-    iteration 94 out of 200: slope = -0.000293
-    iteration 95 out of 200: slope = -0.000244
-    iteration 96 out of 200: slope = -0.000195
-    iteration 97 out of 200: slope = -0.000146
-    iteration 98 out of 200: slope = -0.000098
-    iteration 99 out of 200: slope = -0.000049
-    iteration 100 out of 200: slope = -0.000000
-    iteration 101 out of 200: slope = 0.000049
-    iteration 102 out of 200: slope = 0.000098
-    iteration 103 out of 200: slope = 0.000146
-    iteration 104 out of 200: slope = 0.000195
-    iteration 105 out of 200: slope = 0.000244
-    iteration 106 out of 200: slope = 0.000293
-    iteration 107 out of 200: slope = 0.000342
-    iteration 108 out of 200: slope = 0.000391
-    iteration 109 out of 200: slope = 0.000439
-    iteration 110 out of 200: slope = 0.000488
-    iteration 111 out of 200: slope = 0.000537
-    iteration 112 out of 200: slope = 0.000586
-    iteration 113 out of 200: slope = 0.000635
-    iteration 114 out of 200: slope = 0.000684
-    iteration 115 out of 200: slope = 0.000732
-    iteration 116 out of 200: slope = 0.000781
-    iteration 117 out of 200: slope = 0.000830
-    iteration 118 out of 200: slope = 0.000879
-    iteration 119 out of 200: slope = 0.000928
-    iteration 120 out of 200: slope = 0.000977
-    iteration 121 out of 200: slope = 0.001025
-    iteration 122 out of 200: slope = 0.001074
-    iteration 123 out of 200: slope = 0.001123
-    iteration 124 out of 200: slope = 0.001172
-    iteration 125 out of 200: slope = 0.001221
-    iteration 126 out of 200: slope = 0.001270
-    iteration 127 out of 200: slope = 0.001318
-    iteration 128 out of 200: slope = 0.001367
-    iteration 129 out of 200: slope = 0.001416
-    iteration 130 out of 200: slope = 0.001465
-    iteration 131 out of 200: slope = 0.001514
-    iteration 132 out of 200: slope = 0.001562
-    iteration 133 out of 200: slope = 0.001611
-    iteration 134 out of 200: slope = 0.001660
-    iteration 135 out of 200: slope = 0.001709
-    iteration 136 out of 200: slope = 0.001758
-    iteration 137 out of 200: slope = 0.001807
-    iteration 138 out of 200: slope = 0.001855
-    iteration 139 out of 200: slope = 0.001904
-    iteration 140 out of 200: slope = 0.001953
-    iteration 141 out of 200: slope = 0.002002
-    iteration 142 out of 200: slope = 0.002051
-    iteration 143 out of 200: slope = 0.002100
-    iteration 144 out of 200: slope = 0.002148
-    iteration 145 out of 200: slope = 0.002197
-    iteration 146 out of 200: slope = 0.002246
-    iteration 147 out of 200: slope = 0.002295
-    iteration 148 out of 200: slope = 0.002344
-    iteration 149 out of 200: slope = 0.002393
-    iteration 150 out of 200: slope = 0.002441
-    iteration 151 out of 200: slope = 0.002490
-    iteration 152 out of 200: slope = 0.002539
-    iteration 153 out of 200: slope = 0.002588
-    iteration 154 out of 200: slope = 0.002637
-    iteration 155 out of 200: slope = 0.002686
-    iteration 156 out of 200: slope = 0.002734
-    iteration 157 out of 200: slope = 0.002783
-    iteration 158 out of 200: slope = 0.002832
-    iteration 159 out of 200: slope = 0.002881
-    iteration 160 out of 200: slope = 0.002930
-    iteration 161 out of 200: slope = 0.002979
-    iteration 162 out of 200: slope = 0.003027
-    iteration 163 out of 200: slope = 0.003076
-    iteration 164 out of 200: slope = 0.003125
-    iteration 165 out of 200: slope = 0.003174
-    iteration 166 out of 200: slope = 0.003223
-    iteration 167 out of 200: slope = 0.003271
-    iteration 168 out of 200: slope = 0.003320
-    iteration 169 out of 200: slope = 0.003369
-    iteration 170 out of 200: slope = 0.003418
-    iteration 171 out of 200: slope = 0.003467
-    iteration 172 out of 200: slope = 0.003516
-    iteration 173 out of 200: slope = 0.003564
-    iteration 174 out of 200: slope = 0.003613
-    iteration 175 out of 200: slope = 0.003662
-    iteration 176 out of 200: slope = 0.003711
-    iteration 177 out of 200: slope = 0.003760
-    iteration 178 out of 200: slope = 0.003809
-    iteration 179 out of 200: slope = 0.003857
-    iteration 180 out of 200: slope = 0.003906
-    iteration 181 out of 200: slope = 0.003955
-    iteration 182 out of 200: slope = 0.004004
-    iteration 183 out of 200: slope = 0.004053
-    iteration 184 out of 200: slope = 0.004102
-    iteration 185 out of 200: slope = 0.004150
-    iteration 186 out of 200: slope = 0.004199
-    iteration 187 out of 200: slope = 0.004248
-    iteration 188 out of 200: slope = 0.004297
-    iteration 189 out of 200: slope = 0.004346
-    iteration 190 out of 200: slope = 0.004395
-    iteration 191 out of 200: slope = 0.004443
-    iteration 192 out of 200: slope = 0.004492
-    iteration 193 out of 200: slope = 0.004541
-    iteration 194 out of 200: slope = 0.004590
-    iteration 195 out of 200: slope = 0.004639
-    iteration 196 out of 200: slope = 0.004687
-    iteration 197 out of 200: slope = 0.004736
-    iteration 198 out of 200: slope = 0.004785
-    iteration 199 out of 200: slope = 0.004834
             slope     intercept    maxval  index  d_bestguess  fwhm  multimax
     -4.882812e-03  5.000000e+00 33.721638     72     0.312407   2.2     False
     -4.833984e-03  4.950000e+00 33.745896     72     0.296685   2.2     False
@@ -878,14 +589,8 @@ subsequent correction needed for optimal alignment.
      4.736328e-03 -4.850000e+00 33.461138     86    -1.345151   2.0     False
      4.785156e-03 -4.900000e+00 32.987108     86    -1.371583   2.0     False
      4.833984e-03 -4.950000e+00 33.397166     86    -1.398015   2.0     False
-    ####BEST:
         slope  intercept    maxval  index  d_bestguess  fwhm  multimax
     -0.000049       0.05 83.453103     77    -0.554842   0.8     False
-    Setting rough_cut_px=1.999999999999993. limits: (0.3-0.8)
-    Setting rough_cut_px=0.8
-
-    ####################
-    ### d_rotated cut (Nsigma=3.0)
     Keeping 111 out of 111, skippin 0 because of null values in columns d_rot_tmp
     median: -0.508221
     75.000000 percentile cut: max residual for cut: 0.212142
@@ -909,214 +614,6 @@ subsequent correction needed for optimal alignment.
 
     mean: -0.490056
     i:06 mean:-0.490056(0.017614) stdev:0.183049(0.012398) X2norm:1.00 Nchanged:0 Ngood:109 Nclip:2
-    i:06 mean:-0.490056(0.017614) stdev:0.183049(0.012398) X2norm:1.00 Nchanged:0 Ngood:109 Nclip:2
-    ### Doing histogram cut for dy, slope_min:-0.004883 slope_max:0.004883 slope_stepsize:0.000049
-    Nfwhm=2.5, rough_cut_px_min=0.3, rough_cut_px_max=0.8, Nsigma=3.0
-    ########################
-    ### rotate dy versus x
-    Applying rolling gaussian:
-    gaussian_sigma_px=0.22, binsize=0.2, gaussian_sigma(bins)=1.0999999999999999, windowsize(bins)=7 halfwindowsize(bins)=4
-    slope min: -0.0048828125, slope max: 0.0048828125, slope stepsize: slope_stepsize
-    iteration 0 out of 200: slope = -0.004883
-    iteration 1 out of 200: slope = -0.004834
-    iteration 2 out of 200: slope = -0.004785
-    iteration 3 out of 200: slope = -0.004736
-    iteration 4 out of 200: slope = -0.004688
-    iteration 5 out of 200: slope = -0.004639
-    iteration 6 out of 200: slope = -0.004590
-    iteration 7 out of 200: slope = -0.004541
-    iteration 8 out of 200: slope = -0.004492
-    iteration 9 out of 200: slope = -0.004443
-    iteration 10 out of 200: slope = -0.004395
-    iteration 11 out of 200: slope = -0.004346
-    iteration 12 out of 200: slope = -0.004297
-    iteration 13 out of 200: slope = -0.004248
-    iteration 14 out of 200: slope = -0.004199
-    iteration 15 out of 200: slope = -0.004150
-    iteration 16 out of 200: slope = -0.004102
-    iteration 17 out of 200: slope = -0.004053
-    iteration 18 out of 200: slope = -0.004004
-    iteration 19 out of 200: slope = -0.003955
-    iteration 20 out of 200: slope = -0.003906
-    iteration 21 out of 200: slope = -0.003857
-    iteration 22 out of 200: slope = -0.003809
-    iteration 23 out of 200: slope = -0.003760
-    iteration 24 out of 200: slope = -0.003711
-    iteration 25 out of 200: slope = -0.003662
-    iteration 26 out of 200: slope = -0.003613
-    iteration 27 out of 200: slope = -0.003564
-    iteration 28 out of 200: slope = -0.003516
-    iteration 29 out of 200: slope = -0.003467
-    iteration 30 out of 200: slope = -0.003418
-    iteration 31 out of 200: slope = -0.003369
-    iteration 32 out of 200: slope = -0.003320
-    iteration 33 out of 200: slope = -0.003271
-    iteration 34 out of 200: slope = -0.003223
-    iteration 35 out of 200: slope = -0.003174
-    iteration 36 out of 200: slope = -0.003125
-    iteration 37 out of 200: slope = -0.003076
-    iteration 38 out of 200: slope = -0.003027
-    iteration 39 out of 200: slope = -0.002979
-    iteration 40 out of 200: slope = -0.002930
-    iteration 41 out of 200: slope = -0.002881
-    iteration 42 out of 200: slope = -0.002832
-    iteration 43 out of 200: slope = -0.002783
-    iteration 44 out of 200: slope = -0.002734
-    iteration 45 out of 200: slope = -0.002686
-    iteration 46 out of 200: slope = -0.002637
-    iteration 47 out of 200: slope = -0.002588
-    iteration 48 out of 200: slope = -0.002539
-    iteration 49 out of 200: slope = -0.002490
-    iteration 50 out of 200: slope = -0.002441
-    iteration 51 out of 200: slope = -0.002393
-    iteration 52 out of 200: slope = -0.002344
-    iteration 53 out of 200: slope = -0.002295
-    iteration 54 out of 200: slope = -0.002246
-    iteration 55 out of 200: slope = -0.002197
-    iteration 56 out of 200: slope = -0.002148
-    iteration 57 out of 200: slope = -0.002100
-    iteration 58 out of 200: slope = -0.002051
-    iteration 59 out of 200: slope = -0.002002
-    iteration 60 out of 200: slope = -0.001953
-    iteration 61 out of 200: slope = -0.001904
-    iteration 62 out of 200: slope = -0.001855
-    iteration 63 out of 200: slope = -0.001807
-    iteration 64 out of 200: slope = -0.001758
-    iteration 65 out of 200: slope = -0.001709
-    iteration 66 out of 200: slope = -0.001660
-    iteration 67 out of 200: slope = -0.001611
-    iteration 68 out of 200: slope = -0.001563
-    iteration 69 out of 200: slope = -0.001514
-    iteration 70 out of 200: slope = -0.001465
-    iteration 71 out of 200: slope = -0.001416
-    iteration 72 out of 200: slope = -0.001367
-    iteration 73 out of 200: slope = -0.001318
-    iteration 74 out of 200: slope = -0.001270
-    iteration 75 out of 200: slope = -0.001221
-    iteration 76 out of 200: slope = -0.001172
-    iteration 77 out of 200: slope = -0.001123
-    iteration 78 out of 200: slope = -0.001074
-    iteration 79 out of 200: slope = -0.001025
-    iteration 80 out of 200: slope = -0.000977
-    iteration 81 out of 200: slope = -0.000928
-    iteration 82 out of 200: slope = -0.000879
-    iteration 83 out of 200: slope = -0.000830
-    iteration 84 out of 200: slope = -0.000781
-    iteration 85 out of 200: slope = -0.000732
-    iteration 86 out of 200: slope = -0.000684
-    iteration 87 out of 200: slope = -0.000635
-    iteration 88 out of 200: slope = -0.000586
-    iteration 89 out of 200: slope = -0.000537
-    iteration 90 out of 200: slope = -0.000488
-    iteration 91 out of 200: slope = -0.000439
-    iteration 92 out of 200: slope = -0.000391
-    iteration 93 out of 200: slope = -0.000342
-    iteration 94 out of 200: slope = -0.000293
-    iteration 95 out of 200: slope = -0.000244
-    iteration 96 out of 200: slope = -0.000195
-    iteration 97 out of 200: slope = -0.000146
-    iteration 98 out of 200: slope = -0.000098
-    iteration 99 out of 200: slope = -0.000049
-    iteration 100 out of 200: slope = -0.000000
-    iteration 101 out of 200: slope = 0.000049
-    iteration 102 out of 200: slope = 0.000098
-    iteration 103 out of 200: slope = 0.000146
-    iteration 104 out of 200: slope = 0.000195
-    iteration 105 out of 200: slope = 0.000244
-    iteration 106 out of 200: slope = 0.000293
-    iteration 107 out of 200: slope = 0.000342
-    iteration 108 out of 200: slope = 0.000391
-    iteration 109 out of 200: slope = 0.000439
-    iteration 110 out of 200: slope = 0.000488
-    iteration 111 out of 200: slope = 0.000537
-    iteration 112 out of 200: slope = 0.000586
-    iteration 113 out of 200: slope = 0.000635
-    iteration 114 out of 200: slope = 0.000684
-    iteration 115 out of 200: slope = 0.000732
-    iteration 116 out of 200: slope = 0.000781
-    iteration 117 out of 200: slope = 0.000830
-    iteration 118 out of 200: slope = 0.000879
-    iteration 119 out of 200: slope = 0.000928
-    iteration 120 out of 200: slope = 0.000977
-    iteration 121 out of 200: slope = 0.001025
-    iteration 122 out of 200: slope = 0.001074
-    iteration 123 out of 200: slope = 0.001123
-    iteration 124 out of 200: slope = 0.001172
-    iteration 125 out of 200: slope = 0.001221
-    iteration 126 out of 200: slope = 0.001270
-    iteration 127 out of 200: slope = 0.001318
-    iteration 128 out of 200: slope = 0.001367
-    iteration 129 out of 200: slope = 0.001416
-    iteration 130 out of 200: slope = 0.001465
-    iteration 131 out of 200: slope = 0.001514
-    iteration 132 out of 200: slope = 0.001562
-    iteration 133 out of 200: slope = 0.001611
-    iteration 134 out of 200: slope = 0.001660
-    iteration 135 out of 200: slope = 0.001709
-    iteration 136 out of 200: slope = 0.001758
-    iteration 137 out of 200: slope = 0.001807
-    iteration 138 out of 200: slope = 0.001855
-    iteration 139 out of 200: slope = 0.001904
-    iteration 140 out of 200: slope = 0.001953
-    iteration 141 out of 200: slope = 0.002002
-    iteration 142 out of 200: slope = 0.002051
-    iteration 143 out of 200: slope = 0.002100
-    iteration 144 out of 200: slope = 0.002148
-    iteration 145 out of 200: slope = 0.002197
-    iteration 146 out of 200: slope = 0.002246
-    iteration 147 out of 200: slope = 0.002295
-    iteration 148 out of 200: slope = 0.002344
-    iteration 149 out of 200: slope = 0.002393
-    iteration 150 out of 200: slope = 0.002441
-    iteration 151 out of 200: slope = 0.002490
-    iteration 152 out of 200: slope = 0.002539
-    iteration 153 out of 200: slope = 0.002588
-    iteration 154 out of 200: slope = 0.002637
-    iteration 155 out of 200: slope = 0.002686
-    iteration 156 out of 200: slope = 0.002734
-    iteration 157 out of 200: slope = 0.002783
-    iteration 158 out of 200: slope = 0.002832
-    iteration 159 out of 200: slope = 0.002881
-    iteration 160 out of 200: slope = 0.002930
-    iteration 161 out of 200: slope = 0.002979
-    iteration 162 out of 200: slope = 0.003027
-    iteration 163 out of 200: slope = 0.003076
-    iteration 164 out of 200: slope = 0.003125
-    iteration 165 out of 200: slope = 0.003174
-    iteration 166 out of 200: slope = 0.003223
-    iteration 167 out of 200: slope = 0.003271
-    iteration 168 out of 200: slope = 0.003320
-    iteration 169 out of 200: slope = 0.003369
-    iteration 170 out of 200: slope = 0.003418
-    iteration 171 out of 200: slope = 0.003467
-    iteration 172 out of 200: slope = 0.003516
-    iteration 173 out of 200: slope = 0.003564
-    iteration 174 out of 200: slope = 0.003613
-    iteration 175 out of 200: slope = 0.003662
-    iteration 176 out of 200: slope = 0.003711
-    iteration 177 out of 200: slope = 0.003760
-    iteration 178 out of 200: slope = 0.003809
-    iteration 179 out of 200: slope = 0.003857
-    iteration 180 out of 200: slope = 0.003906
-    iteration 181 out of 200: slope = 0.003955
-    iteration 182 out of 200: slope = 0.004004
-    iteration 183 out of 200: slope = 0.004053
-    iteration 184 out of 200: slope = 0.004102
-    iteration 185 out of 200: slope = 0.004150
-    iteration 186 out of 200: slope = 0.004199
-    iteration 187 out of 200: slope = 0.004248
-    iteration 188 out of 200: slope = 0.004297
-    iteration 189 out of 200: slope = 0.004346
-    iteration 190 out of 200: slope = 0.004395
-    iteration 191 out of 200: slope = 0.004443
-    iteration 192 out of 200: slope = 0.004492
-    iteration 193 out of 200: slope = 0.004541
-    iteration 194 out of 200: slope = 0.004590
-    iteration 195 out of 200: slope = 0.004639
-    iteration 196 out of 200: slope = 0.004687
-    iteration 197 out of 200: slope = 0.004736
-    iteration 198 out of 200: slope = 0.004785
-    iteration 199 out of 200: slope = 0.004834
             slope     intercept    maxval  index  d_bestguess  fwhm  multimax
     -4.882812e-03  5.000000e+00 22.513200     17     2.248719   1.4     False
     -4.833984e-03  4.950000e+00 23.453239     17     2.247211   1.4     False
@@ -1318,14 +815,8 @@ subsequent correction needed for optimal alignment.
      4.736328e-03 -4.850000e+00 22.688460     16    -3.217885   1.8     False
      4.785156e-03 -4.900000e+00 22.099719     16    -3.266410   1.8     False
      4.833984e-03 -4.950000e+00 21.629699     16    -3.314936   1.8     False
-    ####BEST:
        slope  intercept    maxval  index  d_bestguess  fwhm  multimax
     0.000098       -0.1 82.818657      6    -0.607945   0.8     False
-    Setting rough_cut_px=1.9999999999999996. limits: (0.3-0.8)
-    Setting rough_cut_px=0.8
-
-    ####################
-    ### d_rotated cut (Nsigma=3.0)
     Keeping 107 out of 107, skippin 0 because of null values in columns d_rot_tmp
     median: -0.603414
     75.000000 percentile cut: max residual for cut: 0.199393
@@ -1340,22 +831,6 @@ subsequent correction needed for optimal alignment.
 
     mean: -0.607249
     i:03 mean:-0.607249(0.015275) stdev:0.153516(0.010748) X2norm:1.00 Nchanged:0 Ngood:102 Nclip:5
-    i:03 mean:-0.607249(0.015275) stdev:0.153516(0.010748) X2norm:1.00 Nchanged:0 Ngood:102 Nclip:5
-    Setting output directory for ./mastDownload/jw02107041001_02101_00001_nrcblong_cal.jhat.fits file to ./mastDownload
-    Index(['aper_sum_2.9px', 'annulus_median_2.9px', 'aper_bkg_2.9px',
-           'aper_sum_bkgsub_2.9px', 'flux_err_2.9px', 'mag', 'dmag', 'x', 'y',
-           'sharpness', 'roundness1', 'roundness2', 'ra', 'dec', 'x_idl', 'y_idl',
-           'reffile_ra', 'reffile_dec', 'reffile_x', 'reffile_y', 'reffile_ID',
-           'reffile_mag', 'reffile_dmag', 'reffile_d2d', 'dx', 'dy', 'delta_mag',
-           '__weights', 'd_rot_tmp', '__tmp_residuals'],
-          dtype='object')
-    Index(['aper_sum_2.9px', 'annulus_median_2.9px', 'aper_bkg_2.9px',
-           'aper_sum_bkgsub_2.9px', 'flux_err_2.9px', 'mag', 'dmag', 'x', 'y',
-           'sharpness', 'roundness1', 'roundness2', 'ra', 'dec', 'x_idl', 'y_idl',
-           'reffile_ra', 'reffile_dec', 'reffile_ID', 'reffile_mag',
-           'reffile_dmag', 'delta_mag', '__weights', 'd_rot_tmp',
-           '__tmp_residuals', 'reffile_x', 'reffile_y', 'dx', 'dy'],
-          dtype='object')
 
     0
 
@@ -1476,29 +951,22 @@ catalog of the field.
     *
 
       .. image-sg:: /examples/images/sphx_glr_plot_b_nircam_009.png
-         :alt: plot b nircam
+         :alt: pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction
          :srcset: /examples/images/sphx_glr_plot_b_nircam_009.png
          :class: sphx-glr-multi-img
 
     *
 
       .. image-sg:: /examples/images/sphx_glr_plot_b_nircam_010.png
-         :alt: pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction, pre WCS correction
+         :alt: after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction
          :srcset: /examples/images/sphx_glr_plot_b_nircam_010.png
          :class: sphx-glr-multi-img
 
     *
 
       .. image-sg:: /examples/images/sphx_glr_plot_b_nircam_011.png
-         :alt: after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction, after WCS correction
-         :srcset: /examples/images/sphx_glr_plot_b_nircam_011.png
-         :class: sphx-glr-multi-img
-
-    *
-
-      .. image-sg:: /examples/images/sphx_glr_plot_b_nircam_012.png
          :alt: To Align, Aligned
-         :srcset: /examples/images/sphx_glr_plot_b_nircam_012.png
+         :srcset: /examples/images/sphx_glr_plot_b_nircam_011.png
          :class: sphx-glr-multi-img
 
 
@@ -1506,10 +974,6 @@ catalog of the field.
 
  .. code-block:: none
 
-
-    ### Doing photometry on mastDownload/JWST/jw02107041001_02101_00001_nrcblong/jw02107041001_02101_00001_nrcblong_cal.fits
-    photometry catalog filename: ./mastDownload/jw02107041001_02101_00001_nrcblong_cal.phot.txt
-    photcat ./mastDownload/jw02107041001_02101_00001_nrcblong_cal.phot.txt already exists, but recreating it since overwrite=True
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/wcs/wcs.py:725: FITSFixedWarning: 'datfix' made the change 'Set DATE-BEG to '2022-07-06T19:16:42.721' from MJD-BEG.
     Set DATE-AVG to '2022-07-06T19:17:14.932' from MJD-AVG.
     Set DATE-END to '2022-07-06T19:17:47.142' from MJD-END'.
@@ -1518,276 +982,20 @@ catalog of the field.
     Set OBSGEO-B to   -38.353872 from OBSGEO-[XYZ].
     Set OBSGEO-H to 1740894174.999 from OBSGEO-[XYZ]'.
       warnings.warn(
-    NIRCAM NRCBLONG F360M CLEAR FULL NRCB5_FULL
-    Finding stars --- Detector: NRCBLONG, Filter: F360M
-    FWHM for the filter F360M: 1.901 px
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/stats/sigma_clipping.py:411: AstropyUserWarning: Input data contains invalid values (NaNs or infs), which were automatically clipped.
       warnings.warn('Input data contains invalid values (NaNs or '
-
-    Number of sources found in the image: 4439
-    -------------------------------------
-
-    Performing aperture photometry for radius r = 2.9230000972747803 px
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/units/function/logarithmic.py:47: RuntimeWarning: invalid value encountered in log10
       return dex.to(self._function_unit, np.log10(x))
-    /Users/jpierel/CodeBase/jhat/jhat/simple_jwst_phot.py:895: RuntimeWarning: invalid value encountered in log10
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/jhat/simple_jwst_phot.py:898: RuntimeWarning: invalid value encountered in log10
       phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/flux))
-    Time Elapsed: 2.6402379699866287
-    4081 objects left after removing entries with NaNs in mag or dmag column
-    SNR_min cut: 3372 objects left after removing entries dmag>0.36200000000000004 (SNR<3)
-    3372 out of 4081 entries remain in photometry table
-    0        772.450062
-    1        103.009572
-    2        534.976834
-    3       1656.493827
-    4        411.542888
-               ...     
-    4076     687.800123
-    4077    1896.908457
-    4078    1154.119186
-    4079    1168.525250
-    4080     926.912297
-    Name: x, Length: 4081, dtype: float64
-    Saving ./mastDownload/jw02107041001_02101_00001_nrcblong_cal.phot.txt
-    ########### !!!!!!!!!!  INITIAL CUT on image photometry cat: starting with 4081 objects
-    dmag_max =1.0 CUT:
-    3939 left
-    SHARPNESS =(0.3, 0.9) CUT:
-    3699 left
-    roundness1=(-0.7, 0.7) CUT:
-    3232 left
-    objmag_lim=(14, 24) CUT:
-    1446 left
-    1446 of image photometry objects pass initial cuts #1, 2635 cut
-    347.44397520687136 -43.43020560976671 0.025662132311264907
-    RA/Dec columns in reference catalog:  auto auto
-    query:SELECT * FROM gaiadr2.gaia_source WHERE CONTAINS(POINT('ICRS',            gaiadr2.gaia_source.ra,gaiadr2.gaia_source.dec),            CIRCLE('ICRS',347.44397520687136,-43.43020560976671 ,0.03849319846689736))=1;
     INFO: Query finished. [astroquery.utils.tap.core]
     Number of stars: 21
     ### NO propoer motion correction!!!
-    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/pandas/core/arraylike.py:397: RuntimeWarning: invalid value encountered in sqrt
+    /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/pandas/core/arraylike.py:402: RuntimeWarning: invalid value encountered in sqrt
       result = getattr(ufunc, method)(*inputs, **kwargs)
     Number of stars after removing nan's: 21
-    ########### !!!!!!!!!!  INITIAL CUT on reference catalog: starting with 21 objects
-    21 of image photometry objects pass initial cuts #1, 0 cut
-    Matching reference catalog Gaia
-    Using 1446 image objects that are in x_idl=[-63.96,63.70] and y_idl=[-63.40,62.64] range
-    Keeping 11 out of 21 catalog objects within x=-40.0-2088 and y=-40.0-2088
-    Keeping 11  after removing NaNs from ra/dec
-    !! Matching 1446 image objects to 11 refcat objects!
-    ########### !!!!!!!!!!  INITIAL CUT on matched cat: starting with 1446 objects
-    d2d =0.5 CUT:
-    14 left
-    14 of image photometry objects pass initial cuts #1, 1432 cut
-    ### Doing histogram cut for dx, slope_min:-0.004883 slope_max:0.004883 slope_stepsize:0.000049
-    Nfwhm=2.5, rough_cut_px_min=0.3, rough_cut_px_max=0.8, Nsigma=3.0
-    ########################
-    ### rotate dx versus y
-    Applying rolling gaussian:
-    gaussian_sigma_px=0.22, binsize=0.2, gaussian_sigma(bins)=1.0999999999999999, windowsize(bins)=7 halfwindowsize(bins)=4
-    slope min: -0.0048828125, slope max: 0.0048828125, slope stepsize: slope_stepsize
-    iteration 0 out of 200: slope = -0.004883
-    iteration 1 out of 200: slope = -0.004834
-    iteration 2 out of 200: slope = -0.004785
-    iteration 3 out of 200: slope = -0.004736
-    iteration 4 out of 200: slope = -0.004688
-    iteration 5 out of 200: slope = -0.004639
-    iteration 6 out of 200: slope = -0.004590
-    iteration 7 out of 200: slope = -0.004541
-    iteration 8 out of 200: slope = -0.004492
-    iteration 9 out of 200: slope = -0.004443
-    iteration 10 out of 200: slope = -0.004395
-    iteration 11 out of 200: slope = -0.004346
-    iteration 12 out of 200: slope = -0.004297
-    iteration 13 out of 200: slope = -0.004248
-    iteration 14 out of 200: slope = -0.004199
-    iteration 15 out of 200: slope = -0.004150
-    iteration 16 out of 200: slope = -0.004102
-    iteration 17 out of 200: slope = -0.004053
-    iteration 18 out of 200: slope = -0.004004
-    iteration 19 out of 200: slope = -0.003955
-    iteration 20 out of 200: slope = -0.003906
-    iteration 21 out of 200: slope = -0.003857
-    iteration 22 out of 200: slope = -0.003809
-    iteration 23 out of 200: slope = -0.003760
-    iteration 24 out of 200: slope = -0.003711
-    iteration 25 out of 200: slope = -0.003662
-    iteration 26 out of 200: slope = -0.003613
-    iteration 27 out of 200: slope = -0.003564
-    iteration 28 out of 200: slope = -0.003516
-    iteration 29 out of 200: slope = -0.003467
-    iteration 30 out of 200: slope = -0.003418
-    iteration 31 out of 200: slope = -0.003369
-    iteration 32 out of 200: slope = -0.003320
-    iteration 33 out of 200: slope = -0.003271
-    iteration 34 out of 200: slope = -0.003223
-    iteration 35 out of 200: slope = -0.003174
-    iteration 36 out of 200: slope = -0.003125
-    iteration 37 out of 200: slope = -0.003076
-    iteration 38 out of 200: slope = -0.003027
-    iteration 39 out of 200: slope = -0.002979
-    iteration 40 out of 200: slope = -0.002930
-    iteration 41 out of 200: slope = -0.002881
-    iteration 42 out of 200: slope = -0.002832
-    iteration 43 out of 200: slope = -0.002783
-    iteration 44 out of 200: slope = -0.002734
-    iteration 45 out of 200: slope = -0.002686
-    iteration 46 out of 200: slope = -0.002637
-    iteration 47 out of 200: slope = -0.002588
-    iteration 48 out of 200: slope = -0.002539
-    iteration 49 out of 200: slope = -0.002490
-    iteration 50 out of 200: slope = -0.002441
-    iteration 51 out of 200: slope = -0.002393
-    iteration 52 out of 200: slope = -0.002344
-    iteration 53 out of 200: slope = -0.002295
-    iteration 54 out of 200: slope = -0.002246
-    iteration 55 out of 200: slope = -0.002197
-    iteration 56 out of 200: slope = -0.002148
-    iteration 57 out of 200: slope = -0.002100
-    iteration 58 out of 200: slope = -0.002051
-    iteration 59 out of 200: slope = -0.002002
-    iteration 60 out of 200: slope = -0.001953
-    iteration 61 out of 200: slope = -0.001904
-    iteration 62 out of 200: slope = -0.001855
-    iteration 63 out of 200: slope = -0.001807
-    iteration 64 out of 200: slope = -0.001758
-    iteration 65 out of 200: slope = -0.001709
-    iteration 66 out of 200: slope = -0.001660
-    iteration 67 out of 200: slope = -0.001611
-    iteration 68 out of 200: slope = -0.001563
-    iteration 69 out of 200: slope = -0.001514
-    iteration 70 out of 200: slope = -0.001465
-    iteration 71 out of 200: slope = -0.001416
-    iteration 72 out of 200: slope = -0.001367
-    iteration 73 out of 200: slope = -0.001318
-    iteration 74 out of 200: slope = -0.001270
-    iteration 75 out of 200: slope = -0.001221
-    iteration 76 out of 200: slope = -0.001172
-    iteration 77 out of 200: slope = -0.001123
-    iteration 78 out of 200: slope = -0.001074
-    iteration 79 out of 200: slope = -0.001025
-    iteration 80 out of 200: slope = -0.000977
-    iteration 81 out of 200: slope = -0.000928
-    iteration 82 out of 200: slope = -0.000879
-    iteration 83 out of 200: slope = -0.000830
-    iteration 84 out of 200: slope = -0.000781
-    iteration 85 out of 200: slope = -0.000732
-    iteration 86 out of 200: slope = -0.000684
-    iteration 87 out of 200: slope = -0.000635
-    iteration 88 out of 200: slope = -0.000586
-    iteration 89 out of 200: slope = -0.000537
-    iteration 90 out of 200: slope = -0.000488
-    iteration 91 out of 200: slope = -0.000439
-    iteration 92 out of 200: slope = -0.000391
-    iteration 93 out of 200: slope = -0.000342
-    iteration 94 out of 200: slope = -0.000293
-    iteration 95 out of 200: slope = -0.000244
-    iteration 96 out of 200: slope = -0.000195
-    iteration 97 out of 200: slope = -0.000146
-    iteration 98 out of 200: slope = -0.000098
-    iteration 99 out of 200: slope = -0.000049
-    iteration 100 out of 200: slope = -0.000000
-    iteration 101 out of 200: slope = 0.000049
-    iteration 102 out of 200: slope = 0.000098
-    iteration 103 out of 200: slope = 0.000146
-    iteration 104 out of 200: slope = 0.000195
-    iteration 105 out of 200: slope = 0.000244
-    iteration 106 out of 200: slope = 0.000293
-    iteration 107 out of 200: slope = 0.000342
-    iteration 108 out of 200: slope = 0.000391
-    iteration 109 out of 200: slope = 0.000439
-    iteration 110 out of 200: slope = 0.000488
-    iteration 111 out of 200: slope = 0.000537
-    iteration 112 out of 200: slope = 0.000586
-    iteration 113 out of 200: slope = 0.000635
-    iteration 114 out of 200: slope = 0.000684
-    iteration 115 out of 200: slope = 0.000732
-    iteration 116 out of 200: slope = 0.000781
-    iteration 117 out of 200: slope = 0.000830
-    iteration 118 out of 200: slope = 0.000879
-    iteration 119 out of 200: slope = 0.000928
-    iteration 120 out of 200: slope = 0.000977
-    iteration 121 out of 200: slope = 0.001025
-    iteration 122 out of 200: slope = 0.001074
-    iteration 123 out of 200: slope = 0.001123
-    iteration 124 out of 200: slope = 0.001172
-    iteration 125 out of 200: slope = 0.001221
-    iteration 126 out of 200: slope = 0.001270
-    iteration 127 out of 200: slope = 0.001318
-    iteration 128 out of 200: slope = 0.001367
-    iteration 129 out of 200: slope = 0.001416
-    iteration 130 out of 200: slope = 0.001465
-    iteration 131 out of 200: slope = 0.001514
-    iteration 132 out of 200: slope = 0.001562
-    iteration 133 out of 200: slope = 0.001611
-    iteration 134 out of 200: slope = 0.001660
-    iteration 135 out of 200: slope = 0.001709
-    iteration 136 out of 200: slope = 0.001758
-    iteration 137 out of 200: slope = 0.001807
-    iteration 138 out of 200: slope = 0.001855
-    iteration 139 out of 200: slope = 0.001904
-    iteration 140 out of 200: slope = 0.001953
-    iteration 141 out of 200: slope = 0.002002
-    iteration 142 out of 200: slope = 0.002051
-    iteration 143 out of 200: slope = 0.002100
-    iteration 144 out of 200: slope = 0.002148
-    iteration 145 out of 200: slope = 0.002197
-    iteration 146 out of 200: slope = 0.002246
-    iteration 147 out of 200: slope = 0.002295
-    iteration 148 out of 200: slope = 0.002344
-    iteration 149 out of 200: slope = 0.002393
-    iteration 150 out of 200: slope = 0.002441
-    iteration 151 out of 200: slope = 0.002490
-    iteration 152 out of 200: slope = 0.002539
-    iteration 153 out of 200: slope = 0.002588
-    iteration 154 out of 200: slope = 0.002637
-    iteration 155 out of 200: slope = 0.002686
-    iteration 156 out of 200: slope = 0.002734
-    iteration 157 out of 200: slope = 0.002783
-    iteration 158 out of 200: slope = 0.002832
-    iteration 159 out of 200: slope = 0.002881
-    iteration 160 out of 200: slope = 0.002930
-    iteration 161 out of 200: slope = 0.002979
-    iteration 162 out of 200: slope = 0.003027
-    iteration 163 out of 200: slope = 0.003076
-    iteration 164 out of 200: slope = 0.003125
-    iteration 165 out of 200: slope = 0.003174
-    iteration 166 out of 200: slope = 0.003223
-    iteration 167 out of 200: slope = 0.003271
-    iteration 168 out of 200: slope = 0.003320
-    iteration 169 out of 200: slope = 0.003369
-    iteration 170 out of 200: slope = 0.003418
-    iteration 171 out of 200: slope = 0.003467
-    iteration 172 out of 200: slope = 0.003516
-    iteration 173 out of 200: slope = 0.003564
-    iteration 174 out of 200: slope = 0.003613
-    iteration 175 out of 200: slope = 0.003662
-    iteration 176 out of 200: slope = 0.003711
-    iteration 177 out of 200: slope = 0.003760
-    iteration 178 out of 200: slope = 0.003809
-    iteration 179 out of 200: slope = 0.003857
-    iteration 180 out of 200: slope = 0.003906
-    iteration 181 out of 200: slope = 0.003955
-    iteration 182 out of 200: slope = 0.004004
-    iteration 183 out of 200: slope = 0.004053
-    iteration 184 out of 200: slope = 0.004102
-    iteration 185 out of 200: slope = 0.004150
-    iteration 186 out of 200: slope = 0.004199
-    iteration 187 out of 200: slope = 0.004248
-    iteration 188 out of 200: slope = 0.004297
-    iteration 189 out of 200: slope = 0.004346
-    iteration 190 out of 200: slope = 0.004395
-    iteration 191 out of 200: slope = 0.004443
-    iteration 192 out of 200: slope = 0.004492
-    iteration 193 out of 200: slope = 0.004541
-    iteration 194 out of 200: slope = 0.004590
-    iteration 195 out of 200: slope = 0.004639
-    iteration 196 out of 200: slope = 0.004687
-    iteration 197 out of 200: slope = 0.004736
-    iteration 198 out of 200: slope = 0.004785
-    iteration 199 out of 200: slope = 0.004834
             slope     intercept   maxval  index  d_bestguess  fwhm  multimax
     -4.882812e-03  5.000000e+00 3.323029      9    -4.266164   0.8     False
     -4.833984e-03  4.950000e+00 3.323029      9    -4.259090   0.8     False
@@ -1989,14 +1197,8 @@ catalog of the field.
      4.736328e-03 -4.850000e+00 3.000000     35    -0.146861   0.8     False
      4.785156e-03 -4.900000e+00 3.000000     35    -0.157530   0.8     False
      4.833984e-03 -4.950000e+00 3.000000     35    -0.168200   0.8     False
-    ####BEST:
        slope  intercept  maxval  index  d_bestguess  fwhm  multimax
     0.001221      -1.25     4.0     35     0.621346   0.8     False
-    Setting rough_cut_px=2.0000000000000018. limits: (0.3-0.8)
-    Setting rough_cut_px=0.8
-
-    ####################
-    ### d_rotated cut (Nsigma=3.0)
     Keeping 4 out of 4, skippin 0 because of null values in columns d_rot_tmp
     median: 0.640435
     75.000000 percentile cut: max residual for cut: 0.056049
@@ -2008,214 +1210,6 @@ catalog of the field.
 
     mean: 0.623836
     i:02 mean:0.623836(0.040472) stdev:0.070100(0.024784) X2norm:1.00 Nchanged:0 Ngood:4 Nclip:0
-    i:02 mean:0.623836(0.040472) stdev:0.070100(0.024784) X2norm:1.00 Nchanged:0 Ngood:4 Nclip:0
-    ### Doing histogram cut for dy, slope_min:-0.004883 slope_max:0.004883 slope_stepsize:0.000049
-    Nfwhm=2.5, rough_cut_px_min=0.3, rough_cut_px_max=0.8, Nsigma=3.0
-    ########################
-    ### rotate dy versus x
-    Applying rolling gaussian:
-    gaussian_sigma_px=0.22, binsize=0.2, gaussian_sigma(bins)=1.0999999999999999, windowsize(bins)=7 halfwindowsize(bins)=4
-    slope min: -0.0048828125, slope max: 0.0048828125, slope stepsize: slope_stepsize
-    iteration 0 out of 200: slope = -0.004883
-    iteration 1 out of 200: slope = -0.004834
-    iteration 2 out of 200: slope = -0.004785
-    iteration 3 out of 200: slope = -0.004736
-    iteration 4 out of 200: slope = -0.004688
-    iteration 5 out of 200: slope = -0.004639
-    iteration 6 out of 200: slope = -0.004590
-    iteration 7 out of 200: slope = -0.004541
-    iteration 8 out of 200: slope = -0.004492
-    iteration 9 out of 200: slope = -0.004443
-    iteration 10 out of 200: slope = -0.004395
-    iteration 11 out of 200: slope = -0.004346
-    iteration 12 out of 200: slope = -0.004297
-    iteration 13 out of 200: slope = -0.004248
-    iteration 14 out of 200: slope = -0.004199
-    iteration 15 out of 200: slope = -0.004150
-    iteration 16 out of 200: slope = -0.004102
-    iteration 17 out of 200: slope = -0.004053
-    iteration 18 out of 200: slope = -0.004004
-    iteration 19 out of 200: slope = -0.003955
-    iteration 20 out of 200: slope = -0.003906
-    iteration 21 out of 200: slope = -0.003857
-    iteration 22 out of 200: slope = -0.003809
-    iteration 23 out of 200: slope = -0.003760
-    iteration 24 out of 200: slope = -0.003711
-    iteration 25 out of 200: slope = -0.003662
-    iteration 26 out of 200: slope = -0.003613
-    iteration 27 out of 200: slope = -0.003564
-    iteration 28 out of 200: slope = -0.003516
-    iteration 29 out of 200: slope = -0.003467
-    iteration 30 out of 200: slope = -0.003418
-    iteration 31 out of 200: slope = -0.003369
-    iteration 32 out of 200: slope = -0.003320
-    iteration 33 out of 200: slope = -0.003271
-    iteration 34 out of 200: slope = -0.003223
-    iteration 35 out of 200: slope = -0.003174
-    iteration 36 out of 200: slope = -0.003125
-    iteration 37 out of 200: slope = -0.003076
-    iteration 38 out of 200: slope = -0.003027
-    iteration 39 out of 200: slope = -0.002979
-    iteration 40 out of 200: slope = -0.002930
-    iteration 41 out of 200: slope = -0.002881
-    iteration 42 out of 200: slope = -0.002832
-    iteration 43 out of 200: slope = -0.002783
-    iteration 44 out of 200: slope = -0.002734
-    iteration 45 out of 200: slope = -0.002686
-    iteration 46 out of 200: slope = -0.002637
-    iteration 47 out of 200: slope = -0.002588
-    iteration 48 out of 200: slope = -0.002539
-    iteration 49 out of 200: slope = -0.002490
-    iteration 50 out of 200: slope = -0.002441
-    iteration 51 out of 200: slope = -0.002393
-    iteration 52 out of 200: slope = -0.002344
-    iteration 53 out of 200: slope = -0.002295
-    iteration 54 out of 200: slope = -0.002246
-    iteration 55 out of 200: slope = -0.002197
-    iteration 56 out of 200: slope = -0.002148
-    iteration 57 out of 200: slope = -0.002100
-    iteration 58 out of 200: slope = -0.002051
-    iteration 59 out of 200: slope = -0.002002
-    iteration 60 out of 200: slope = -0.001953
-    iteration 61 out of 200: slope = -0.001904
-    iteration 62 out of 200: slope = -0.001855
-    iteration 63 out of 200: slope = -0.001807
-    iteration 64 out of 200: slope = -0.001758
-    iteration 65 out of 200: slope = -0.001709
-    iteration 66 out of 200: slope = -0.001660
-    iteration 67 out of 200: slope = -0.001611
-    iteration 68 out of 200: slope = -0.001563
-    iteration 69 out of 200: slope = -0.001514
-    iteration 70 out of 200: slope = -0.001465
-    iteration 71 out of 200: slope = -0.001416
-    iteration 72 out of 200: slope = -0.001367
-    iteration 73 out of 200: slope = -0.001318
-    iteration 74 out of 200: slope = -0.001270
-    iteration 75 out of 200: slope = -0.001221
-    iteration 76 out of 200: slope = -0.001172
-    iteration 77 out of 200: slope = -0.001123
-    iteration 78 out of 200: slope = -0.001074
-    iteration 79 out of 200: slope = -0.001025
-    iteration 80 out of 200: slope = -0.000977
-    iteration 81 out of 200: slope = -0.000928
-    iteration 82 out of 200: slope = -0.000879
-    iteration 83 out of 200: slope = -0.000830
-    iteration 84 out of 200: slope = -0.000781
-    iteration 85 out of 200: slope = -0.000732
-    iteration 86 out of 200: slope = -0.000684
-    iteration 87 out of 200: slope = -0.000635
-    iteration 88 out of 200: slope = -0.000586
-    iteration 89 out of 200: slope = -0.000537
-    iteration 90 out of 200: slope = -0.000488
-    iteration 91 out of 200: slope = -0.000439
-    iteration 92 out of 200: slope = -0.000391
-    iteration 93 out of 200: slope = -0.000342
-    iteration 94 out of 200: slope = -0.000293
-    iteration 95 out of 200: slope = -0.000244
-    iteration 96 out of 200: slope = -0.000195
-    iteration 97 out of 200: slope = -0.000146
-    iteration 98 out of 200: slope = -0.000098
-    iteration 99 out of 200: slope = -0.000049
-    iteration 100 out of 200: slope = -0.000000
-    iteration 101 out of 200: slope = 0.000049
-    iteration 102 out of 200: slope = 0.000098
-    iteration 103 out of 200: slope = 0.000146
-    iteration 104 out of 200: slope = 0.000195
-    iteration 105 out of 200: slope = 0.000244
-    iteration 106 out of 200: slope = 0.000293
-    iteration 107 out of 200: slope = 0.000342
-    iteration 108 out of 200: slope = 0.000391
-    iteration 109 out of 200: slope = 0.000439
-    iteration 110 out of 200: slope = 0.000488
-    iteration 111 out of 200: slope = 0.000537
-    iteration 112 out of 200: slope = 0.000586
-    iteration 113 out of 200: slope = 0.000635
-    iteration 114 out of 200: slope = 0.000684
-    iteration 115 out of 200: slope = 0.000732
-    iteration 116 out of 200: slope = 0.000781
-    iteration 117 out of 200: slope = 0.000830
-    iteration 118 out of 200: slope = 0.000879
-    iteration 119 out of 200: slope = 0.000928
-    iteration 120 out of 200: slope = 0.000977
-    iteration 121 out of 200: slope = 0.001025
-    iteration 122 out of 200: slope = 0.001074
-    iteration 123 out of 200: slope = 0.001123
-    iteration 124 out of 200: slope = 0.001172
-    iteration 125 out of 200: slope = 0.001221
-    iteration 126 out of 200: slope = 0.001270
-    iteration 127 out of 200: slope = 0.001318
-    iteration 128 out of 200: slope = 0.001367
-    iteration 129 out of 200: slope = 0.001416
-    iteration 130 out of 200: slope = 0.001465
-    iteration 131 out of 200: slope = 0.001514
-    iteration 132 out of 200: slope = 0.001562
-    iteration 133 out of 200: slope = 0.001611
-    iteration 134 out of 200: slope = 0.001660
-    iteration 135 out of 200: slope = 0.001709
-    iteration 136 out of 200: slope = 0.001758
-    iteration 137 out of 200: slope = 0.001807
-    iteration 138 out of 200: slope = 0.001855
-    iteration 139 out of 200: slope = 0.001904
-    iteration 140 out of 200: slope = 0.001953
-    iteration 141 out of 200: slope = 0.002002
-    iteration 142 out of 200: slope = 0.002051
-    iteration 143 out of 200: slope = 0.002100
-    iteration 144 out of 200: slope = 0.002148
-    iteration 145 out of 200: slope = 0.002197
-    iteration 146 out of 200: slope = 0.002246
-    iteration 147 out of 200: slope = 0.002295
-    iteration 148 out of 200: slope = 0.002344
-    iteration 149 out of 200: slope = 0.002393
-    iteration 150 out of 200: slope = 0.002441
-    iteration 151 out of 200: slope = 0.002490
-    iteration 152 out of 200: slope = 0.002539
-    iteration 153 out of 200: slope = 0.002588
-    iteration 154 out of 200: slope = 0.002637
-    iteration 155 out of 200: slope = 0.002686
-    iteration 156 out of 200: slope = 0.002734
-    iteration 157 out of 200: slope = 0.002783
-    iteration 158 out of 200: slope = 0.002832
-    iteration 159 out of 200: slope = 0.002881
-    iteration 160 out of 200: slope = 0.002930
-    iteration 161 out of 200: slope = 0.002979
-    iteration 162 out of 200: slope = 0.003027
-    iteration 163 out of 200: slope = 0.003076
-    iteration 164 out of 200: slope = 0.003125
-    iteration 165 out of 200: slope = 0.003174
-    iteration 166 out of 200: slope = 0.003223
-    iteration 167 out of 200: slope = 0.003271
-    iteration 168 out of 200: slope = 0.003320
-    iteration 169 out of 200: slope = 0.003369
-    iteration 170 out of 200: slope = 0.003418
-    iteration 171 out of 200: slope = 0.003467
-    iteration 172 out of 200: slope = 0.003516
-    iteration 173 out of 200: slope = 0.003564
-    iteration 174 out of 200: slope = 0.003613
-    iteration 175 out of 200: slope = 0.003662
-    iteration 176 out of 200: slope = 0.003711
-    iteration 177 out of 200: slope = 0.003760
-    iteration 178 out of 200: slope = 0.003809
-    iteration 179 out of 200: slope = 0.003857
-    iteration 180 out of 200: slope = 0.003906
-    iteration 181 out of 200: slope = 0.003955
-    iteration 182 out of 200: slope = 0.004004
-    iteration 183 out of 200: slope = 0.004053
-    iteration 184 out of 200: slope = 0.004102
-    iteration 185 out of 200: slope = 0.004150
-    iteration 186 out of 200: slope = 0.004199
-    iteration 187 out of 200: slope = 0.004248
-    iteration 188 out of 200: slope = 0.004297
-    iteration 189 out of 200: slope = 0.004346
-    iteration 190 out of 200: slope = 0.004395
-    iteration 191 out of 200: slope = 0.004443
-    iteration 192 out of 200: slope = 0.004492
-    iteration 193 out of 200: slope = 0.004541
-    iteration 194 out of 200: slope = 0.004590
-    iteration 195 out of 200: slope = 0.004639
-    iteration 196 out of 200: slope = 0.004687
-    iteration 197 out of 200: slope = 0.004736
-    iteration 198 out of 200: slope = 0.004785
-    iteration 199 out of 200: slope = 0.004834
             slope     intercept   maxval  index  d_bestguess  fwhm  multimax
     -4.882812e-03  5.000000e+00 2.323029      5    -5.210110   0.8     False
     -4.833984e-03  4.950000e+00 2.323029      5    -5.176109   0.8     False
@@ -2417,14 +1411,8 @@ catalog of the field.
      4.736328e-03 -4.850000e+00 2.191495     17     1.174213   1.0     False
      4.785156e-03 -4.900000e+00 2.661515     17     1.174446   0.8     False
      4.833984e-03 -4.950000e+00 2.661515     17     1.174679   0.8     False
-    ####BEST:
        slope  intercept  maxval  index  d_bestguess  fwhm  multimax
     0.000537      -0.55     4.0      4    -1.642504   0.8     False
-    Setting rough_cut_px=2.0000000000000018. limits: (0.3-0.8)
-    Setting rough_cut_px=0.8
-
-    ####################
-    ### d_rotated cut (Nsigma=3.0)
     Keeping 4 out of 4, skippin 0 because of null values in columns d_rot_tmp
     median: -1.671795
     75.000000 percentile cut: max residual for cut: 0.084521
@@ -2436,24 +1424,6 @@ catalog of the field.
 
     mean: -1.657983
     i:02 mean:-1.657983(0.056113) stdev:0.097190(0.034362) X2norm:1.00 Nchanged:0 Ngood:4 Nclip:0
-    i:02 mean:-1.657983(0.056113) stdev:0.097190(0.034362) X2norm:1.00 Nchanged:0 Ngood:4 Nclip:0
-    Setting output directory for ./mastDownload/jw02107041001_02101_00001_nrcblong_cal.jhat.fits file to ./mastDownload
-    Index(['aper_sum_2.9px', 'annulus_median_2.9px', 'aper_bkg_2.9px',
-           'aper_sum_bkgsub_2.9px', 'flux_err_2.9px', 'mag', 'dmag', 'x', 'y',
-           'sharpness', 'roundness1', 'roundness2', 'ra', 'dec', 'x_idl', 'y_idl',
-           'gaia_ra', 'gaia_dec', 'gaia_x', 'gaia_y', 'gaia_ID', 'gaia_g',
-           'gaia_g_err', 'gaia_g_rp', 'gaia_source_id', 'gaia_ra_error',
-           'gaia_dec_error', 'gaia_rp', 'gaia_rp_err', 'gaia_g_rp_err', 'gaia_d2d',
-           'dx', 'dy', 'delta_mag', '__weights', 'd_rot_tmp', '__tmp_residuals'],
-          dtype='object')
-    Index(['aper_sum_2.9px', 'annulus_median_2.9px', 'aper_bkg_2.9px',
-           'aper_sum_bkgsub_2.9px', 'flux_err_2.9px', 'mag', 'dmag', 'x', 'y',
-           'sharpness', 'roundness1', 'roundness2', 'ra', 'dec', 'x_idl', 'y_idl',
-           'gaia_ra', 'gaia_dec', 'gaia_ID', 'gaia_g', 'gaia_g_err', 'gaia_g_rp',
-           'gaia_source_id', 'gaia_ra_error', 'gaia_dec_error', 'gaia_rp',
-           'gaia_rp_err', 'gaia_g_rp_err', 'delta_mag', '__weights', 'd_rot_tmp',
-           '__tmp_residuals', 'gaia_x', 'gaia_y', 'dx', 'dy'],
-          dtype='object')
     /Users/jpierel/miniconda3/envs/tweakreg/lib/python3.10/site-packages/astropy/wcs/wcs.py:725: FITSFixedWarning: 'obsfix' made the change 'Set OBSGEO-L to   -72.164999 from OBSGEO-[XYZ].
     Set OBSGEO-B to   -38.353872 from OBSGEO-[XYZ].
     Set OBSGEO-H to 1740894174.999 from OBSGEO-[XYZ]'.
@@ -2465,7 +1435,7 @@ catalog of the field.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 1 minutes  43.784 seconds)
+   **Total running time of the script:** ( 0 minutes  55.247 seconds)
 
 
 .. _sphx_glr_download_examples_plot_b_nircam.py:
