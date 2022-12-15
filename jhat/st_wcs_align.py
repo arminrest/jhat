@@ -6,7 +6,7 @@ Created on Thu Apr 21 14:32:42 2022
 @author: arest, bhilbert, mcorrenti, acanipe, jpierel
 """
 
-import os,re,sys,copy
+import os,re,sys,copy,warnings
 #from jwst.tweakreg import TweakRegStep
 import tweakreg_hack
 import argparse
@@ -19,6 +19,7 @@ from jwst import datamodels
 from .simple_jwst_phot import jwst_photclass,hst_photclass
 from .pdastro import *
 
+warnings.simplefilter('ignore')
 __all__ = ['st_wcs_align']
 
 plot_style={}
@@ -62,7 +63,6 @@ def infoplots(phot,ixs_good,dy_plotlim=(-4,4),dx_plotlim=(-4,4)):
 
     if phot.ixs_use is not None:
         ixs_cut = AnotB(phot.ixs_use,ixs_good)
-        print(len(ixs_good),len(ixs_cut),len(phot.ixs_use))
         phot.t.loc[ixs_cut].plot('y','dx',ax=sp[0],ylim=dx_plotlim, **plot_style['cut_data'])
         phot.t.loc[ixs_cut].plot('y','dx',ax=sp[0],ylim=dx_plotlim, **plot_style['cut_data'])
         phot.t.loc[ixs_cut].plot('x','dy',ax=sp[1],ylim=dy_plotlim, **plot_style['cut_data'])
@@ -140,14 +140,14 @@ def plot_rotated(phot,ixs,d_col,col,
 def initial_dxdy_plot(phot, ixs_use, ixs_notuse, 
                       plots_dxdy_delta_pix_ylim=20,
                       refcat_mainfilter=None,refcat_mainfilter_err=None,refcat_maincolor=None,
-                      d2d_max=None,dmag_max=None,Nbright=None,delta_mag_lim=None):
+                      d2d_max=None,dmag_max=None,Nbright=None,delta_mag_lim=None,verbose=0):
     
     sp = initplot(2,3)
     
     dx_median = phot.t.loc[ixs_use,'dx'].median()
     dy_median = phot.t.loc[ixs_use,'dy'].median()
-
-    print(f'dx median: {dx_median}\ndy median: {dy_median}')
+    if verbose:
+        print(f'dx median: {dx_median}\ndy median: {dy_median}')
  
     # these are the general limits for the y-axis for the dx/dy plots
     dy_plotlim = (dy_median-plots_dxdy_delta_pix_ylim,dy_median+plots_dxdy_delta_pix_ylim)
@@ -200,7 +200,6 @@ def dxdy_plot(phot,ixs_selected, sp=None, spi = [0,1,4,5,8,9,2,6,10,3,7,11], tit
     #dx_ylim_small = (dx_median-dlim_small,dx_median+dlim_small)
     #dy_ylim_small = (dy_median-dlim_small,dy_median+dlim_small)
 
-    print(phot.t.columns)
     if (refcat_mainfilter is not None):
         if (refcat_mainfilter in phot.t.columns):
             phot.t['delta_mag'] = phot.t['mag'] - phot.t[refcat_mainfilter]
@@ -411,8 +410,10 @@ def rotate_d_and_find_binmax(phot,ixs,d_col,col,
                              slope_stepsize=1.0/2048,
                              showplots=0,
                              sp=None,
+                             verbose=0,
                              spi=[0,1,2,3,4]):
-    print(f'########################\n### rotate {d_col} versus {col}')
+    if verbose:
+        print(f'########################\n### rotate {d_col} versus {col}')
     rot_results = pdastroclass()
 
     if bin_weights_flag:
@@ -431,10 +432,12 @@ def rotate_d_and_find_binmax(phot,ixs,d_col,col,
         if windowsize % 2 == 0:
             windowsize+=1
         halfwindowsize = int(windowsize*0.5)+1
-        print(f'Applying rolling gaussian:\ngaussian_sigma_px={gaussian_sigma_px}, binsize={binsize}, gaussian_sigma(bins)={gaussian_sigma}, windowsize(bins)={windowsize} halfwindowsize(bins)={halfwindowsize}')
+        if verbose:
+            print(f'Applying rolling gaussian:\ngaussian_sigma_px={gaussian_sigma_px}, binsize={binsize}, gaussian_sigma(bins)={gaussian_sigma}, windowsize(bins)={windowsize} halfwindowsize(bins)={halfwindowsize}')
     
     # Loop through the slopes
-    print(f'slope min: {slope_min}, slope max: {slope_max}, slope stepsize: slope_stepsize')
+    if verbose>1:
+        print(f'slope min: {slope_min}, slope max: {slope_max}, slope stepsize: slope_stepsize')
     slopes = np.arange(slope_min,slope_max,slope_stepsize)
     for counter in range(len(slopes)):
         #print(f'iteration {counter} out of {len(slopes)}: slope = {slopes[counter]:.6f}')
@@ -465,7 +468,8 @@ def rotate_d_and_find_binmax(phot,ixs,d_col,col,
         best_index=ixs_maxmax[0][0]
     else:
         best_index=ixs_maxmax[0][0]
-    print('####BEST:')
+    if verbose:
+        print('####BEST:')
     rot_results.write(indices=[best_index])
     
     # make the summary plots
@@ -508,6 +512,7 @@ def sigmacut_d_rot(phot,ixs,
                    bin_weights_flag=True,
                    showplots=0,
                    sp=None,
+                   verbose=0,
                    spi=[0]):
 
     ### recover the slope and intercept of the best binning
@@ -516,14 +521,13 @@ def sigmacut_d_rot(phot,ixs,
     # Now make the rough cut! only keep data for with dx_rotated within  d_rot_bestguess+-rough_cut_px
     ixs_roughcut = phot.ix_inrange(d_col_rot,d_rot_bestguess-rough_cut_px,d_rot_bestguess+rough_cut_px,indices=ixs)
     #d_rotated = phot.t.loc[ixs,d_col_rot]
-    
-    print(f'\n####################\n### d_rotated cut (Nsigma={Nsigma})')
+    if verbose:
+        print(f'\n####################\n### d_rotated cut (Nsigma={Nsigma})')
     if Nsigma is None or Nsigma==0.0:
         # don't do percentile cut if there are no iterations!
         percentile_cut_firstiteration = None
     #ixs_clean4average = phot_clear.ix_inrange(d_col,0,3,indices=ixs_clear_cut)
     phot.calcaverage_sigmacutloop(d_col_rot,verbose=3,indices=ixs_roughcut,Nsigma=Nsigma,percentile_cut_firstiteration=percentile_cut_firstiteration)
-    print(phot.statstring())
     ixs_cut = phot.statparams['ix_good']
 
     if showplots>1:
@@ -561,11 +565,12 @@ def histogram_cut(phot,ixs,d_col,col,
                   rough_cut_px_max=None,
                   Nsigma=3.0,
                   showplots=0,
+                  verbose=0,
                   sp=None
                   ):
-
-    print(f'### Doing histogram cut for {d_col}, slope_min:{slope_min:.6f} slope_max:{slope_max:.6f} slope_stepsize:{slope_stepsize:.6f}')
-    print(f'Nfwhm={Nfwhm}, rough_cut_px_min={rough_cut_px_min}, rough_cut_px_max={rough_cut_px_max}, Nsigma={Nsigma}')
+    if verbose:
+        print(f'### Doing histogram cut for {d_col}, slope_min:{slope_min:.6f} slope_max:{slope_max:.6f} slope_stepsize:{slope_stepsize:.6f}')
+        print(f'Nfwhm={Nfwhm}, rough_cut_px_min={rough_cut_px_min}, rough_cut_px_max={rough_cut_px_max}, Nsigma={Nsigma}')
     # initialize plot
     if showplots>1:
         if sp is None:
@@ -584,6 +589,7 @@ def histogram_cut(phot,ixs,d_col,col,
                                                         slope_stepsize=slope_stepsize,
                                                         showplots=showplots,
                                                         sp=sp,
+                                                        verbose=verbose,
                                                         spi=[0,1,2,3,4])
     
     # Using the best dy_rotated, we first remove all entries with dy_rotated outside of dy_bestguess+-Nfwhm*fwhm
@@ -592,12 +598,14 @@ def histogram_cut(phot,ixs,d_col,col,
     rough_cut_px= Nfwhm*rot_results.t.loc[best_index,'fwhm']
     # when using a rolling gaussian to smooth the histogram (in particular for small numbers of good matches), 
     # the Nfwhm*fwhm method does nto work well. In that case it is better to use upper/lower limits
-    print(f'Setting rough_cut_px={rough_cut_px}. limits: ({rough_cut_px_min}-{rough_cut_px_max})')
+    if verbose:
+        print(f'Setting rough_cut_px={rough_cut_px}. limits: ({rough_cut_px_min}-{rough_cut_px_max})')
     if (rough_cut_px_max is not None) and rough_cut_px>rough_cut_px_max:
         rough_cut_px=rough_cut_px_max
     if (rough_cut_px_min is not None) and rough_cut_px<rough_cut_px_min:
         rough_cut_px=rough_cut_px_min
-    print(f'Setting rough_cut_px={rough_cut_px}')
+    if verbose:
+        print(f'Setting rough_cut_px={rough_cut_px}')
     
     (ixs_cut,ixs_roughcut) = sigmacut_d_rot(phot,ixs,d_col,col,
                                             rot_results.t.loc[best_index,'slope'],
@@ -609,9 +617,14 @@ def histogram_cut(phot,ixs,d_col,col,
                                             bin_weights_flag=bin_weights_flag,
                                             showplots=showplots,
                                             sp=sp,
-                                            spi=[5]
+                                            spi=[5],
+                                            verbose=verbose
                                             )
     plt.tight_layout()   
+    if showplots>0:
+        plt.show()
+    else:
+        plt.close()
     return(ixs_cut,rot_results)
 
 
@@ -918,7 +931,8 @@ class st_wcs_align:
             (outdir,shortoutputfits) = os.path.split(outputfits)
             
             
-        print(f'Setting output directory for {shortoutputfits} file to {outdir}')
+        if self.verbose:    
+            print(f'Setting output directory for {shortoutputfits} file to {outdir}')
         tweakreg.output_dir = outdir
         if not os.path.isdir(outdir):
             makepath(outdir)
@@ -1073,7 +1087,7 @@ class st_wcs_align:
             initial_dxdy_plot(phot, phot.ixs_use, phot.ixs_notuse,
                               plots_dxdy_delta_pix_ylim=plots_dxdy_delta_pix_ylim,
                               refcat_mainfilter=phot.refcat_mainfilter,refcat_mainfilter_err=phot.refcat_mainfilter_err,refcat_maincolor=phot.refcat_maincolor,
-                              d2d_max=d2d_max,dmag_max=dmag_max,Nbright=Nbright,delta_mag_lim=delta_mag_lim)
+                              d2d_max=d2d_max,dmag_max=dmag_max,Nbright=Nbright,delta_mag_lim=delta_mag_lim,verbose=self.verbose)
 
         
 
@@ -1118,7 +1132,8 @@ class st_wcs_align:
                                                 rough_cut_px_min=self.rough_cut_px_min,
                                                 rough_cut_px_max=self.rough_cut_px_max,
                                                 Nsigma=self.d_rotated_Nsigma,
-                                                showplots=show_histofit_plots)
+                                                showplots=show_histofit_plots,
+                                                verbose=self.verbose)
 
         # Do the histogram cut on the second dcol (dx or dy, as selected)
         (ixs_cut2,rot_results2) = histogram_cut(phot,ixs_cut1,d_col2,col2,Naxis2_px,
@@ -1131,7 +1146,8 @@ class st_wcs_align:
                                                 rough_cut_px_min=self.rough_cut_px_min,
                                                 rough_cut_px_max=self.rough_cut_px_max,
                                                 Nsigma=self.d_rotated_Nsigma,
-                                                showplots=show_histofit_plots)
+                                                showplots=show_histofit_plots,
+                                                verbose=self.verbose)
 
 
         if savephottable:
@@ -1185,9 +1201,13 @@ class st_wcs_align:
                 outfilename = f'{outbasename}.phot.prewcs.png'
                 if os.path.isfile(outfilename):
                     rmfile(outfilename)
-                print(f'Saving {outfilename}')
+                if self.verbose:
+                    print(f'Saving {outfilename}')
                 plt.savefig(outfilename)
-
+            if showplots>=0:
+                plt.show()
+            else:
+                plt.close()
 
         #racol=f'{phot.refcat.short}_ra'
         #deccol=f'{phot.refcat.short}_dec'
@@ -1221,7 +1241,8 @@ class st_wcs_align:
                 else:
                     # make sure output filename is deleted
                     rmfile(outfilename)
-            print(f'Saving {outfilename}')
+            if self.verbose:
+                print(f'Saving {outfilename}')
             phot.write(outfilename,indices=ixs_bestmatch)
             if savephottable>2:
                 outfilename = f'{outbasename}.all.phot.txt'
@@ -1231,7 +1252,8 @@ class st_wcs_align:
                     else:
                         # make sure output filename is deleted
                         rmfile(outfilename)
-                print(f'Saving {outfilename}')
+                if self.verbose:        
+                    print(f'Saving {outfilename}')
                 phot.write(outfilename)
 
         # show or save dxdy post WCS correction
@@ -1244,8 +1266,13 @@ class st_wcs_align:
                 outfilename = f'{outbasename}.phot.finalwcs.png'
                 if os.path.isfile(outfilename):
                     rmfile(outfilename)
-                print(f'Saving {outfilename}')
+                if self.verbose:
+                    print(f'Saving {outfilename}')
                 plt.savefig(outfilename)
+            if showplots>=0:
+                plt.show()
+            else:
+                plt.close()
 
 
 

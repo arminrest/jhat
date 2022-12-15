@@ -18,7 +18,7 @@ class jhattest(TestCommand):
 
 AUTHOR = 'Armin Rest & Justin Pierel'
 AUTHOR_EMAIL = 'arest@stsci.edu'
-VERSION = '0.0.6'
+VERSION = '0.0.7'
 LICENSE = ''
 URL = ''
 
@@ -47,7 +47,7 @@ setup(
     name=PACKAGENAME,
     cmdclass={'test': jhattest},
     packages=['bin',PACKAGENAME],
-    scripts=['bin/st_wcs_align','bin/st_wcs_align_batch'],
+    scripts=['bin/run_st_wcs_align.py','bin/run_st_wcs_align_batch.py'],
     setup_requires=['numpy'],
     install_requires=['argparse', 'numpy', 'matplotlib', 'astropy', 'jwst', 'scipy', 
                         'photutils', 'pysiaf', 'astroquery', 'pandas>=1.5', 'stsci.skypac',

@@ -108,8 +108,8 @@ plt.show()
 # We choose one of the images to be the reference image, and then 
 # create a catalog that we will use to align the other image.
 
-hst_phot = jwst_photclass()
-hst_phot.run_phot(imagename=ref_image,photfilename='auto',overwrite=True)
+jwst_phot = jwst_photclass()
+jwst_phot.run_phot(imagename=ref_image,photfilename='auto',overwrite=True,ee_radius=80)
 ref_catname = ref_image.replace('.fits','.phot.txt') # the default
 refcat = Table.read(ref_catname,format='ascii')
 print(refcat)
@@ -122,11 +122,11 @@ print(refcat)
 # subsequent correction needed for optimal alignment.
 
 wcs_align = st_wcs_align()
-wcs_align.outdir = 'mastDownload'
 
 
 wcs_align.run_all(align_image,
 		  telescope='jwst',
+		  outsubdir='mastDownload',
           refcat_racol='ra',
           refcat_deccol='dec',
           refcat_magcol='mag',
@@ -150,7 +150,7 @@ wcs_align.run_all(align_image,
 # aligned image and compare with the original. 
 # subsequent correction needed for optimal alignment.
 
-aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('cal.fits','tweakregstep.fits'))
+aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('.fits','.jhat.fits'))
 aligned_fits = fits.open(aligned_image)
 aligned_data = fits.open(aligned_image)['SCI',1].data
 aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))
@@ -186,6 +186,7 @@ plt.show()
 
 wcs_align.run_all(align_image,
 		  telescope='jwst',
+		  outsubdir='mastDownload',
           overwrite=True,
           d2d_max=.5,
           showplots=0,
@@ -197,7 +198,7 @@ wcs_align.run_all(align_image,
               dmag_max=1.0,
               objmag_lim =(14,24))
 
-aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('cal.fits','tweakregstep.fits'))
+aligned_image = os.path.join('mastDownload',os.path.basename(align_image).replace('.fits','.jhat.fits'))
 aligned_fits = fits.open(aligned_image)
 aligned_data = fits.open(aligned_image)['SCI',1].data
 aligned_y,aligned_x = skycoord_to_pixel(star_location,wcs.WCS(aligned_fits['SCI',1],aligned_fits))
