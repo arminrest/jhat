@@ -43,16 +43,16 @@ class align_wcs_batch(pdastroclass):
             inputdir = None
 
         # default directory for output
-        if 'JWST_OUTROOTDIR' in os.environ:
-            outrootdir = os.environ['JWST_OUTROOTDIR']
+        if 'JWST_OUTPUT_ROOTDIR' in os.environ:
+            outrootdir = os.environ['JWST_OUTPUT_ROOTDIR']
         else:
             outrootdir = None
 
 
-        parser.add_argument('--input_dir', default=inputdir, help='Directory in which the cal or rate images are located, to which the distortions are applied. (default=%(default)s)')
+        parser.add_argument('--input_dir', default=inputdir, help='Directory in which the input images are located. If $JWST_INPUT_IMAGEDIR is defined, then this dir is taken as default (default=%(default)s)')
         parser.add_argument('--input_files', nargs='+', default=['*_cal.fits'], help='list of cal or rate file(pattern)s to which the distortion files are applied to. "input_dir" is used if not None (default=%(default)s)')
 
-        parser.add_argument('--outrootdir', default=outrootdir, help='output root directory. The output directoy is the output root directory + the outsubdir if not None (default=%(default)s)')
+        parser.add_argument('--outrootdir', default=outrootdir, help='output root directory. The output directoy is the output root directory + the outsubdir if not None.  If $JWST_OUTPUT_ROOTDIR is defined, then this dir is taken as default (default=%(default)s)')
         parser.add_argument('--outsubdir', default=None, help='outsubdir added to output root directory (default=%(default)s)')
         parser.add_argument('--overwrite', default=False, action='store_true', help='overwrite files if they exist.')
 

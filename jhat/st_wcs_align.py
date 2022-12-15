@@ -749,12 +749,12 @@ class st_wcs_align:
         #    ratedir = None
 
         # default directory for output
-        if 'JWST_OUTROOTDIR' in os.environ:
-            outrootdir = os.environ['JWST_OUTROOTDIR']
+        if 'JWST_OUTPUT_ROOTDIR' in os.environ:
+            outrootdir = os.environ['JWST_OUTPUT_ROOTDIR']
         else:
             outrootdir = None
 
-        parser.add_argument('--outrootdir', default=outrootdir, help='output root directory. The output directoy is the output root directory + the outsubdir if not None (default=%(default)s)')
+        parser.add_argument('--outrootdir', default=outrootdir, help='output root directory. The output directoy is the output root directory + the outsubdir if not None.  If $JWST_OUTPUT_ROOTDIR is defined, then this dir is taken as default (default=%(default)s)')
         parser.add_argument('--outsubdir', default=None, help='outsubdir added to output root directory (default=%(default)s)')
         parser.add_argument('--overwrite', default=False, action='store_true', help='overwrite files if they exist.')
 
@@ -785,12 +785,12 @@ class st_wcs_align:
 
         parser.add_argument('--d2d_max', default=None, type=float, help='maximum distance between source in image and refcat object, in arcsec (default=%(default)s)')
         parser.add_argument('--dmag_max', default=None, type=float, help='maximum uncertainty of sources in image (default=%(default)s)')
-        parser.add_argument('--sharpness_lim', default=(0.4,1.0), nargs=2, type=float, help='sharpness limits of sources in image (default=%(default)s)')
+        parser.add_argument('--sharpness_lim', default=(None,None), nargs=2, type=float, help='sharpness limits of sources in image (default=%(default)s)')
         parser.add_argument('--roundness1_lim', default=(-0.75,0.75), nargs=2, type=float, help='roundness1 limits of sources in image (default=%(default)s)')
         parser.add_argument('--delta_mag_lim', default=(None,None), nargs=2, type=float, help='limits on mag - refcat_mainfilter (default=%(default)s)')
         parser.add_argument('--objmag_lim', default=(None,None), nargs=2, type=float, help='limits on mag, the magnitude of the objects in the image (default=%(default)s)')
         parser.add_argument('--refmag_lim', default=(None,None), nargs=2, type=float, help='limits on refcat_mainfilter, the magnitude of the reference catalog (default=%(default)s)')
-        parser.add_argument('--slope_min', default=-0.005, type=float, help='minimum slope for linear correction applied to dx/dy. This effectively accounts for rotation. slopes go from slopemin to -slopemin (default=%(default)s)')
+        parser.add_argument('--slope_min', default=-0.008, type=float, help='minimum slope for linear correction applied to dx/dy. This effectively accounts for rotation. slopes go from slopemin to -slopemin (default=%(default)s)')
         parser.add_argument('--Nbright4match', default=None, type=int, help='Use only Nbright brightest objects for matching to the ref cat (default=%(default)s)')
         parser.add_argument('--Nbright', default=None, type=int, help='Use only Nbright brightest objects in image that are matched to refcat for alignment (default=%(default)s)')
         parser.add_argument('--histocut_order', default='dxdy', choices=['dxdy','dydx'], help='histocut_order defines whether the histogram cut is first done for dx or first for dy (default=%(default)s)')
@@ -807,7 +807,7 @@ class st_wcs_align:
         parser.add_argument('--ee_radius', default=70, type=int, help='encircled energy percentage (multiples of 10) for photometry')
         parser.add_argument('--is_hst', default=False, action='store_true', help='set if your image is from hst not jwst')
         parser.add_argument('--rough_cut_px_min', default=0.3, type=float,help='first rough cut: best d_rotated+-rough_cut_pix. This is the lower limit for rough_cut (default=%(default)s)')
-        parser.add_argument('--rough_cut_px_max', default=0.8, type=float,help='first rough cut: best d_rotated+-rough_cut_pix. This is the upper limit for rough_cut (default=%(default)s)')
+        parser.add_argument('--rough_cut_px_max', default=1.0, type=float,help='first rough cut: best d_rotated+-rough_cut_pix. This is the upper limit for rough_cut (default=%(default)s)')
         parser.add_argument('--d_rotated_Nsigma', default=3.0, type=float,help='Nsigma for sigma cut of d_rotated. If 0.0, then 3-sigma cut is skipped (default=%(default)s)')
 
         return(parser)
