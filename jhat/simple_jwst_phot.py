@@ -399,7 +399,6 @@ def xy_to_idl(x,y, primaryhdr, scihdr,aperturename='APERNAME',instrument='INSTRU
         apername = primaryhdr[aperturename]
     else:
         apername = pysiaf_name
-
     ap= siaf.apertures[apername]
     xidl,yidl = ap.sci_to_idl(x+1,y+1)
     return xidl, yidl
@@ -1724,9 +1723,20 @@ class hst_photclass(jwst_photclass):
         self.primaryhdr = self.im['PRIMARY'].header
         self.scihdr = self.im['SCI'].header
         self.instrument = self.primaryhdr['INSTRUME']
-        self.filtername = self.primaryhdr['FILTER']
-        self.aperture = 'I'+self.primaryhdr['APERTURE'].replace('-','')
-        self.filters = {self.instrument:[self.primaryhdr['FILTER']]}
+        if 'FILTER' in self.primaryhdr:
+            self.filterkey = 'FILTER'
+            
+        elif 'CLEAR' not in self.primaryhdr['FILTER1']:
+            self.filterkey = 'FILTER1'
+        else:
+            self.filterkey = 'FILTER2'
+        self.filtername = self.primaryhdr[self.filterkey]
+        
+        if 'ACS' in self.instrument:
+            self.aperture = 'J'+self.primaryhdr['APERTURE'].replace('-','')
+        else:
+            self.aperture = 'I'+self.primaryhdr['APERTURE'].replace('-','')
+        self.filters = {self.instrument:[self.primaryhdr[self.filterkey]]}
         self.psf_fwhm = {self.instrument : [self.psf_fwhm]}
         self.dict_utils = {}
         for instrument in self.filters:

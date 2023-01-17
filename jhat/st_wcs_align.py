@@ -995,6 +995,7 @@ class st_wcs_align:
             raise RuntimeError(f'Image {outputfits} did not get created!!')
         if self.replace_sip:
             if self.telescope.lower()=='jwst':
+                print('replacing SIP',outputfits)
                 dm = datamodels.open(outputfits)
                 gwcs_header = dm.meta.wcs.to_fits_sip(max_pix_error=self.sip_err,
                                                        max_inv_pix_error=self.sip_err,
@@ -1002,13 +1003,13 @@ class st_wcs_align:
                                                        npoints=self.sip_points)
                 from astropy.io import fits
                 dm_fits = fits.open(outputfits)
-
-                for key,value in dict(gwcs_header).items():
-                    for k in dm_fits['SCI',1].header.keys():
-                        if k==key:
-                            dm_fits['SCI',1].header[key] = value
-                            break
-                    #astropy.wcs.WCS(header=gwcs_header)
+                dm_fits['SCI',1].header.update(gwcs_header)
+                # for key,value in dict(gwcs_header).items():
+                #     for k in dm_fits['SCI',1].header.keys():
+                #         if k==key:
+                #             dm_fits['SCI',1].header[key] = value
+                #             break
+                #     #astropy.wcs.WCS(header=gwcs_header)
                 dm_fits.writeto(outputfits,overwrite=True)
         #print(imcat.meta['image_model'].wcs)
         #print(gwcs_header)
@@ -1218,20 +1219,30 @@ class st_wcs_align:
         if f'{phot.refcatshort}_d2d' in phot.t.columns:
             phot.t.drop(columns=[f'{phot.refcatshort}_d2d'],inplace=True)    
             
-        
-        image_model = datamodels.ImageModel(outputfits)
+
+        #image_model = datamodels.ImageModel(outputfits)
+        image_model = fits.open(outputfits)
+        print(outputfits)
         # recalculate the x,y of the ref cat objects
-        world_to_detector = image_model.meta.wcs.get_transform('world', 'detector')
-        phot.t[refcat_xcol], phot.t[refcat_ycol] = world_to_detector(phot.t[refcat_racol],phot.t[refcat_deccol])
-        
+        #world_to_detector = image_model.meta.wcs.get_transform('world', 'detector')
+        #phot.t[refcat_xcol], phot.t[refcat_ycol] = world_to_detector(phot.t[refcat_racol],phot.t[refcat_deccol])
+        from astropy import wcs
+        from astropy.wcs.utils import skycoord_to_pixel,pixel_to_skycoord
+        from astropy import units as u
+        imwcs = wcs.WCS(image_model['SCI',1],image_model)
+        phot.t[refcat_xcol], phot.t[refcat_ycol] = skycoord_to_pixel(SkyCoord(phot.t[refcat_racol],
+            phot.t[refcat_deccol],unit=u.deg),imwcs)
         # recalculate dx, dy
         phot.t['dx'] = phot.t[refcat_xcol] - phot.t['x']
         phot.t['dy'] = phot.t[refcat_ycol] - phot.t['y']
 
         # recalculate the RA, Dec of the image objects
-        detector_to_world = image_model.meta.wcs.get_transform('detector', 'world')
-        phot.t['ra'],phot.t['dec'] = detector_to_world(phot.t['x'],phot.t['y'])
+        #detector_to_world = image_model.meta.wcs.get_transform('detector', 'world')
 
+        #phot.t['ra'],phot.t['dec'] = detector_to_world(phot.t['x'],phot.t['y'])
+        sc = pixel_to_skycoord(phot.t['x'],phot.t['y'],imwcs)
+        phot.t['ra'] = sc.ra.value
+        phot.t['dec'] = sc.dec.value
 
         if savephottable:
             outfilename = f'{outbasename}.good.phot.txt'
@@ -1423,7 +1434,6 @@ class st_wcs_align:
                                                          )     
 
         jhatfits = f'{self.outbasename}_jhat.fits'
-        jhatfits = f'{self.outbasename}_tweakregstep.fits'
         (runflag,jhatfits) = self.run_align2refcat(input_image,
                                                    outputfits=jhatfits,
                                                    ixs=ixs_bestmatch,
