@@ -1249,6 +1249,7 @@ class jwst_photclass(pdastrostatsclass):
         #ixs_cat = self.refcat.ix_not_null([self.refcat.racol,self.refcat.deccol],indices=ixs_cat)
         #print(f'Keeping {len(ixs_cat)}  after removing NaNs from ra/dec')
         
+        # Get the detector x,y position
         image_model = ImageModel(self.im)
         world_to_detector = image_model.meta.wcs.get_transform('world', 'detector')
         (self.refcat.t['x'], self.refcat.t['y']) = world_to_detector(self.refcat.t[self.refcat.racol],self.refcat.t[self.refcat.deccol])
@@ -1280,9 +1281,9 @@ class jwst_photclass(pdastrostatsclass):
             return(0)
 
         # Get the detector x,y position
-        image_model = ImageModel(self.im)
-        world_to_detector = image_model.meta.wcs.get_transform('world', 'detector')
-        self.refcat.t.loc[ixs_refcat,'x'], self.refcat.t.loc[ixs_refcat,'y'] = world_to_detector(self.refcat.t.loc[ixs_refcat,self.refcat.racol],self.refcat.t.loc[ixs_refcat,self.refcat.deccol])
+        #image_model = ImageModel(self.im)
+        #world_to_detector = image_model.meta.wcs.get_transform('world', 'detector')
+        #self.refcat.t.loc[ixs_refcat,'x'], self.refcat.t.loc[ixs_refcat,'y'] = world_to_detector(self.refcat.t.loc[ixs_refcat,self.refcat.racol],self.refcat.t.loc[ixs_refcat,self.refcat.deccol])
 
         refcatcoord = SkyCoord(self.refcat.t.loc[ixs_refcat,self.refcat.racol],self.refcat.t.loc[ixs_refcat,self.refcat.deccol], unit='deg')
         if self.verbose:
@@ -1585,7 +1586,7 @@ class jwst_photclass(pdastrostatsclass):
             print(f'{len(ixs_use)} of image photometry objects pass initial cuts #1, {len(ixs)-len(ixs_use)} cut')
 
         self.ixs_use = ixs_use
-        self.ixs_notuse = AorB(self.getindices(),ixs_use) 
+        self.ixs_notuse = AnotB(self.getindices(),ixs_use) 
 
         return(self.ixs_use)
 
@@ -1624,7 +1625,7 @@ class jwst_photclass(pdastrostatsclass):
             print(f'{len(ixs_use)} of image photometry objects pass initial cuts #1, {len(ixs)-len(ixs_use)} cut')
 
         self.ixs_use = ixs_use
-        self.ixs_notuse = AorB(self.getindices(),ixs_use) 
+        self.ixs_notuse = AnotB(self.getindices(),ixs_use) 
 
 
         return(self.ixs_use)
@@ -1672,7 +1673,7 @@ class jwst_photclass(pdastrostatsclass):
             print(f'{len(ixs_use_refcat)} of image photometry objects pass initial cuts #1, {len(ixs_refcat)-len(ixs_use_refcat)} cut')
 
         self.ixs_use_refcat = ixs_use_refcat
-        self.ixs_notuse_refcat = AorB(self.refcat.getindices(),ixs_use_refcat) 
+        self.ixs_notuse_refcat = AnotB(self.refcat.getindices(),ixs_use_refcat) 
 
         return(self.ixs_use_refcat)
 

@@ -144,6 +144,9 @@ def initial_dxdy_plot(phot, ixs_use, ixs_notuse,
     
     sp = initplot(2,3)
     
+    #print('FFFFFFF',len(ixs_notuse),len(ixs_use),len(phot.t))
+    #sys.exit(0)
+    
     dx_median = phot.t.loc[ixs_use,'dx'].median()
     dy_median = phot.t.loc[ixs_use,'dy'].median()
     if verbose:
@@ -456,7 +459,7 @@ def rotate_d_and_find_binmax(phot,ixs,d_col,col,
                               sp=None,
                               spi=[0,1])
     # print the results        
-    rot_results.write()
+    #rot_results.write()
     
     # find the best rotation
     maxmaxval = np.max(rot_results.t['maxval'])
@@ -1067,6 +1070,10 @@ class st_wcs_align:
         phot.t['dx'] = phot.t[refcat_xcol] - phot.t[xcol]
         phot.t['dy'] = phot.t[refcat_ycol] - phot.t[ycol]
 
+        #phot.write('delme1.txt',columns=['x','y','dx','dy','gaia_x','gaia_y'])
+        #phot.write(columns=['x','y','dx','dy','gaia_x','gaia_y'])
+        #print(len(phot.ixs_use),len(phot.ixs_notuse),len(phot.t))
+        
         # Calculate the difference between JWST mag and main filter of reference catalog
         if phot.refcat_mainfilter is not None:
             phot.t['delta_mag'] = phot.t['mag'] - phot.t[phot.refcat_mainfilter]
@@ -1090,7 +1097,7 @@ class st_wcs_align:
                               refcat_mainfilter=phot.refcat_mainfilter,refcat_mainfilter_err=phot.refcat_mainfilter_err,refcat_maincolor=phot.refcat_maincolor,
                               d2d_max=d2d_max,dmag_max=dmag_max,Nbright=Nbright,delta_mag_lim=delta_mag_lim,verbose=self.verbose)
 
-        
+       
 
         # Here we correct for rotation so that we can robustly remove outlier matches
         
