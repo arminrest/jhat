@@ -992,6 +992,7 @@ class st_wcs_align:
         cal_data = [datamodels.open(cal_image)]
         tweakreg.input_file = imfilename
         tweakreg.output_file = os.path.join(outdir,shortoutputfits)
+        print(f'AAAAAAAAAAAAAAAAAAAAAAA {tweakreg.output_file}')
         tweakreg.run(cal_data)
 
         if not os.path.isfile(outputfits):
@@ -1211,10 +1212,9 @@ class st_wcs_align:
                 if self.verbose:
                     print(f'Saving {outfilename}')
                 plt.savefig(outfilename)
-            if showplots>=0:
+            if showplots>0:
                 plt.show()
-            else:
-                plt.close()
+            plt.close()
 
         #racol=f'{phot.refcat.short}_ra'
         #deccol=f'{phot.refcat.short}_dec'
@@ -1276,10 +1276,9 @@ class st_wcs_align:
                 if self.verbose:
                     print(f'Saving {outfilename}')
                 plt.savefig(outfilename)
-            if showplots>=0:
+            if showplots>0:
                 plt.show()
-            else:
-                plt.close()
+            plt.close()
 
 
 
@@ -1327,7 +1326,6 @@ class st_wcs_align:
                 savephottable=0,
                 ee_radius=70                ):
             
-        
         # set self.outbasename based on option
         self.set_outbasename(outrootdir=outrootdir,outsubdir=outsubdir,inputname=input_image)
         
