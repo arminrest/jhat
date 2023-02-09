@@ -27,6 +27,7 @@ align_batch.d_rotated_Nsigma = args.d_rotated_Nsigma
 
 # get the input files
 align_batch.get_input_files(args.input_files,directory=args.input_dir,
+                            detectors=args.detectors,
                             filters=args.filters,pupils=args.pupils)
 
 ixs_all = align_batch.getindices()
