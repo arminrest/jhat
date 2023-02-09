@@ -416,7 +416,7 @@ class jwst_photclass(pdastrostatsclass):
         """
 
         pdastrostatsclass.__init__(self)
-        
+        self.verbose = verbose
         self.filters = {}
         self.filters['NIRCAM'] = ['F070W', 'F090W', 'F115W', 'F140M', 'F150W2', 'F150W', 'F162M', 'F164N', 'F182M',
                                   'F187N', 'F200W', 'F210M', 'F212N', 'F250M', 'F277W', 'F300M', 'F322W2', 'F323N',
@@ -1409,7 +1409,7 @@ class jwst_photclass(pdastrostatsclass):
         
         # get the photfilename. photfilename='auto' removes fits from image name and replaces it with phot.txt
         self.photfilename = self.get_photfilename(photfilename,outrootdir=outrootdir,outsubdir=outsubdir,imagename=imagename)
-        
+        print(self.verbose,self.photfilename)
         # Load photcat if wanted
         photcat_loaded = False
         if (self.photfilename is not None):
