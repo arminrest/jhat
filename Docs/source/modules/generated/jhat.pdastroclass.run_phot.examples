@@ -56,5 +56,26 @@ Examples using ``jhat.pdastroclass.run_phot``
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="Aligning HST images with JHAT.">
+
+.. only:: html
+
+  .. image:: /examples/images/thumb/sphx_glr_plot_a_hst_thumb.png
+    :alt: Hubble
+
+  :ref:`sphx_glr_examples_plot_a_hst.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Hubble</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr_examples_plot_a_hst.py`
+
+.. raw:: html
+
     </div>
 

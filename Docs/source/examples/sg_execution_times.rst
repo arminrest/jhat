@@ -5,12 +5,12 @@
 
 Computation times
 =================
-**01:26.239** total execution time for **examples** files:
+**03:08.990** total execution time for **examples** files:
 
 +------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_plot_b_nircam.py` (``plot_b_nircam.py``) | 00:55.247 | 0.0 MB |
+| :ref:`sphx_glr_examples_plot_b_nircam.py` (``plot_b_nircam.py``) | 01:37.474 | 0.0 MB |
 +------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_plot_c_miri.py` (``plot_c_miri.py``)     | 00:30.992 | 0.0 MB |
+| :ref:`sphx_glr_examples_plot_a_hst.py` (``plot_a_hst.py``)       | 00:57.951 | 0.0 MB |
 +------------------------------------------------------------------+-----------+--------+
-| :ref:`sphx_glr_examples_plot_a_hst.py` (``plot_a_hst.py``)       | 00:00.000 | 0.0 MB |
+| :ref:`sphx_glr_examples_plot_c_miri.py` (``plot_c_miri.py``)     | 00:33.564 | 0.0 MB |
 +------------------------------------------------------------------+-----------+--------+
