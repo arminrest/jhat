@@ -106,7 +106,7 @@ the code will also work for level 3 images.
 
     <div class="output_subarea output_html rendered_html output_result">
     <div><i>Table length=1</i>
-    <table id="table140300353390528" class="table-striped table-bordered table-condensed">
+    <table id="table140661006484528" class="table-striped table-bordered table-condensed">
     <thead><tr><th>Local Path</th><th>Status</th><th>Message</th><th>URL</th></tr></thead>
     <thead><tr><th>str98</th><th>str8</th><th>object</th><th>object</th></tr></thead>
     <tr><td>./mastDownload/JWST/jw02107038001_02105_00001_mirimage/jw02107038001_02105_00001_mirimage_cal.fits</td><td>COMPLETE</td><td>None</td><td>None</td></tr>
@@ -450,7 +450,7 @@ The reference image has not changed, but let's read in the newly
 aligned image and compare with the original. 
 subsequent correction needed for optimal alignment.
 
-.. GENERATED FROM PYTHON SOURCE LINES 154-177
+.. GENERATED FROM PYTHON SOURCE LINES 154-176
 
 .. code-block:: default
 
@@ -479,7 +479,6 @@ subsequent correction needed for optimal alignment.
     plt.show()
 
 
-
 .. image-sg:: /examples/images/sphx_glr_plot_c_miri_006.png
    :alt: Reference, To Align, Aligned
    :srcset: /examples/images/sphx_glr_plot_c_miri_006.png
@@ -501,7 +500,7 @@ subsequent correction needed for optimal alignment.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  33.564 seconds)
+   **Total running time of the script:** ( 0 minutes  32.073 seconds)
 
 
 .. _sphx_glr_download_examples_plot_c_miri.py:

@@ -105,7 +105,7 @@ the code will also work for level 3 data images.
 
     <div class="output_subarea output_html rendered_html output_result">
     <div><i>Table length=1</i>
-    <table id="table140300413197312" class="table-striped table-bordered table-condensed">
+    <table id="table140661271044608" class="table-striped table-bordered table-condensed">
     <thead><tr><th>Local Path</th><th>Status</th><th>Message</th><th>URL</th></tr></thead>
     <thead><tr><th>str98</th><th>str8</th><th>object</th><th>object</th></tr></thead>
     <tr><td>./mastDownload/JWST/jw02107041001_02101_00001_nrcblong/jw02107041001_02101_00001_nrcblong_cal.fits</td><td>COMPLETE</td><td>None</td><td>None</td></tr>
@@ -501,7 +501,7 @@ You can also align each image to the Gaia DR3 catalog, or you
 could replace the catalog created in step one with your own
 catalog of the field. 
 
-.. GENERATED FROM PYTHON SOURCE LINES 185-220
+.. GENERATED FROM PYTHON SOURCE LINES 185-219
 
 .. code-block:: default
 
@@ -540,7 +540,6 @@ catalog of the field.
 
 
     plt.show()
-
 
 
 .. image-sg:: /examples/images/sphx_glr_plot_b_nircam_007.png
@@ -614,7 +613,7 @@ catalog of the field.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 1 minutes  37.474 seconds)
+   **Total running time of the script:** ( 1 minutes  42.234 seconds)
 
 
 .. _sphx_glr_download_examples_plot_b_nircam.py:
