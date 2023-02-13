@@ -1744,7 +1744,7 @@ class hst_photclass(jwst_photclass):
         for instrument in self.filters:
             self.dict_utils[instrument.upper()] = {self.filters[instrument.upper()][i]: {'psf fwhm': self.psf_fwhm[instrument.upper()][i]} for i in range(len(self.filters[instrument]))}
 
-        self.sci_wcs = wcs.WCS(self.scihdr)
+        self.sci_wcs = wcs.WCS(self.scihdr,self.im)
         try:
             self.err = self.im['ERR'].data
         except:
