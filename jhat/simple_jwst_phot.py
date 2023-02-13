@@ -401,6 +401,7 @@ def xy_to_idl(x,y, primaryhdr, scihdr,aperturename='APERNAME',instrument='INSTRU
         apername = pysiaf_name
     ap= siaf.apertures[apername]
     xidl,yidl = ap.sci_to_idl(x+1,y+1)
+
     return xidl, yidl
 
 class jwst_photclass(pdastrostatsclass):
@@ -1985,20 +1986,21 @@ class hst_photclass(jwst_photclass):
                      aperturename=None,
                      primaryhdr=None, scihdr=None, indices=None):
 
-        if primaryhdr is None: primaryhdr=self.primaryhdr
-        if scihdr is None: scihdr=self.scihdr
+        return
+        # if primaryhdr is None: primaryhdr=self.primaryhdr
+        # if scihdr is None: scihdr=self.scihdr
     
-        indices = self.getindices()
+        # indices = self.getindices()
         
-        x_idl, y_idl = xy_to_idl(self.t.loc[indices,xcol], 
-                                      self.t.loc[indices,ycol],
-                                      primaryhdr, scihdr,
-                                      aperturename = 'APERTURE', instrument='TELESCOP',
-                                      pysiaf_name = self.aperture)
-        self.t.loc[indices,xcol_idl]=x_idl
-        self.t.loc[indices,ycol_idl]=y_idl
+        # x_idl, y_idl = xy_to_idl(self.t.loc[indices,xcol], 
+        #                               self.t.loc[indices,ycol],
+        #                               primaryhdr, scihdr,
+        #                               aperturename = 'APERTURE', instrument='TELESCOP',
+        #                               pysiaf_name = self.aperture)
+        # self.t.loc[indices,xcol_idl]=x_idl
+        # self.t.loc[indices,ycol_idl]=y_idl
   
-        return x_idl, y_idl
+        # return x_idl, y_idl
 
     def get_radecinfo_image(self,im=None,nx=None,ny=None):
         if im is None: im=self.im
@@ -2063,12 +2065,12 @@ class hst_photclass(jwst_photclass):
 
         
         # find the x_idl and y_idl range, so that we can cut down the objects from the outside catalog!!
-        xmin = self.t.loc[ixs_obj,'x_idl'].min()
-        xmax = self.t.loc[ixs_obj,'x_idl'].max()
-        ymin = self.t.loc[ixs_obj,'y_idl'].min()
-        ymax = self.t.loc[ixs_obj,'y_idl'].max()
-        if self.verbose:
-            print(f'image objects are in x_idl=[{xmin:.2f},{xmax:.2f}] and y_idl=[{ymin:.2f},{ymax:.2f}] range')
+        # xmin = self.t.loc[ixs_obj,'x_idl'].min()
+        # xmax = self.t.loc[ixs_obj,'x_idl'].max()
+        # ymin = self.t.loc[ixs_obj,'y_idl'].min()
+        # ymax = self.t.loc[ixs_obj,'y_idl'].max()
+        # if self.verbose:
+        #     print(f'image objects are in x_idl=[{xmin:.2f},{xmax:.2f}] and y_idl=[{ymin:.2f},{ymax:.2f}] range')
 
         #### gaia catalog
         # get ideal coords into table
@@ -2102,10 +2104,10 @@ class hst_photclass(jwst_photclass):
         #sys.exit(0)
 
         # cut down to the objects that are within the image
-        xmin = 0.0-borderpadding
-        xmax = self.scihdr['NAXIS1']+borderpadding
-        ymin = 0.0-borderpadding
-        ymax = self.scihdr['NAXIS2']+borderpadding
+        xmin = 0.0+borderpadding
+        xmax = self.scihdr['NAXIS1']-borderpadding
+        ymin = 0.0+borderpadding
+        ymax = self.scihdr['NAXIS2']-borderpadding
         
         ixs_refcat = self.refcat.ix_inrange('x',xmin,xmax,indices=ixs_refcat)
         ixs_refcat = self.refcat.ix_inrange('y',ymin,ymax,indices=ixs_refcat)
