@@ -508,13 +508,15 @@ class jwst_photclass(pdastrostatsclass):
         self.im = fits.open(imagename)
         self.primaryhdr = self.im['PRIMARY'].header
         self.scihdr = self.im['SCI'].header
-        self.sci_wcs = wcs.WCS(self.scihdr)
+        #self.sci_wcs = wcs.WCS(self.scihdr)
+        self.sci_wcs = self.dm.meta.wcs
+        self.sip_wcs = wcs.WCS(self.scihdr)
         try:
             self.err = self.im['ERR'].data
         except:
             self.err = None
-        self.pixel_scale = wcs.utils.proj_plane_pixel_scales(self.sci_wcs)[0]  *\
-         self.sci_wcs.wcs.cunit[0].to('arcsec')
+        self.pixel_scale = wcs.utils.proj_plane_pixel_scales(self.sip_wcs)[0]  *\
+         self.sip_wcs.wcs.cunit[0].to('arcsec')
         self.instrument = self.dm.meta.instrument.name
         self.detector = self.dm.meta.instrument.detector
         self.filtername = self.dm.meta.instrument.filter
@@ -528,8 +530,10 @@ class jwst_photclass(pdastrostatsclass):
         if imagetype is None:
             if re.search('cal\.fits$|tweakregstep\.fits$|assignwcsstep\.fits$',imagename):
                 self.imagetype = 'cal'
+                self.pipeline_level = 2
             elif re.search('i2d\.fits$',imagename):
                 self.imagetype = 'i2d'
+                self.pipeline_level = 3
             else:
                 raise RuntimeError(f'Unknown image type for file {imagename}')
         else:
@@ -945,9 +949,7 @@ class jwst_photclass(pdastrostatsclass):
 
         image_model = ImageModel(self.im)
         
-        ra,dec = image_model.meta.wcs(self.t.loc[ixs,xcol]+xshift, self.t.loc[ixs,ycol]+yshift)
-        coord = SkyCoord(ra, dec, unit='deg')
-        
+        coord = self.sci_wcs.pixel_to_world(self.t.loc[ixs,xcol]+xshift, self.t.loc[ixs,ycol]+yshift)
         self.t.loc[ixs,racol] = coord.ra.degree
         self.t.loc[ixs,deccol] = coord.dec.degree
 
@@ -1744,7 +1746,7 @@ class hst_photclass(jwst_photclass):
         for instrument in self.filters:
             self.dict_utils[instrument.upper()] = {self.filters[instrument.upper()][i]: {'psf fwhm': self.psf_fwhm[instrument.upper()][i]} for i in range(len(self.filters[instrument]))}
 
-        self.sci_wcs = wcs.WCS(self.scihdr,self.im)
+        self.sci_wcs = wcs.WCS(self.scihdr)
         try:
             self.err = self.im['ERR'].data
         except:
@@ -1757,8 +1759,10 @@ class hst_photclass(jwst_photclass):
         if imagetype is None:
             if re.search('flt\.fits$|flc\.fits$|tweakregstep\.fits$|assignwcsstep\.fits$',imagename):
                 self.imagetype = 'flc'
+                self.pipeline_level = 2
             elif re.search('drz\.fits$|drc\.fits$',imagename):
                 self.imagetype = 'drz'
+                self.pipeline_level = 3
             else:
                 raise RuntimeError(f'Unknown image type for file {imagename}')
         else:

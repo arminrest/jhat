@@ -953,8 +953,12 @@ class st_wcs_align:
                 rmfile(outputfits)
 
 
-        # It is important to set fitgeometry to rshift
-        tweakreg.fitgeometry = 'rshift'
+        # It is important to set fitgeometry to rshift for level 2
+        tweakreg.pipeline_level = self.phot.pipeline_level
+        if self.phot.pipeline_level==2:
+            tweakreg.fitgeometry = 'rshift'
+        else:    
+            tweakreg.fitgeometry = 'general'
         tweakreg.align_to_gaia = False
         tweakreg.save_gaia_catalog = False
         tweakreg.save_results = True
@@ -976,6 +980,7 @@ class st_wcs_align:
         # phot_cal.t.loc[ixs_cal_good] is the table with the good matches!
         if self.verbose: print(f'{len(ixs)} matches are passed to tweakreg {tweakreg.fitgeometry} fitting')
         t =  Table.from_pandas(phot.t.loc[ixs,[xcol,ycol,refcat_racol,refcat_deccol]])
+        #t.write(os.path.join(outdir,shortoutputfits.replace('.fits','_matched.txt')),format='ascii')
         tweakreg.refcat = t
         tweakreg.ref_racol = refcat_racol
         tweakreg.ref_deccol = refcat_deccol
@@ -1000,7 +1005,7 @@ class st_wcs_align:
             raise RuntimeError(f'Image {outputfits} did not get created!!')
         elif not os.path.isfile(outputfits):
             os.rename(outputfits.replace('jhat.fits','tweakregstep.fits'),outputfits)
-        if self.replace_sip:
+        if self.replace_sip and self.phot.pipeline_level==2:
             if self.telescope.lower()=='jwst':
                 print('replacing SIP',outputfits)
                 dm = datamodels.open(outputfits)
@@ -1279,6 +1284,7 @@ class st_wcs_align:
 
         # show or save dxdy post WCS correction
         if showplots>=0 or saveplots:
+            print('should be plotting')
             dxdy_plot(phot, ixs_bestmatch,title='after WCS correction',
                       refcat_mainfilter=phot.refcat_mainfilter,
                       refcat_mainfilter_err=phot.refcat_mainfilter_err,
@@ -1446,8 +1452,8 @@ class st_wcs_align:
                                                    outputfits=jhatfits,
                                                    ixs=ixs_bestmatch,
                                                    overwrite=overwrite,skip_if_exists=skip_if_exists)
-        if self.telescope.lower()=='jwst':
-            self.update_phottable_final_wcs(jhatfits,
+        #if self.telescope.lower()=='jwst':
+        self.update_phottable_final_wcs(jhatfits,
                                             ixs_bestmatch = ixs_bestmatch,
                                             showplots=showplots,
                                             saveplots=saveplots,
