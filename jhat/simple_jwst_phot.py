@@ -731,6 +731,7 @@ class jwst_photclass(pdastrostatsclass):
 
         daofind = DAOStarFinder(threshold=threshold * std, fwhm=fwhm_psf, exclude_border=True)
         self.found_stars = daofind(self.data_bkgsub, mask=bool_mask)
+
         #found_stars = daofind(data_bkgsub)
         if self.verbose:            
             print('')
@@ -1266,10 +1267,10 @@ class jwst_photclass(pdastrostatsclass):
         #sys.exit(0)
 
         # cut down to the objects that are within the image
-        xmin = 0.0-borderpadding
-        xmax = self.scihdr['NAXIS1']+borderpadding
-        ymin = 0.0-borderpadding
-        ymax = self.scihdr['NAXIS2']+borderpadding
+        xmin = 0.0+borderpadding
+        xmax = self.scihdr['NAXIS1']-borderpadding
+        ymin = 0.0+borderpadding
+        ymax = self.scihdr['NAXIS2']-borderpadding
         
         ixs_refcat = self.refcat.ix_inrange('x',xmin,xmax,indices=ixs_refcat)
         ixs_refcat = self.refcat.ix_inrange('y',ymin,ymax,indices=ixs_refcat)
@@ -1726,6 +1727,8 @@ class hst_photclass(jwst_photclass):
         self.im = fits.open(imagename)
         self.primaryhdr = self.im['PRIMARY'].header
         self.scihdr = self.im['SCI'].header
+        self.NAXIS1 = self.scihdr['NAXIS1']
+        self.NAXIS2 = self.scihdr['NAXIS2']
         self.instrument = self.primaryhdr['INSTRUME']
         if 'FILTER' in self.primaryhdr:
             self.filterkey = 'FILTER'
@@ -1746,7 +1749,7 @@ class hst_photclass(jwst_photclass):
         for instrument in self.filters:
             self.dict_utils[instrument.upper()] = {self.filters[instrument.upper()][i]: {'psf fwhm': self.psf_fwhm[instrument.upper()][i]} for i in range(len(self.filters[instrument]))}
 
-        self.sci_wcs = wcs.WCS(self.scihdr)
+        self.sci_wcs = wcs.WCS(self.scihdr,self.im)
         try:
             self.err = self.im['ERR'].data
         except:
@@ -1760,9 +1763,15 @@ class hst_photclass(jwst_photclass):
             if re.search('flt\.fits$|flc\.fits$|tweakregstep\.fits$|assignwcsstep\.fits$',imagename):
                 self.imagetype = 'flc'
                 self.pipeline_level = 2
+                try:
+                    temp = self.im['SCI',2].header
+                    self.do_driz = True
+                except:
+                    self.do_driz = False
             elif re.search('drz\.fits$|drc\.fits$',imagename):
                 self.imagetype = 'drz'
                 self.pipeline_level = 3
+                self.do_driz = False
             else:
                 raise RuntimeError(f'Unknown image type for file {imagename}')
         else:
@@ -1770,7 +1779,7 @@ class hst_photclass(jwst_photclass):
             
         if not skip_preparing:
             # prepare the data.
-            if self.imagetype == 'flc':
+            if self.pipeline_level==2 and not self.do_driz:
                 #print('VVVVV',self.im.info())
                 #sys.exit(0)
                 dq=None
@@ -1780,13 +1789,12 @@ class hst_photclass(jwst_photclass):
                 (self.data,self.mask) = self.prepare_image(self.im['SCI'].data, self.im['SCI'].header,
                                                            area = pamutils.pam_from_file(self.imagename, ('sci', 1), self.imagename + '_pam.fits'),
                                                            dq = dq)
-            elif self.imagetype == 'drz':
-                (self.data,self.mask) = self.prepare_image(self.im['SCI'].data, self.im['SCI'].header)
             else:
-                raise RuntimeError(f'image type {self.imagetype} not yet implemented!')
+                (self.data,self.mask) = self.prepare_image(self.im['SCI'].data, self.im['SCI'].header,self.do_driz)
+            
         
 
-    def prepare_image(self,data_original, imhdr, area=None, dq=None, 
+    def prepare_image(self,data_original, imhdr, do_driz=False,area=None, dq=None, 
                     dq_ignore_bits = 2+4):
         # dq_ignore_bits contains the bits in the dq which are still ok, so they
         # should be ignored.
@@ -1797,21 +1805,38 @@ class hst_photclass(jwst_photclass):
         
             if self.verbose: print('Applying Pixel Area Map')
         
-            data_pam = data_original * area
-            
+            data_pam = data_original * area/self.primaryhdr['EXPTIME']
+        elif do_driz:
+            self.driz_name = self.imagename.replace('flc.fits','drc_sci.fits')
+
+            from drizzlepac import astrodrizzle
+
+            astrodrizzle.AstroDrizzle(self.imagename,
+                            driz_separate=False,
+                            median=False,
+                            driz_cr_corr=False,
+                            driz_cr=False,
+                            blot=False,clean=True)
+            temp = fits.open(self.driz_name)
+            data_pam = temp[0].data
+            self.sci_wcs = wcs.WCS(temp[0])
+            self.NAXIS1 = temp[0].header['NAXIS1']
+            self.NAXIS2 = temp[0].header['NAXIS2']
+            self.err = None
         else:
             
             data_pam = data_original
         
+
         data = data_pam
         
         
         if dq is not None:
             # dq_ignore_bits are removed from the mask!
             #fits.writeto('TEST_dq_delme.fits',dq,overwrite=True,output_verify='ignore')
-            mask = np.bitwise_and(dq,np.full(data_original.shape, ~dq_ignore_bits, dtype='int'))
+            mask = np.bitwise_and(dq,np.full(data_pam.shape, ~dq_ignore_bits, dtype='int'))
         else:
-            mask = np.zeros(data_original.shape, dtype='int')
+            mask = np.zeros(data_pam.shape, dtype='int')
 
         # hijack a few bits for our purposes...
         mask[np.isnan(data)==True] = 8
@@ -1843,7 +1868,7 @@ class hst_photclass(jwst_photclass):
         if scihdr is None: scihdr=self.scihdr
         if filt is None: filt = self.filtername
 
-        if scihdr['BUNIT']=='ELECTRON':
+        if not self.do_driz and scihdr['BUNIT']=='ELECTRON':
             epadu = 1
         else:
             epadu = primaryhdr['EXPTIME']
@@ -1890,9 +1915,9 @@ class hst_photclass(jwst_photclass):
                     annulus_data_1d = annulus_data[ok]
                     mean_sigclip, median_sigclip, stdev_sigclip = sigma_clipped_stats(annulus_data_1d, 
                                                                                      sigma=3.5, maxiters=5)
-                    if mean_sigclip < 0 or median_sigclip == 0:
-                        median_sigclip = -99.99
-                        stdev_sigclip = -9.99
+                    # if mean_sigclip < 0 or median_sigclip == 0:
+                    #     median_sigclip = -99.99
+                    #     stdev_sigclip = -9.99
                 
                 else:
                     median_sigclip = -99.99
@@ -1961,7 +1986,6 @@ class hst_photclass(jwst_photclass):
                 #table_aper['mag'] = -2.5 * np.log10(table_aper[self.colname('aper_sum_bkgsub',rad)])
                 #table_aper['dmag'] = 1.086 * (table_aper[self.colname('flux_err',rad)] / 
                 #                              table_aper[self.colname('aper_sum_bkgsub',rad)])      
-
         table_aper['x'] = self.found_stars['xcentroid']
         table_aper['y'] = self.found_stars['ycentroid']
         table_aper['sharpness'] = self.found_stars['sharpness']
@@ -2007,11 +2031,9 @@ class hst_photclass(jwst_photclass):
         # return x_idl, y_idl
 
     def get_radecinfo_image(self,im=None,nx=None,ny=None):
-        if im is None: im=self.im
-        image_model = ImageModel(im)
-        if nx is None: nx = int(im['SCI'].header['NAXIS1'])
-        if ny is None: ny = int(im['SCI'].header['NAXIS2'])
-                
+        #if im is None: im=self.im
+        if nx is None: nx = self.NAXIS1#int(im['SCI'].header['NAXIS1'])
+        if ny is None: ny = self.NAXIS2#int(im['SCI'].header['NAXIS2'])
         coord0 = self.sci_wcs.pixel_to_world(nx/2.0-1,ny/2.0-1)
         radius_deg = []
         for x in [0,nx-1]:        
@@ -2109,9 +2131,9 @@ class hst_photclass(jwst_photclass):
 
         # cut down to the objects that are within the image
         xmin = 0.0+borderpadding
-        xmax = self.scihdr['NAXIS1']-borderpadding
+        xmax = self.NAXIS1-borderpadding
         ymin = 0.0+borderpadding
-        ymax = self.scihdr['NAXIS2']-borderpadding
+        ymax = self.NAXIS2-borderpadding
         
         ixs_refcat = self.refcat.ix_inrange('x',xmin,xmax,indices=ixs_refcat)
         ixs_refcat = self.refcat.ix_inrange('y',ymin,ymax,indices=ixs_refcat)
