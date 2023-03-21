@@ -963,7 +963,7 @@ class st_wcs_align:
 
         # It is important to set fitgeometry to rshift for level 2
         tweakreg.pipeline_level = self.phot.pipeline_level
-        if self.phot.pipeline_level==2 and not self.phot.do_driz:
+        if self.phot.pipeline_level==2 and not (self.telescope=='hst' and self.phot.do_driz):
             tweakreg.fitgeometry = 'rshift'
         else:    
             tweakreg.fitgeometry = 'general'
@@ -1253,7 +1253,7 @@ class st_wcs_align:
         from astropy.wcs.utils import skycoord_to_pixel,pixel_to_skycoord
         from astropy import units as u
         imwcs = wcs.WCS(image_model['SCI',1],image_model)
-        if self.phot.do_driz:
+        if self.telescope=='hst' and self.phot.do_driz:
             old_model = fits.open(self.phot.imagename)
             oldwcs1 = wcs.WCS(old_model['SCI',1],old_model)
             oldwcs2 = wcs.WCS(old_model['SCI',2],old_model)
@@ -1261,8 +1261,8 @@ class st_wcs_align:
             phot.t[refcat_deccol],unit=u.deg),oldwcs1)
             x2,y2 = skycoord_to_pixel(SkyCoord(phot.t[refcat_racol],
             phot.t[refcat_deccol],unit=u.deg),oldwcs2)
-            inds2 = np.where(np.logical_or(np.logical_or(x1<0,x1>old_model['SCI',1].data.shape[0]),
-                np.logical_or(y1<0,y1>old_model['SCI',1].data.shape[1])))[0]
+            inds2 = np.where(np.logical_or(np.logical_or(x1<0,x1>old_model['SCI',1].data.shape[1]),
+                np.logical_or(y1<0,y1>old_model['SCI',1].data.shape[0])))[0]
             for i in inds2:
                 x1[i] = x2[i]
                 y1[i] = y2[i]
@@ -1281,8 +1281,8 @@ class st_wcs_align:
             phot.t[refcat_deccol],unit=u.deg),newwcs1)
             x2,y2 = skycoord_to_pixel(SkyCoord(phot.t[refcat_racol],
             phot.t[refcat_deccol],unit=u.deg),newwcs2)
-            inds2 = np.where(np.logical_or(np.logical_or(x1<0,x1>image_model['SCI',1].data.shape[0]),
-                np.logical_or(y1<0,y1>image_model['SCI',1].data.shape[1])))[0]
+            inds2 = np.where(np.logical_or(np.logical_or(x1<0,x1>image_model['SCI',1].data.shape[1]),
+                np.logical_or(y1<0,y1>image_model['SCI',1].data.shape[0])))[0]
             sc1 = pixel_to_skycoord(x1,y1,newwcs1)
             sc2 = pixel_to_skycoord(x2,y2,newwcs2)
             phot.t['ra'] = sc1.ra.value
