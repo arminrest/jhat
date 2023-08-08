@@ -538,6 +538,12 @@ class jwst_photclass(pdastrostatsclass):
                 raise RuntimeError(f'Unknown image type for file {imagename}')
         else:
             self.imagetype = imagetype
+            if self.imagetype == 'cal':
+                self.pipeline_level = 2
+            elif self.imagetype == 'i2d':
+                self.pipeline_level = 3
+            else:
+                raise RuntimeError(f'Unknown image type for file {imagename}')
             
         if not skip_preparing:
             # prepare the data.
