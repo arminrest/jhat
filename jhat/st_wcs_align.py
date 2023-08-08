@@ -1401,7 +1401,8 @@ class st_wcs_align:
                 showplots=0,
                 saveplots=0,
                 savephottable=0,
-                ee_radius=70                ):
+                ee_radius=70,
+                imagetype=None):
             
         # set self.outbasename based on option
         self.set_outbasename(outrootdir=outrootdir,outsubdir=outsubdir,inputname=input_image)
@@ -1421,7 +1422,8 @@ class st_wcs_align:
                                                                   SNR_min=SNR_min,
                                                                   xshift=xshift,
                                                                   yshift=yshift,
-                                                                  ee_radius=ee_radius)
+                                                                  ee_radius=ee_radius,
+                                                                  imagetype=imagetype)
         if (photfilename!=photfilename_4check):
             raise RuntimeError(f'BUG!!! {photfilename}!={photfilename_4check}')
             
