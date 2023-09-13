@@ -87,18 +87,22 @@ def hst_get_zp(filt,zpsys='ab'):
         return
 
 def get_apcorr_params(fname,ee=70):
-    sc = source_catalog.source_catalog_step.SourceCatalogStep()
-    with datamodels.open(fname) as model:
-        reffile_paths = sc._get_reffile_paths(model)
-        aperture_ee = (30,40,ee)
+    try:
+        sc = source_catalog.source_catalog_step.SourceCatalogStep()
+        with datamodels.open(fname) as model:
+            reffile_paths = sc._get_reffile_paths(model)
+            aperture_ee = (30,40,ee)
 
-        refdata = reference_data.ReferenceData(model, reffile_paths,
-                                aperture_ee)
-        aperture_params = refdata.aperture_params
-    return [aperture_params['aperture_radii'][-1], 
+            refdata = reference_data.ReferenceData(model, reffile_paths,
+                                    aperture_ee)
+            aperture_params = refdata.aperture_params
+        return [aperture_params['aperture_radii'][-1], 
            aperture_params['aperture_corrections'][-1],
            aperture_params['bkg_aperture_inner_radius'],
            aperture_params['bkg_aperture_outer_radius']]
+    except:
+        return [3,1,6,9] # hack
+    
 
 
 def get_refcat_file(refcatfilename,racol=None,deccol=None):
