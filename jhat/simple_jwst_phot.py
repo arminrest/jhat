@@ -181,7 +181,12 @@ def get_hst_cat(ra0,dec0,radius_deg,radius_factor=1.1,
     else:
         decimal_year_of_observation = None
     
-    cat = hst.hst_catalog(decimal_year_of_observation=decimal_year_of_observation)
+    if decimal_year_of_observation is None:
+        print('NO apparent motion adjustement!')
+        cat = hst.hst_catalog(decimal_year_of_observation=decimal_year_of_observation)
+    else:
+        print(f'apparent motion adjustement to decimal_year_of_observation={decimal_year_of_observation}!')
+        cat = hst.hst_catalog(decimal_year_of_observation=decimal_year_of_observation)
     cat.rename_column('ra_deg', 'ra')
     cat.rename_column('dec_deg', 'dec')
     #print(cat.columns)
@@ -1101,6 +1106,7 @@ class jwst_photclass(pdastrostatsclass):
             self.refcat.t['ID']=self.refcat.getindices()
         elif os.path.basename(refcatname).lower()=='hst_lmc':
             self.refcat.t,self.refcat.racol,self.refcat.deccol = get_hst_cat(ra0,dec0,radius_deg,mjd=mjd)
+            (self.refcat.mainfilter,self.refcat.mainfilter_err,self.refcat.maincolor)=('j_mag_vega',None,'j_k')
         elif os.path.basename(refcatname)=='hawki':
             if (mjd is not None) or pm_median:
                 raise RuntimeError('Cannot correct for proper motion with catalog {refcatname}')

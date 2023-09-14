@@ -54,6 +54,7 @@ class align_wcs_batch(pdastroclass):
 
         parser.add_argument('--outrootdir', default=outrootdir, help='output root directory. The output directoy is the output root directory + the outsubdir if not None.  If $JWST_OUTPUT_ROOTDIR is defined, then this dir is taken as default (default=%(default)s)')
         parser.add_argument('--outsubdir', default=None, help='outsubdir added to output root directory (default=%(default)s)')
+        parser.add_argument('--addfilter2outsubdir', default=False, action='store_true', help='add the filter to the outsubdir')
         parser.add_argument('--overwrite', default=False, action='store_true', help='overwrite files if they exist.')
 
         parser.add_argument('--skip_if_exists', default=False, action='store_true', help='Skip doing the analysis of a given input image if the cal file already exists, assuming the full analysis has been already done')
@@ -73,7 +74,7 @@ class align_wcs_batch(pdastroclass):
         return(parser)
     
     #def get_output_filenames(self, suffixmapping = {'cal':'tweakregstep','rate':'tweakregstep'},ixs=None):
-    def get_output_filenames(self, outputsuffix = 'tweakregstep',ixs=None,outrootdir=None,outsubdir=None):
+    def get_output_filenames(self, outputsuffix = 'jhat',ixs=None,outrootdir=None,outsubdir=None,addfilter2outsubdir=False):
         ixs = self.getindices(ixs)
         ixs_exists=[]
         ixs_notexists=[]
@@ -85,8 +86,12 @@ class align_wcs_batch(pdastroclass):
             #(inputname_nosuffix,inputsuffix)=m.groups()
             #inputbasename = os.path.basename(inputname_nosuffix)
             
+            outsubdir_filter = outsubdir
+            if addfilter2outsubdir:
+                outsubdir_filter+=f'/{self.t.loc[ix,"filter"].lower()}'
+            
             outfilebasename = self.wcs_align.set_outbasename(outrootdir=outrootdir,
-                                                         outsubdir=outsubdir,
+                                                         outsubdir=outsubdir_filter,
                                                          inputname=self.t.loc[ix,'filename'])
             
             outfilename = f'{outfilebasename}_{outputsuffix}.fits'
@@ -156,6 +161,8 @@ class align_wcs_batch(pdastroclass):
         if detectors is not None:
             ixs_detectors = []
             for detector in detectors:
+                if re.search('^a[1-5]$|^b[1-5]$', detector.lower()):
+                    detector = f'nrc{detector.lower()}'
                 ixs_detectors.extend(self.ix_equal(self.detector_col,detector.lower()))
             print(f'### after detectors cut ({detectors}): {len(ixs_detectors)} input files left')
             self.t = self.t.loc[ixs_detectors]
@@ -172,7 +179,7 @@ class align_wcs_batch(pdastroclass):
         if pupils is not None:
             ixs_pupils = []
             for pupil in pupils:
-                ixs_pupils.extend(self.ix_equal(self.filter_col,pupil.lower()))
+                ixs_pupils.extend(self.ix_equal(self.pupil_col,pupil.lower()))
             print(f'### after pupils cut ({pupils}): {len(ixs_pupils)} input files left')
             self.t = self.t.loc[ixs_pupils]
             
@@ -184,6 +191,7 @@ class align_wcs_batch(pdastroclass):
     def align_wcs(self, ixs, 
                   outrootdir=None, 
                   outsubdir=None,
+                  addfilter2outsubdir=False,
                   overwrite = False,
                   skip_if_exists = False,
                   telescope = None,
@@ -242,13 +250,18 @@ class align_wcs_batch(pdastroclass):
             self.wcs_align.rough_cut_px_max = self.rough_cut_px_max
             self.wcs_align.d_rotated_Nsigma = self.d_rotated_Nsigma
 
+            outsubdir_filter = outsubdir
+            if addfilter2outsubdir:
+                outsubdir_filter+=f'/{self.t.loc[ix,"filter"].lower()}'
+            
+
             # If debugging: just run one, outside the try block so that we can get real error messages
             if self.debug:
                 self.wcs_align.run_all(inputfile,
                                        #distortion_file=distfile,  
                                        telescope = telescope,
                                        outrootdir = outrootdir,
-                                       outsubdir = outsubdir,
+                                       outsubdir = outsubdir_filter,
                                        overwrite = overwrite,
                                        skip_if_exists = skip_if_exists,
                                        #skip_applydistortions_if_exists=skip_applydistortions_if_exists,
@@ -287,7 +300,7 @@ class align_wcs_batch(pdastroclass):
                                            #distortion_file=distfile,                     
                                            telescope = telescope,
                                            outrootdir = outrootdir,
-                                           outsubdir = outsubdir,
+                                           outsubdir = outsubdir_filter,
                                            overwrite = overwrite,
                                            skip_if_exists = skip_if_exists,
                                            #skip_applydistortions_if_exists=skip_applydistortions_if_exists,
