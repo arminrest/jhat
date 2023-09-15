@@ -4,7 +4,6 @@ Examples
 ========
 
 
-
 .. raw:: html
 
     <div class="sphx-glr-thumbnails">

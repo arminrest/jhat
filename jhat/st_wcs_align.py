@@ -930,7 +930,15 @@ class st_wcs_align:
         if refcat_deccol is None: refcat_deccol = phot.refcat_deccol
 
         tweakreg = tweakreg_hack.TweakRegStep()
-        cal_image = datamodels.open(imfilename)
+        if self.telescope.lower()=='jwst' or not self.phot.do_driz:
+            cal_image = datamodels.open(imfilename)
+            tweakreg.do_driz = False
+            tweakreg.input_file = imfilename
+        else:
+            cal_image = datamodels.open(self.phot.driz_name)
+            tweakreg.do_driz = True
+            tweakreg.true_file = imfilename
+            tweakreg.input_file = self.phot.driz_name
 
         if outputfits is None:
             shortoutputfits = re.sub('_[a-zA-Z0-9]+\.fits$','_jhat.fits',os.path.basename(imfilename))
@@ -967,8 +975,12 @@ class st_wcs_align:
                 rmfile(outputfits)
 
 
-        # It is important to set fitgeometry to rshift
-        tweakreg.fitgeometry = 'rshift'
+        # It is important to set fitgeometry to rshift for level 2
+        tweakreg.pipeline_level = self.phot.pipeline_level
+        if self.phot.pipeline_level==2 and not (self.telescope.lower()=='hst' and self.phot.do_driz):
+            tweakreg.fitgeometry = 'rshift'
+        else:    
+            tweakreg.fitgeometry = 'general'
         tweakreg.align_to_gaia = False
         tweakreg.save_gaia_catalog = False
         tweakreg.save_results = True
@@ -990,6 +1002,7 @@ class st_wcs_align:
         # phot_cal.t.loc[ixs_cal_good] is the table with the good matches!
         if self.verbose: print(f'{len(ixs)} matches are passed to tweakreg {tweakreg.fitgeometry} fitting')
         t =  Table.from_pandas(phot.t.loc[ixs,[xcol,ycol,refcat_racol,refcat_deccol]])
+        #t.write(os.path.join(outdir,shortoutputfits.replace('.fits','_matched.txt')),format='ascii')
         tweakreg.refcat = t
         tweakreg.ref_racol = refcat_racol
         tweakreg.ref_deccol = refcat_deccol
@@ -1004,8 +1017,9 @@ class st_wcs_align:
         if self.verbose: print(f'Fitting tweakreg fitgeometry={tweakreg.fitgeometry} to xy={xcol},{ycol} to ra,dec={refcat_racol},{refcat_deccol}')
         
         cal_data = [datamodels.open(cal_image)]
-        tweakreg.input_file = imfilename
+        
         tweakreg.output_file = os.path.join(outdir,shortoutputfits)
+        tweakreg.telescope = self.telescope
         tweakreg.run(cal_data)
 
         if not os.path.isfile(outputfits) and not \
@@ -1013,7 +1027,7 @@ class st_wcs_align:
             raise RuntimeError(f'Image {outputfits} did not get created!!')
         elif not os.path.isfile(outputfits):
             os.rename(outputfits.replace('jhat.fits','tweakregstep.fits'),outputfits)
-        if self.replace_sip:
+        if self.replace_sip and self.phot.pipeline_level==2:
             if self.telescope.lower()=='jwst':
                 print('replacing SIP',outputfits)
                 dm = datamodels.open(outputfits)
@@ -1258,8 +1272,59 @@ class st_wcs_align:
         from astropy.wcs.utils import skycoord_to_pixel,pixel_to_skycoord
         from astropy import units as u
         imwcs = wcs.WCS(image_model['SCI',1],image_model)
-        phot.t[refcat_xcol], phot.t[refcat_ycol] = skycoord_to_pixel(SkyCoord(phot.t[refcat_racol],
-            phot.t[refcat_deccol],unit=u.deg),imwcs)
+        if self.telescope.lower()=='hst' and self.phot.do_driz:
+            old_model = fits.open(self.phot.imagename)
+            oldwcs1 = wcs.WCS(old_model['SCI',1],old_model)
+            oldwcs2 = wcs.WCS(old_model['SCI',2],old_model)
+            x1,y1 = skycoord_to_pixel(SkyCoord(phot.t[refcat_racol],
+            phot.t[refcat_deccol],unit=u.deg),oldwcs1)
+            x2,y2 = skycoord_to_pixel(SkyCoord(phot.t[refcat_racol],
+            phot.t[refcat_deccol],unit=u.deg),oldwcs2)
+            inds2 = np.where(np.logical_or(np.logical_or(x1<0,x1>old_model['SCI',1].data.shape[1]),
+                np.logical_or(y1<0,y1>old_model['SCI',1].data.shape[0])))[0]
+            for i in inds2:
+                x1[i] = x2[i]
+                y1[i] = y2[i]
+            #for i in range(len(x1)):
+            #    if not 0<x1[i]<old_model['SCI',1].data.shape[1] or not\
+            #        0<y1[i]<old_model['SCI',1].data.shape[0]:
+            #        x1[i],y1[i] = skycoord_to_pixel(SkyCoord(phot.t[refcat_racol][i],
+            #                        phot.t[refcat_deccol][i],unit=u.deg),oldwcs2)
+            phot.t['x'] = x1
+            phot.t['y'] = y1
+
+
+            newwcs1 = wcs.WCS(image_model['SCI',1],image_model)
+            newwcs2 = wcs.WCS(image_model['SCI',2],image_model)
+            x1,y1 = skycoord_to_pixel(SkyCoord(phot.t[refcat_racol],
+            phot.t[refcat_deccol],unit=u.deg),newwcs1)
+            x2,y2 = skycoord_to_pixel(SkyCoord(phot.t[refcat_racol],
+            phot.t[refcat_deccol],unit=u.deg),newwcs2)
+            inds2 = np.where(np.logical_or(np.logical_or(x1<0,x1>image_model['SCI',1].data.shape[1]),
+                np.logical_or(y1<0,y1>image_model['SCI',1].data.shape[0])))[0]
+            sc1 = pixel_to_skycoord(x1,y1,newwcs1)
+            sc2 = pixel_to_skycoord(x2,y2,newwcs2)
+            phot.t['ra'] = sc1.ra.value
+            phot.t['dec'] = sc1.dec.value
+            for i in inds2:
+                x1[i] = x2[i]
+                y1[i] = y2[i]
+                phot.t['ra'][i] = sc2[i].ra.value
+                phot.t['dec'][i] = sc2[i].dec.value
+            #for i in range(len(x1)):
+            #    if not 0<x1[i]<old_model['SCI',1].data.shape[1] or not\
+            #        0<y1[i]<old_model['SCI',1].data.shape[0]:
+            #        x1[i],y1[i] = skycoord_to_pixel(SkyCoord(phot.t[refcat_racol][i],
+            #                        phot.t[refcat_deccol][i],unit=u.deg),oldwcs2)
+            phot.t[refcat_xcol] = x1
+            phot.t[refcat_ycol] = y1
+        else:
+            phot.t[refcat_xcol], phot.t[refcat_ycol] = skycoord_to_pixel(SkyCoord(phot.t[refcat_racol],
+                phot.t[refcat_deccol],unit=u.deg),imwcs)
+            sc = pixel_to_skycoord(phot.t['x'],phot.t['y'],imwcs)
+            phot.t['ra'] = sc.ra.value
+            phot.t['dec'] = sc.dec.value
+
         # recalculate dx, dy
         phot.t['dx'] = phot.t[refcat_xcol] - phot.t['x']
         phot.t['dy'] = phot.t[refcat_ycol] - phot.t['y']
@@ -1268,9 +1333,7 @@ class st_wcs_align:
         #detector_to_world = image_model.meta.wcs.get_transform('detector', 'world')
 
         #phot.t['ra'],phot.t['dec'] = detector_to_world(phot.t['x'],phot.t['y'])
-        sc = pixel_to_skycoord(phot.t['x'],phot.t['y'],imwcs)
-        phot.t['ra'] = sc.ra.value
-        phot.t['dec'] = sc.dec.value
+        
 
         if savephottable:
             outfilename = f'{outbasename}.good.phot.txt'
@@ -1297,6 +1360,7 @@ class st_wcs_align:
 
         # show or save dxdy post WCS correction
         if showplots>=0 or saveplots:
+            print('should be plotting')
             dxdy_plot(phot, ixs_bestmatch,title='after WCS correction',
                       refcat_mainfilter=phot.refcat_mainfilter,
                       refcat_mainfilter_err=phot.refcat_mainfilter_err,
@@ -1464,8 +1528,8 @@ class st_wcs_align:
                                                    outputfits=jhatfits,
                                                    ixs=ixs_bestmatch,
                                                    overwrite=overwrite,skip_if_exists=skip_if_exists)
-        if self.telescope.lower()=='jwst':
-            self.update_phottable_final_wcs(jhatfits,
+        #if self.telescope.lower()=='jwst':
+        self.update_phottable_final_wcs(jhatfits,
                                             ixs_bestmatch = ixs_bestmatch,
                                             showplots=showplots,
                                             saveplots=saveplots,
