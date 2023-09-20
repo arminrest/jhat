@@ -23,8 +23,10 @@ Welcome to the JWST/HST Alignment Tool (JHAT)
 .. toctree::
    :hidden:
    :titlesonly:
+   :caption: More Info
 
    api
+   ref
    contributors
 
 :doc:`api`
