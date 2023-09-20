@@ -39,7 +39,8 @@ if len(ixs_all)==0:
 # get the output filenames
 ixs_exists,ixs_notexists = align_batch.get_output_filenames(ixs=ixs_all,
                                                             outrootdir=args.outrootdir,
-                                                            outsubdir=args.outsubdir)    
+                                                            outsubdir=args.outsubdir,
+                                                            addfilter2outsubdir=args.addfilter2outsubdir)    
 
 
 ixs_todo = ixs_notexists[:]
@@ -73,6 +74,7 @@ align_batch.align_wcs(ixs_todo,
                     overwrite = args.overwrite,
                     outrootdir= args.outrootdir,
                     outsubdir = args.outsubdir,
+                    addfilter2outsubdir = args.addfilter2outsubdir,
                     telescope = args.telescope,
                     #skip_applydistortions_if_exists=args.skip_applydistortions_if_exists,
                     refcatname = args.refcat,

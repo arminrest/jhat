@@ -518,17 +518,30 @@ def sigmacut_d_rot(phot,ixs,
                    verbose=0,
                    spi=[0]):
 
+    if verbose:
+        print(f'\n####################\n### d_rotated cut (rough_cut_px={rough_cut_px} pixels, Nsigma={Nsigma})')
+
     ### recover the slope and intercept of the best binning
     phot.t[d_col_rot] = phot.t[d_col] - f(phot.t[col],slope,intercept)
     
     # Now make the rough cut! only keep data for with dx_rotated within  d_rot_bestguess+-rough_cut_px
     ixs_roughcut = phot.ix_inrange(d_col_rot,d_rot_bestguess-rough_cut_px,d_rot_bestguess+rough_cut_px,indices=ixs)
-    #d_rotated = phot.t.loc[ixs,d_col_rot]
     if verbose:
-        print(f'\n####################\n### d_rotated cut (Nsigma={Nsigma})')
+        print(f'\nrough_cut_px={rough_cut_px} pixels removes {len(ixs)-len(ixs_roughcut)} from {len(ixs)} entries')
+    
+    
+   #if Nsigma is None or Nsigma==0.0:
+       # don't do percentile cut if there are no iterations!
+    #   percentile_cut_firstiteration = None
+        
     if Nsigma is None or Nsigma==0.0:
-        # don't do percentile cut if there are no iterations!
-        percentile_cut_firstiteration = None
+        if verbose:
+            print(f'Nisgma={Nsigma}, thus skipping Nsigma cut!')
+        return(ixs_roughcut,ixs_roughcut)
+        
+        
+        
+        
     #ixs_clean4average = phot_clear.ix_inrange(d_col,0,3,indices=ixs_clear_cut)
     phot.calcaverage_sigmacutloop(d_col_rot,verbose=3,indices=ixs_roughcut,Nsigma=Nsigma,percentile_cut_firstiteration=percentile_cut_firstiteration)
     ixs_cut = phot.statparams['ix_good']
@@ -809,6 +822,7 @@ class st_wcs_align:
         parser.add_argument('--slope_min', default=-0.008, type=float, help='minimum slope for linear correction applied to dx/dy. This effectively accounts for rotation. slopes go from slopemin to -slopemin (default=%(default)s)')
         parser.add_argument('--Nbright4match', default=None, type=int, help='Use only Nbright brightest objects for matching to the ref cat (default=%(default)s)')
         parser.add_argument('--Nbright', default=None, type=int, help='Use only Nbright brightest objects in image that are matched to refcat for alignment (default=%(default)s)')
+
         parser.add_argument('--histocut_order', default='dxdy', choices=['dxdy','dydx'], help='histocut_order defines whether the histogram cut is first done for dx or first for dy (default=%(default)s)')
         parser.add_argument('--xshift', default=0.0, type=float, help='added to the x coordinate before calculating ra,dec (only impacts ra,dec, not x). This can be used to correct for large shifts before matching! (default=%(default)s)')
         parser.add_argument('--yshift', default=0.0, type=float, help='added to the y coordinate before calculating ra,dec (only impacts ra,dec, not y). This can be used to correct for large shifts before matching! (default=%(default)s)')
@@ -817,10 +831,10 @@ class st_wcs_align:
         parser.add_argument('--saveplots', default=0, action='count',help='saveplots=1: most important plots. saveplots=2: all plots (debug/test/finetune)')
         parser.add_argument('-t','--savephottable', default=0, action='count',help='Save the final photometry table')
         parser.add_argument('--replace_sip', default=True, action='store_true',help='Replace the tweaked fits image wcs with the SIP representation.')
-        parser.add_argument('--sip_err', default=0.3, type=float,help='max_pix_error for SIP transformation.')
-        parser.add_argument('--sip_degree', default=3, type=int,help='degree for SIP transformation.')
-        parser.add_argument('--sip_points', default=128, type=int,help='npoints for SIP transformation.')
-        parser.add_argument('--ee_radius', default=70, type=int, help='encircled energy percentage (multiples of 10) for photometry')
+        parser.add_argument('--sip_err', default=0.3, type=float,help='max_pix_error for SIP transformation.  (default=%(default)s)')
+        parser.add_argument('--sip_degree', default=3, type=int,help='degree for SIP transformation.  (default=%(default)s)')
+        parser.add_argument('--sip_points', default=128, type=int,help='npoints for SIP transformation.  (default=%(default)s)')
+        parser.add_argument('--ee_radius', default=70, type=int, help='encircled energy percentage (multiples of 10) for photometry.  (default=%(default)s)')
         parser.add_argument('--is_hst', default=False, action='store_true', help='set if your image is from hst not jwst')
         parser.add_argument('--rough_cut_px_min', default=0.3, type=float,help='first rough cut: best d_rotated+-rough_cut_pix. This is the lower limit for rough_cut (default=%(default)s)')
         parser.add_argument('--rough_cut_px_max', default=1.0, type=float,help='first rough cut: best d_rotated+-rough_cut_pix. This is the upper limit for rough_cut (default=%(default)s)')
@@ -916,7 +930,7 @@ class st_wcs_align:
         if refcat_deccol is None: refcat_deccol = phot.refcat_deccol
 
         tweakreg = tweakreg_hack.TweakRegStep()
-        if self.telescope=='jwst' or not self.phot.do_driz:
+        if self.telescope.lower()=='jwst' or not self.phot.do_driz:
             cal_image = datamodels.open(imfilename)
             tweakreg.do_driz = False
             tweakreg.input_file = imfilename
@@ -963,7 +977,7 @@ class st_wcs_align:
 
         # It is important to set fitgeometry to rshift for level 2
         tweakreg.pipeline_level = self.phot.pipeline_level
-        if self.phot.pipeline_level==2 and not (self.telescope=='hst' and self.phot.do_driz):
+        if self.phot.pipeline_level==2 and not (self.telescope.lower()=='hst' and self.phot.do_driz):
             tweakreg.fitgeometry = 'rshift'
         else:    
             tweakreg.fitgeometry = 'general'
@@ -1017,10 +1031,15 @@ class st_wcs_align:
             if self.telescope.lower()=='jwst':
                 print('replacing SIP',outputfits)
                 dm = datamodels.open(outputfits)
-                gwcs_header = dm.meta.wcs.to_fits_sip(max_pix_error=self.sip_err,
-                                                       max_inv_pix_error=self.sip_err,
-                                                       degree=self.sip_degree,
-                                                       npoints=self.sip_points)
+                try:
+                    gwcs_header = dm.meta.wcs.to_fits_sip(max_pix_error=self.sip_err,
+                                                          max_inv_pix_error=self.sip_err,
+                                                          degree=self.sip_degree,
+                                                          npoints=self.sip_points)
+                except Exception as error:
+                    print("An exception occurred:", type(error).__name__, "–", error) 
+                    print(f"NOTE: This exception is most likely caused because the uncertainty in the SIP conversion exceed {self.sip_err}. You can change this limit with --sip_err!")
+                    sys.exit(0)
                 from astropy.io import fits
                 dm_fits = fits.open(outputfits)
                 dm_fits['SCI',1].header.update(gwcs_header)
@@ -1253,7 +1272,7 @@ class st_wcs_align:
         from astropy.wcs.utils import skycoord_to_pixel,pixel_to_skycoord
         from astropy import units as u
         imwcs = wcs.WCS(image_model['SCI',1],image_model)
-        if self.telescope=='hst' and self.phot.do_driz:
+        if self.telescope.lower()=='hst' and self.phot.do_driz:
             old_model = fits.open(self.phot.imagename)
             oldwcs1 = wcs.WCS(old_model['SCI',1],old_model)
             oldwcs2 = wcs.WCS(old_model['SCI',2],old_model)
