@@ -72,6 +72,17 @@ class align_wcs_batch(pdastroclass):
         parser = self.wcs_align.default_options(parser)
 
         return(parser)
+
+    def addfilter2outsubdir(self,outsubdir,addfilter2outsubdir,ix,filt=None,pupil=None):
+        outsubdir_filter = outsubdir
+        if addfilter2outsubdir:
+            if filt is None: filt = self.t.loc[ix,"filter"].lower()
+            outsubdir_filter+=f'/{filt}'
+            if (pupil is not None) or self.t.loc[ix,"pupil"].lower()!='clear':
+                if pupil is None: pupil = self.t.loc[ix,"pupil"].lower()
+                outsubdir_filter+=f'_{pupil}'
+        return(outsubdir_filter)
+
     
     #def get_output_filenames(self, suffixmapping = {'cal':'tweakregstep','rate':'tweakregstep'},ixs=None):
     def get_output_filenames(self, outputsuffix = 'jhat',ixs=None,outrootdir=None,outsubdir=None,addfilter2outsubdir=False):
@@ -86,9 +97,7 @@ class align_wcs_batch(pdastroclass):
             #(inputname_nosuffix,inputsuffix)=m.groups()
             #inputbasename = os.path.basename(inputname_nosuffix)
             
-            outsubdir_filter = outsubdir
-            if addfilter2outsubdir:
-                outsubdir_filter+=f'/{self.t.loc[ix,"filter"].lower()}'
+            outsubdir_filter = self.addfilter2outsubdir(outsubdir,addfilter2outsubdir,ix)
             
             outfilebasename = self.wcs_align.set_outbasename(outrootdir=outrootdir,
                                                          outsubdir=outsubdir_filter,
@@ -226,7 +235,7 @@ class align_wcs_batch(pdastroclass):
                   showplots=0,
                   saveplots=0,
                   savephottable=0):
-        
+
         self.t.loc[ixs,'errorflag'] = None
         self.t.loc[ixs,'skipflag'] = None
                 
@@ -250,10 +259,7 @@ class align_wcs_batch(pdastroclass):
             self.wcs_align.rough_cut_px_max = self.rough_cut_px_max
             self.wcs_align.d_rotated_Nsigma = self.d_rotated_Nsigma
 
-            outsubdir_filter = outsubdir
-            if addfilter2outsubdir:
-                outsubdir_filter+=f'/{self.t.loc[ix,"filter"].lower()}'
-            
+            outsubdir_filter = self.addfilter2outsubdir(outsubdir,addfilter2outsubdir,ix)            
 
             # If debugging: just run one, outside the try block so that we can get real error messages
             if self.debug:
