@@ -547,6 +547,12 @@ class jwst_photclass(pdastrostatsclass):
                 raise RuntimeError(f'Unknown image type for file {imagename}')
         else:
             self.imagetype = imagetype
+            if self.imagetype == 'cal':
+                self.pipeline_level = 2
+            elif self.imagetype == 'i2d':
+                self.pipeline_level = 3
+            else:
+                raise RuntimeError(f'Unknown image type for file {imagename}')
             
         if not skip_preparing:
             # prepare the data.
@@ -1416,7 +1422,8 @@ class jwst_photclass(pdastrostatsclass):
                  Nbright4match=None,
                  xshift=0.0,# added to the x coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
                  yshift=0.0, # added to the y coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
-                 ee_radius=70):
+                 ee_radius=70,
+                 imagetype=None):
         if self.verbose:
             print(f'\n### Doing photometry on {imagename}')
         self.ee_radius = ee_radius
@@ -1449,7 +1456,7 @@ class jwst_photclass(pdastrostatsclass):
         
         # load the image, and prepare it. The data and mask are saved in 
         # self.data and self.mask
-        self.load_image(imagename,DNunits=DNunits,use_dq=use_dq)
+        self.load_image(imagename,DNunits=DNunits,use_dq=use_dq,imagetype=imagetype)
         # only do the photometry if not reloaded
         if do_photometry_flag:
     
