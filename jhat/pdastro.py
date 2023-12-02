@@ -507,6 +507,7 @@ class pdastroclass:
         colnames=self.getcolnames(colnames)
         #print(colnames)
         for colname in colnames:
+            print(colname,uplim)
             if not(lowlim is None):
                 if exclude_lowlim:
                     (keep,) = np.where(self.t.loc[indices,colname].gt(lowlim))

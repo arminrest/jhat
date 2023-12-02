@@ -1615,8 +1615,9 @@ class jwst_photclass(pdastrostatsclass):
             print(f'########### !!!!!!!!!!  INITIAL CUT on matched cat: starting with {len(ixs)} objects')
         if d2d_max is not None:
             if self.verbose:
-                print(f'd2d ={d2d_max} CUT:')
+                print(f'd2d ={d2d_max} CUT using {self.refcat.short}_d2d:')
             d2d_colname = f'{self.refcat.short}_d2d'
+            
             ixs_use = self.ix_inrange(d2d_colname,None,d2d_max,indices=ixs_use)
             if self.verbose:
                 print(f'{len(ixs_use)} left')
