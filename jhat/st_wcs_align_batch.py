@@ -78,7 +78,7 @@ class align_wcs_batch(pdastroclass):
         if addfilter2outsubdir:
             if filt is None: filt = self.t.loc[ix,"filter"].lower()
             outsubdir_filter+=f'/{filt}'
-            if (pupil is not None) or self.t.loc[ix,"pupil"].lower()!='clear':
+            if (pupil is not None) or  (isinstance(pupil,str) and self.t.loc[ix,"pupil"].lower()!='clear'):
                 if pupil is None: pupil = self.t.loc[ix,"pupil"].lower()
                 outsubdir_filter+=f'_{pupil}'
         return(outsubdir_filter)
