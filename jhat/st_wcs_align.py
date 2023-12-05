@@ -1420,7 +1420,10 @@ class st_wcs_align:
                 showplots=0,
                 saveplots=0,
                 savephottable=0,
-                ee_radius=70                ):
+                sci_catalog=None,
+                psf_model=None,
+                ee_radius=70,
+                photometry_method='aperture'  ):
             
         # set self.outbasename based on option
         self.set_outbasename(outrootdir=outrootdir,outsubdir=outsubdir,inputname=input_image)
@@ -1440,7 +1443,10 @@ class st_wcs_align:
                                                                   SNR_min=SNR_min,
                                                                   xshift=xshift,
                                                                   yshift=yshift,
-                                                                  ee_radius=ee_radius)
+                                                                  ee_radius=ee_radius,
+                                                                  sci_catalog=sci_catalog,
+                                                                  psf_model=psf_model,
+                                                                  photometry_method=photometry_method)
         if (photfilename!=photfilename_4check):
             raise RuntimeError(f'BUG!!! {photfilename}!={photfilename_4check}')
             

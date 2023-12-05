@@ -694,7 +694,7 @@ class jwst_photclass(pdastrostatsclass):
         
         
 
-    def find_stars(self, threshold=3, var_bkg=False, primaryhdr=None, scihdr=None):
+    def find_stars(self, threshold=3, var_bkg=False, primaryhdr=None, scihdr=None,centers=None):
         
         '''
         Parameters
@@ -738,7 +738,7 @@ class jwst_photclass(pdastrostatsclass):
        
         self.data_bkgsub, std = self.calc_bkg(self.data, mask=bool_mask, var_bkg=var_bkg)
 
-        daofind = DAOStarFinder(threshold=threshold * std, fwhm=fwhm_psf, exclude_border=True)
+        daofind = DAOStarFinder(threshold=threshold * std, fwhm=fwhm_psf, exclude_border=True,xycoords=centers)
         self.found_stars = daofind(self.data_bkgsub, mask=bool_mask)
 
         #found_stars = daofind(data_bkgsub)
@@ -787,6 +787,87 @@ class jwst_photclass(pdastrostatsclass):
         return(f'{basecolname}_{radius:.1f}px')
 
     #def aperture_phot(self, radius=[3.5], sky_in=7, sky_out=10, add_radius_to_colname=False):
+    def psf_phot(self, filt=None, 
+                      primaryhdr=None, scihdr=None):
+        
+        """
+        Aperture photometry routine for HST.
+            
+        Returns
+        -------
+        table_aper : :class:`astropy.table.Table`
+
+        """
+        if primaryhdr is None: primaryhdr=self.primaryhdr
+        if scihdr is None: scihdr=self.scihdr
+
+        # det = primaryhdr['DETECTOR']
+        # if filt is None:
+        #     if det in ['GUIDER1','GUIDER2']:
+        #         filt = 'NA'
+        #     else:
+        #         filt = primaryhdr['FILTER']
+        # if pupil is None: 
+        #     if det in ['GUIDER1','GUIDER2']:
+        #         pupil = 'NA'
+        #     else:
+        #         pupil = primaryhdr['PUPIL']
+
+        # (self.radii_px,
+        #  self.radius_sky_in_px,
+        #  self.radius_sky_out_px,
+        #  self.radius_for_mag_px) = self.get_radii_phot(filt,pupil,
+        #                                                radii_Nfwhm = radii_Nfwhm,
+        #                                                radius_Nfwhm_sky_in = radius_Nfwhm_sky_in, 
+        #                                                radius_Nfwhm_sky_out = radius_Nfwhm_sky_out, 
+        #                                                radius_Nfwhm_for_mag = radius_Nfwhm_for_mag)
+
+        positions = np.transpose((self.found_stars['ycentroid'], self.found_stars['xcentroid']))
+        
+        tic = time.perf_counter()
+    
+        import space_phot
+        if self.pipeline_level==2:
+            obs = space_phot.observation2(self.imagename)
+        else:
+            raise RuntimeError('PSF only set up for level 2 at the moment.')
+            
+        if self.psf_model is None:
+           self.psf_model = space_phot.util.get_jwst_psf_grid(obs,num_psfs=4)
+        obs.fast_psf(self.psf_model,positions)
+        
+        table_aper = obs.psf_result.phot_cal_table
+
+        table_aper['ycentroid'] = obs.psf_result.phot_cal_table['y_fit']
+        table_aper['xcentroid'] = obs.psf_result.phot_cal_table['x_fit']
+        table_aper['y'] = obs.psf_result.phot_cal_table['y_fit']
+        table_aper['x'] = obs.psf_result.phot_cal_table['x_fit']
+        table_aper.remove_column('flux_fit')
+        table_aper.remove_column('flux_err')
+        table_aper.rename_column('fluxerr_cal','flux_err')
+        table_aper.rename_column('flux_cal','flux')
+        table_aper.rename_column('magerr','dmag')
+        
+        
+            #if rad == self.radius_for_mag_px:
+                #table_aper['mag'] = -2.5 * np.log10(table_aper[self.colname('aper_sum_bkgsub',rad)])
+                #table_aper['dmag'] = 1.086 * (table_aper[self.colname('flux_err',rad)] / 
+                #                              table_aper[self.colname('aper_sum_bkgsub',rad)])      
+
+        #table_aper['x'] = self.found_stars['xcentroid']
+        #table_aper['y'] = self.found_stars['ycentroid']
+        table_aper['sharpness'] = self.found_stars['sharpness']
+        table_aper['roundness1'] = self.found_stars['roundness1']
+        table_aper['roundness2'] = self.found_stars['roundness2']
+        table_aper = table_aper[~np.isnan(table_aper['mag'])]
+        toc = time.perf_counter()
+        if self.verbose:
+            print("Time Elapsed:", toc - tic)
+    
+        self.t = table_aper.to_pandas()
+
+        return table_aper
+    
     def aperture_phot(self, filt=None, pupil=None, 
                       radii_Nfwhm = None,
                       radius_Nfwhm_sky_in = None, 
@@ -1412,6 +1493,9 @@ class jwst_photclass(pdastrostatsclass):
                  DNunits=False, 
                  SNR_min=3.0,
                  do_photometry_flag=True,
+                 photometry_method='aperture',
+                 psf_model=None,
+                 sci_catalog=None,
                  photcat_loaded = False,
                  Nbright4match=None,
                  xshift=0.0,# added to the x coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
@@ -1420,6 +1504,7 @@ class jwst_photclass(pdastrostatsclass):
         if self.verbose:
             print(f'\n### Doing photometry on {imagename}')
         self.ee_radius = ee_radius
+        self.psf_model = psf_model
         
         # get the photfilename. photfilename='auto' removes fits from image name and replaces it with phot.txt
         self.photfilename = self.get_photfilename(photfilename,outrootdir=outrootdir,outsubdir=outsubdir,imagename=imagename)
@@ -1454,10 +1539,19 @@ class jwst_photclass(pdastrostatsclass):
         if do_photometry_flag:
     
             # find the stars, saved in self.found_stars
-            self.find_stars()
             
+            if sci_catalog is not None:
+                
+                ref = Table.read(sci_catalog,format='ascii')
+                xycoords=np.atleast_2d([ref['x'],ref['y']]).T
+                self.find_stars(centers=xycoords)
+            else:
+                self.find_stars()
             #aperture phot, saved in self.t
-            self.aperture_phot()
+            if photometry_method == 'aperture':
+                self.aperture_phot()
+            elif photometry_method == 'psf':
+                self.psf_phot()
              
         
         # get the indices of good stars
@@ -1859,7 +1953,85 @@ class hst_photclass(jwst_photclass):
 
         return data,mask
 
+    def psf_phot(self, filt=None, 
+                      primaryhdr=None, scihdr=None):
+        
+        """
+        Aperture photometry routine for HST.
+            
+        Returns
+        -------
+        table_aper : :class:`astropy.table.Table`
 
+        """
+        if primaryhdr is None: primaryhdr=self.primaryhdr
+        if scihdr is None: scihdr=self.scihdr
+
+        # det = primaryhdr['DETECTOR']
+        # if filt is None:
+        #     if det in ['GUIDER1','GUIDER2']:
+        #         filt = 'NA'
+        #     else:
+        #         filt = primaryhdr['FILTER']
+        # if pupil is None: 
+        #     if det in ['GUIDER1','GUIDER2']:
+        #         pupil = 'NA'
+        #     else:
+        #         pupil = primaryhdr['PUPIL']
+
+        # (self.radii_px,
+        #  self.radius_sky_in_px,
+        #  self.radius_sky_out_px,
+        #  self.radius_for_mag_px) = self.get_radii_phot(filt,pupil,
+        #                                                radii_Nfwhm = radii_Nfwhm,
+        #                                                radius_Nfwhm_sky_in = radius_Nfwhm_sky_in, 
+        #                                                radius_Nfwhm_sky_out = radius_Nfwhm_sky_out, 
+        #                                                radius_Nfwhm_for_mag = radius_Nfwhm_for_mag)
+
+        positions = np.transpose((self.found_stars['xcentroid'], self.found_stars['ycentroid']))
+        
+        tic = time.perf_counter()
+    
+        import space_phot
+        if self.pipeline_level==2:
+            obs = space_phot.observation2(self.imagename)
+        else:
+            raise RuntimeError('PSF only set up for level 2 at the moment.')
+            
+        if self.psf_model is None:
+            self.psf_model = space_phot.util.get_hst_psf_grid(obs,num_psfs=4)
+        obs.fast_psf(self.psf_model,positions)
+        
+        table_aper = obs.psf_result.phot_cal_table
+        
+        table_aper['xcentroid'] = obs.psf_result.phot_cal_table['y_fit']
+        table_aper['ycentroid'] = obs.psf_result.phot_cal_table['x_fit']
+        table_aper['x'] = obs.psf_result.phot_cal_table['y_fit']
+        table_aper['y'] = obs.psf_result.phot_cal_table['x_fit']
+        table_aper.remove_column('flux_fit')
+        table_aper.remove_column('flux_err')
+        table_aper.rename_column('fluxerr_cal','flux_err')
+        table_aper.rename_column('flux_cal','flux')
+        
+            #if rad == self.radius_for_mag_px:
+                #table_aper['mag'] = -2.5 * np.log10(table_aper[self.colname('aper_sum_bkgsub',rad)])
+                #table_aper['dmag'] = 1.086 * (table_aper[self.colname('flux_err',rad)] / 
+                #                              table_aper[self.colname('aper_sum_bkgsub',rad)])      
+
+        #table_aper['x'] = self.found_stars['xcentroid']
+        #table_aper['y'] = self.found_stars['ycentroid']
+        table_aper['sharpness'] = self.found_stars['sharpness']
+        table_aper['roundness1'] = self.found_stars['roundness1']
+        table_aper['roundness2'] = self.found_stars['roundness2']
+        table_aper = table_aper[~np.isnan(table_aper['mag'])]
+        toc = time.perf_counter()
+        if self.verbose:
+            print("Time Elapsed:", toc - tic)
+    
+        self.t = table_aper.to_pandas()
+
+        return table_aper
+    
     def aperture_phot(self, filt=None, pupil=None, 
                       radii_Nfwhm = None,
                       radius_Nfwhm_sky_in = None, 
