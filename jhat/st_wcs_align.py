@@ -15,6 +15,9 @@ import matplotlib.pyplot as plt
 from astropy.table import Table
 
 from jwst import datamodels
+from jwst.pipeline.calwebb_image2 import Image2Pipeline
+from jwst.assign_wcs import AssignWcsStep
+
 
 from .simple_jwst_phot import jwst_photclass,hst_photclass
 from .pdastro import *
@@ -765,6 +768,8 @@ class st_wcs_align:
 
         #parser.add_argument('--rate_dir', default=ratedir, help='Directory in which the rate images are located, which will be used to test the distortions. (default=%(default)s)')
         parser.add_argument('cal_image',  help='cal.fits filename or any other image that is at a similar reduction stage.')
+        parser.add_argument('--distortion_file', default=None, help='apply distortion coefficients from given file to image before aligning the image (default=%(default)s)')
+
 
         parser = self.default_options(parser)
         return(parser)
@@ -796,7 +801,6 @@ class st_wcs_align:
         parser.add_argument('--SNR_min', default=None,type=float, help='mininum SNR for object in image to be used for analysis (default=%(default)s)')
 
         parser.add_argument('--use_dq', default=False, action='store_true', help='use the DQ extensions for masking')
-
 
         parser.add_argument('--refcat', default='Gaia', help='reference catalog. Can be a filename or Gaia (default=%(default)s)')
         parser.add_argument('--refcat_racol', default=None, help='RA column of reference catalog. If None, then automatically determined (default=%(default)s)')
@@ -1376,14 +1380,70 @@ class st_wcs_align:
                 plt.show()
             plt.close()
 
+    def apply_distortion_coefficients(self,input_image,distortion_file,outdir=None,
+                                      overwrite=True, skip_if_exists=False):
 
+        print(f'assigning WCS to file {input_image} using distortion file {distortion_file}')
+        step = AssignWcsStep()
+
+        if not os.path.isfile(input_image):
+            raise RuntimeError(f'image {input_image} does not exist')
+
+        if distortion_file.lower() == 'none':
+            print('WARNING!! not applying any distortion file!!')
+        else:
+            if re.search('\.asdf$',distortion_file) is None:
+                raise RuntimeError(f'distortion file {distortion_file} does not have .asdf suffix. asdf format required.')
+            if not os.path.isfile(distortion_file):
+                raise RuntimeError(f'distortion file {distortion_file} does not exist')
+            step.override_distortion = distortion_file
+
+        step.save_results = True
+ 
+        if outdir is None:
+            outdir=os.path.dirname(input_image)
+        if self.verbose: print(f'Setting output directory for assignwcsstep.fits file to {outdir}')
+        
+        assignwcsfilename = re.sub('\_[a-zA-Z0-9]+\.fits$','_assignwcsstep.fits',os.path.basename(input_image))
+        if assignwcsfilename == os.path.basename(input_image):
+            raise RuntimeError('Could not get assignwcsstep filename from {os.path.basename(input_image)}!')
+        assignwcsfilename = f'{outdir}/{assignwcsfilename}'
+
+        
+        
+        step.output_dir = outdir
+        if not os.path.isdir(outdir):
+            makepath(outdir)
+
+        if os.path.isfile(assignwcsfilename):
+            if skip_if_exists:
+                # return False means that rate2cal did not run
+                print(f'Image {assignwcsfilename} already exists, skipping recreating it...')
+                return(False,assignwcsfilename)
+            else:
+                if overwrite:
+                    print(f'WARNING! {assignwcsfilename} exists, deleting it since "overwrite" is set!')
+                    # make sure cal frame is deleted
+                    rmfile(assignwcsfilename)
+                else:
+                    raise RuntimeError(f'Image {assignwcsfilename} already exists! exiting. If you want to overwrite or skip, you can use "overwrite" or "skip_if_exists"')
+                
+        print(f'Creating {assignwcsfilename}')
+        step.run(input_image)
+        
+        #make sure the image got created
+        if not os.path.isfile(assignwcsfilename):
+            raise RuntimeError(f'Image {assignwcsfilename} did not get created!!')
+        else:
+            print(f'distortions {distortion_file} applied to {assignwcsfilename}!!')
+        return(True,assignwcsfilename)
 
     def run_all(self,input_image,
                 telescope=None,
-                #distortion_file=None,
                 outrootdir = None,
                 outsubdir = None,
                 overwrite = False,
+                distortion_file = None,
                 skip_if_exists = False,
                 #skip_applydistortions_if_exists = False,
                 use_dq=False,
@@ -1430,7 +1490,13 @@ class st_wcs_align:
         
         # set the telescope
         self.set_telescope(telescope=telescope,imname=input_image)
-            
+        
+        if distortion_file is not None:
+            runflag,assignwcs_filename = self.apply_distortion_coefficients(input_image,distortion_file,outdir=os.path.dirname(self.outbasename))
+            input_image = assignwcs_filename
+        else:
+            assignwcs_filename = None
+        
         # do the photometry
         self.phot.verbose = self.verbose
         photfilename = f'{self.outbasename}.phot.txt'
