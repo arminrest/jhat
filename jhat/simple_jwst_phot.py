@@ -1494,6 +1494,7 @@ class jwst_photclass(pdastrostatsclass):
                  SNR_min=3.0,
                  do_photometry_flag=True,
                  photometry_method='aperture',
+                 find_stars_threshold = 3.0,
                  psf_model=None,
                  sci_catalog=None,
                  photcat_loaded = False,
@@ -1544,9 +1545,9 @@ class jwst_photclass(pdastrostatsclass):
                 
                 ref = Table.read(sci_catalog,format='ascii')
                 xycoords=np.atleast_2d([ref['x'],ref['y']]).T
-                self.find_stars(centers=xycoords)
+                self.find_stars(centers=xycoords, threshold = find_stars_threshold)
             else:
-                self.find_stars()
+                self.find_stars(threshold = find_stars_threshold)
             #aperture phot, saved in self.t
             if photometry_method == 'aperture':
                 self.aperture_phot()
