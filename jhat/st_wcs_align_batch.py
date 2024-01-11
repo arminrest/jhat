@@ -207,6 +207,7 @@ class align_wcs_batch(pdastroclass):
                   #skip_applydistortions_if_exists = False,
                   photometry_method = 'aperture',
                   find_stars_threshold = 3.0,
+                  sci_xy_catalog=None,
                   # refcat parameters
                   use_dq=False,
                   refcatname = 'Gaia',
@@ -276,6 +277,7 @@ class align_wcs_batch(pdastroclass):
                                        #skip_applydistortions_if_exists=skip_applydistortions_if_exists,
                                        photometry_method = photometry_method,
                                        find_stars_threshold = find_stars_threshold,
+                                       sci_xy_catalog=sci_xy_catalog,
                                        use_dq = use_dq,
                                        refcatname = refcatname,
                                        refcat_racol = refcat_racol,
@@ -318,6 +320,7 @@ class align_wcs_batch(pdastroclass):
                                            #skip_applydistortions_if_exists=skip_applydistortions_if_exists,
                                            photometry_method = photometry_method,
                                            find_stars_threshold = find_stars_threshold,
+                                           sci_xy_catalog=sci_xy_catalog,
                                            use_dq = use_dq,
                                            refcatname = refcatname,
                                            refcat_racol = refcat_racol,

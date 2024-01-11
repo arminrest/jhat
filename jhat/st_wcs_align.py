@@ -816,6 +816,7 @@ class st_wcs_align:
 
         parser.add_argument('--photometry_method', default='aperture', choices=['aperture','psf'], help='photometry method (default=%(default)s)')
         parser.add_argument('--find_stars_threshold', default=3.0, type=float, help='Nsigma threshold used for the  photutils find_stars method (default=%(default)s)')
+        parser.add_argument('--sci_xy_catalog', default=None, help='Pass a file with xy positions, which are used instead of the internal photometry x,y positions. The column names need to be called "x" and "y".')
 
         parser.add_argument('--load_photcat_if_exists', default=False, action='store_true', help='If the photometric catalog file already exists, skip recreating it.')
         parser.add_argument('--rematch_refcat', default=False, action='store_true', help='if --load_photcat_if_exists and the photcat already exists, load the photcat, but rematch with refcat')
@@ -1460,6 +1461,7 @@ class st_wcs_align:
                 use_dq=False,
                 photometry_method='aperture',
                 find_stars_threshold = 3.0,
+                sci_xy_catalog=None,
                 # refcat parameters
                 refcatname = 'Gaia',
                 refcat_racol='auto',
@@ -1493,7 +1495,6 @@ class st_wcs_align:
                 showplots=0,
                 saveplots=0,
                 savephottable=0,
-                sci_catalog=None,
                 psf_model=None,
                 ee_radius=70):
             
@@ -1522,7 +1523,7 @@ class st_wcs_align:
                                                                   xshift=xshift,
                                                                   yshift=yshift,
                                                                   ee_radius=ee_radius,
-                                                                  sci_catalog=sci_catalog,
+                                                                  sci_xy_catalog=sci_xy_catalog,
                                                                   psf_model=psf_model,
                                                                   photometry_method=photometry_method,
                                                                   find_stars_threshold = find_stars_threshold)

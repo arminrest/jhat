@@ -1038,7 +1038,7 @@ class jwst_photclass(pdastrostatsclass):
                     xshift=0.0,yshift=0.0):
         ixs = self.getindices(indices=indices)
 
-        image_model = ImageModel(self.im)
+        #image_model = ImageModel(self.im)
         
         coord = self.sci_wcs.pixel_to_world(self.t.loc[ixs,xcol]+xshift, self.t.loc[ixs,ycol]+yshift)
         self.t.loc[ixs,racol] = coord.ra.degree
@@ -1496,7 +1496,7 @@ class jwst_photclass(pdastrostatsclass):
                  photometry_method='aperture',
                  find_stars_threshold = 3.0,
                  psf_model=None,
-                 sci_catalog=None,
+                 sci_xy_catalog=None,
                  photcat_loaded = False,
                  Nbright4match=None,
                  xshift=0.0,# added to the x coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
@@ -1541,9 +1541,9 @@ class jwst_photclass(pdastrostatsclass):
     
             # find the stars, saved in self.found_stars
             
-            if sci_catalog is not None:
+            if sci_xy_catalog is not None:
                 
-                ref = Table.read(sci_catalog,format='ascii')
+                ref = Table.read(sci_xy_catalog,format='ascii')
                 xycoords=np.atleast_2d([ref['x'],ref['y']]).T
                 self.find_stars(centers=xycoords, threshold = find_stars_threshold)
             else:
