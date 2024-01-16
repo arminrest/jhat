@@ -833,7 +833,10 @@ class jwst_photclass(pdastrostatsclass):
             raise RuntimeError('PSF only set up for level 2 at the moment.')
             
         if self.psf_model is None:
-           self.psf_model = space_phot.util.get_jwst_psf_grid(obs,num_psfs=4)
+            width = int(3*self.get_fwhm_psf(obs.filter))
+            if width%2==0:
+                width = int(width+1)
+            self.psf_model = space_phot.util.get_jwst_psf_grid(obs,num_psfs=4,psf_width=width,local_bkg=True)
         obs.fast_psf(self.psf_model,positions)
         
         table_aper = obs.psf_result.phot_cal_table
