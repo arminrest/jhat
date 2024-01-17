@@ -836,8 +836,8 @@ class jwst_photclass(pdastrostatsclass):
             width = int(3*self.get_fwhm_psf(obs.filter))
             if width%2==0:
                 width = int(width+1)
-            self.psf_model = space_phot.util.get_jwst_psf_grid(obs,num_psfs=4,psf_width=width,local_bkg=True)
-        obs.fast_psf(self.psf_model,positions)
+            self.psf_model = space_phot.util.get_jwst_psf_grid(obs,num_psfs=4)
+        obs.fast_psf(self.psf_model,positions,psf_width=width,local_bkg=True)
         
         table_aper = obs.psf_result.phot_cal_table
 
@@ -2004,7 +2004,7 @@ class hst_photclass(jwst_photclass):
             
         if self.psf_model is None:
             self.psf_model = space_phot.util.get_hst_psf_grid(obs,num_psfs=4)
-        obs.fast_psf(self.psf_model,positions)
+        obs.fast_psf(self.psf_model,positions,local_bkg=True)
         
         table_aper = obs.psf_result.phot_cal_table
         
