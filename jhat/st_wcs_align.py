@@ -13,8 +13,12 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from astropy.table import Table
+import astropy.io.fits as fits
 
 from jwst import datamodels
+from jwst.pipeline.calwebb_image2 import Image2Pipeline
+from jwst.assign_wcs import AssignWcsStep
+
 
 from .simple_jwst_phot import jwst_photclass,hst_photclass
 from .pdastro import *
@@ -765,6 +769,8 @@ class st_wcs_align:
 
         #parser.add_argument('--rate_dir', default=ratedir, help='Directory in which the rate images are located, which will be used to test the distortions. (default=%(default)s)')
         parser.add_argument('cal_image',  help='cal.fits filename or any other image that is at a similar reduction stage.')
+        parser.add_argument('--distortion_file', default=None, help='apply distortion coefficients from given file to image before aligning the image (default=%(default)s)')
+
 
         parser = self.default_options(parser)
         return(parser)
@@ -795,8 +801,7 @@ class st_wcs_align:
 
         parser.add_argument('--SNR_min', default=None,type=float, help='mininum SNR for object in image to be used for analysis (default=%(default)s)')
 
-        parser.add_argument('--use_dq', default=False, action='store_true', help='use the DQ extensions for masking')
-
+        parser.add_argument('--skip_use_dq', default=False, action='store_true', help='skip using the DQ extensions for masking')
 
         parser.add_argument('--refcat', default='Gaia', help='reference catalog. Can be a filename or Gaia (default=%(default)s)')
         parser.add_argument('--refcat_racol', default=None, help='RA column of reference catalog. If None, then automatically determined (default=%(default)s)')
@@ -808,6 +813,10 @@ class st_wcs_align:
         parser.add_argument('--refcat_pmmedian', default=False, action='store_true', help='Apply the MEDIAN proper motion correction (only for catalogs it is applicable, e.g., gaia')
         parser.add_argument('--photfilename', default='auto', help='photometry output filename. if "auto", the fits in the image filename is substituted with phot.txt (default=%(default)s)')
 #        parser.add_argument('--photfilename', default='auto', help='photometry output filename. if "auto", the fits in the image filename is substituted with phot.txt (default=%(default)s)')
+
+        parser.add_argument('--photometry_method', default='aperture', choices=['aperture','psf'], help='photometry method (default=%(default)s)')
+        parser.add_argument('--find_stars_threshold', default=3.0, type=float, help='Nsigma threshold used for the  photutils find_stars method (default=%(default)s)')
+        parser.add_argument('--sci_xy_catalog', default=None, help='Pass a file with xy positions, which are used instead of the internal photometry x,y positions. The column names need to be called "x" and "y".')
 
         parser.add_argument('--load_photcat_if_exists', default=False, action='store_true', help='If the photometric catalog file already exists, skip recreating it.')
         parser.add_argument('--rematch_refcat', default=False, action='store_true', help='if --load_photcat_if_exists and the photcat already exists, load the photcat, but rematch with refcat')
@@ -1376,17 +1385,83 @@ class st_wcs_align:
                 plt.show()
             plt.close()
 
+    def apply_distortion_coefficients(self,input_image,distortion_file,outdir=None,
+                                      overwrite=True, skip_if_exists=False):
+        
+        scihdr = fits.getheader(input_image)
+        dummy_filename = f'{scihdr["APERNAME"].lower()}_{scihdr["FILTER"].lower()}_{scihdr["PUPIL"].lower()}.polycoeff.asdf'
+        if dummy_filename != os.path.basename(distortion_file):
+            print(f'\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!! WARNING! distortion file {os.path.basename(distortion_file)} is not as expected {dummy_filename}!'
+                  f' The image has aperture={scihdr["APERNAME"]}, filter={scihdr["FILTER"]}, and pupil={scihdr["PUPIL"]}, is that consistent with the distortion file???\n'
+                  '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
 
+        print(f'assigning WCS to file {input_image} using distortion file {distortion_file}')
+        step = AssignWcsStep()
+
+        if not os.path.isfile(input_image):
+            raise RuntimeError(f'image {input_image} does not exist')
+
+        if distortion_file.lower() == 'none':
+            print('WARNING!! not applying any distortion file!!')
+        else:
+            if re.search('\.asdf$',distortion_file) is None:
+                raise RuntimeError(f'distortion file {distortion_file} does not have .asdf suffix. asdf format required.')
+            if not os.path.isfile(distortion_file):
+                raise RuntimeError(f'distortion file {distortion_file} does not exist')
+            step.override_distortion = distortion_file
+
+        step.save_results = True
+ 
+        if outdir is None:
+            outdir=os.path.dirname(input_image)
+        if self.verbose: print(f'Setting output directory for assignwcsstep.fits file to {outdir}')
+        
+        assignwcsfilename = re.sub('\_[a-zA-Z0-9]+\.fits$','_assignwcsstep.fits',os.path.basename(input_image))
+        if assignwcsfilename == os.path.basename(input_image):
+            raise RuntimeError('Could not get assignwcsstep filename from {os.path.basename(input_image)}!')
+        assignwcsfilename = f'{outdir}/{assignwcsfilename}'
+
+        
+        
+        step.output_dir = outdir
+        if not os.path.isdir(outdir):
+            makepath(outdir)
+
+        if os.path.isfile(assignwcsfilename):
+            if skip_if_exists:
+                # return False means that rate2cal did not run
+                print(f'Image {assignwcsfilename} already exists, skipping recreating it...')
+                return(False,assignwcsfilename)
+            else:
+                if overwrite:
+                    print(f'WARNING! {assignwcsfilename} exists, deleting it since "overwrite" is set!')
+                    # make sure cal frame is deleted
+                    rmfile(assignwcsfilename)
+                else:
+                    raise RuntimeError(f'Image {assignwcsfilename} already exists! exiting. If you want to overwrite or skip, you can use "overwrite" or "skip_if_exists"')
+                
+        print(f'Creating {assignwcsfilename}')
+        step.run(input_image)
+        
+        #make sure the image got created
+        if not os.path.isfile(assignwcsfilename):
+            raise RuntimeError(f'Image {assignwcsfilename} did not get created!!')
+        else:
+            print(f'distortions {distortion_file} applied to {assignwcsfilename}!!')
+        return(True,assignwcsfilename)
 
     def run_all(self,input_image,
                 telescope=None,
-                #distortion_file=None,
                 outrootdir = None,
                 outsubdir = None,
                 overwrite = False,
+                distortion_file = None,
                 skip_if_exists = False,
                 #skip_applydistortions_if_exists = False,
                 use_dq=False,
+                photometry_method='aperture',
+                find_stars_threshold = 3.0,
+                sci_xy_catalog=None,
                 # refcat parameters
                 refcatname = 'Gaia',
                 refcat_racol='auto',
@@ -1420,17 +1495,21 @@ class st_wcs_align:
                 showplots=0,
                 saveplots=0,
                 savephottable=0,
-                sci_catalog=None,
                 psf_model=None,
-                ee_radius=70,
-                photometry_method='aperture'  ):
+                ee_radius=70):
             
         # set self.outbasename based on option
         self.set_outbasename(outrootdir=outrootdir,outsubdir=outsubdir,inputname=input_image)
         
         # set the telescope
         self.set_telescope(telescope=telescope,imname=input_image)
-            
+        
+        if distortion_file is not None:
+            runflag,assignwcs_filename = self.apply_distortion_coefficients(input_image,distortion_file,outdir=os.path.dirname(self.outbasename))
+            input_image = assignwcs_filename
+        else:
+            assignwcs_filename = None
+        
         # do the photometry
         self.phot.verbose = self.verbose
         photfilename = f'{self.outbasename}.phot.txt'
@@ -1444,9 +1523,10 @@ class st_wcs_align:
                                                                   xshift=xshift,
                                                                   yshift=yshift,
                                                                   ee_radius=ee_radius,
-                                                                  sci_catalog=sci_catalog,
+                                                                  sci_xy_catalog=sci_xy_catalog,
                                                                   psf_model=psf_model,
-                                                                  photometry_method=photometry_method)
+                                                                  photometry_method=photometry_method,
+                                                                  find_stars_threshold = find_stars_threshold)
         if (photfilename!=photfilename_4check):
             raise RuntimeError(f'BUG!!! {photfilename}!={photfilename_4check}')
             
@@ -1534,6 +1614,9 @@ class st_wcs_align:
                                                    outputfits=jhatfits,
                                                    ixs=ixs_bestmatch,
                                                    overwrite=overwrite,skip_if_exists=skip_if_exists)
+        if assignwcs_filename is not None:
+            rmfile(assignwcs_filename)
+        
         #if self.telescope.lower()=='jwst':
         self.update_phottable_final_wcs(jhatfits,
                                             ixs_bestmatch = ixs_bestmatch,
