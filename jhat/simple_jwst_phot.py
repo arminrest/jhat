@@ -29,6 +29,7 @@ from photutils import CircularAperture, CircularAnnulus, aperture_photometry
 from astropy.visualization import simple_norm
 
 import jwst
+#from stdatamodels.jwst.datamodels import ImageModel
 from jwst.datamodels import ImageModel
 from jwst import datamodels
 from jwst import source_catalog
@@ -79,9 +80,15 @@ def hst_get_ee_corr(ap,filt,inst):
 
 def hst_get_zp(filt,zpsys='ab'):
     if zpsys.lower()=='ab':
-        return {'F098M':25.666,'F105W':26.264,'F110W':26.819,'F125W':26.232,'F140W':26.450,'F160W':25.936}[filt]
+        return {'F098M':25.666,'F105W':26.264,'F110W':26.819,
+        'F125W':26.232,'F140W':26.450,'F160W':25.936,'F126N':22.849,'F127M':24.625,
+        'F128N':22.956,'F130N':22.981,'F132N':22.933,'F139M':24.466,'F153M':24.447,
+        'F164N':22.892,'F167N':22.937}[filt]
     elif zpsys.lower()=='vega':
-        return {'F098M':25.090,'F105W':25.603,'F110W':26.042,'F125W':25.312,'F140W':25.353,'F160W':24.662}[filt]
+        return {'F098M':25.090,'F105W':25.603,'F110W':26.042,
+        'F125W':25.312,'F140W':25.353,'F160W':24.662,'F126N':21.908,'F127M':23.643,
+        'F128N':21.898,'F130N':21.985,'F132N':21.915,'F139M':23.366,'F153M':23.171,
+        'F164N':22.892,'F167N':21.550}[filt]
     else:
         print('unknown zpsys')
         return
@@ -519,6 +526,8 @@ class jwst_photclass(pdastrostatsclass):
         self.scihdr = self.im['SCI'].header
         #self.sci_wcs = wcs.WCS(self.scihdr)
         self.sci_wcs = self.dm.meta.wcs
+        print(self.sci_wcs(100,100))
+        sys.exit()
         self.sip_wcs = wcs.WCS(self.scihdr)
         try:
             self.err = self.im['ERR'].data
@@ -616,6 +625,7 @@ class jwst_photclass(pdastrostatsclass):
         mask[np.isnan(data)==True] = 8
         mask[np.isfinite(data)==False] = 8
         mask[np.where(data==0)] = 16
+
         #fits.writeto('TEST_mask_delme.fits',mask,overwrite=True,output_verify='ignore')
                
         data[mask>0] = np.nan
@@ -1019,7 +1029,7 @@ class jwst_photclass(pdastrostatsclass):
 
         return table_aper
 
-    def clean_phottable(self,SNR_min=3.0,indices=None):
+    def clean_phottable(self,SNR_min=3.0,indices=None,psf_quality=None):
         # remove nans
         ixs = self.ix_not_null(['mag','dmag'],indices=indices)
         if self.verbose:
@@ -1032,6 +1042,10 @@ class jwst_photclass(pdastrostatsclass):
             if self.verbose:
                 print(f'SNR_min cut: {len(ixs)} objects left after removing entries dmag>{dmag_max} (SNR<{SNR_min})')
 
+        if psf_quality is not None:
+            ixs = self.ix_inrange('psf_quality',None,psf_quality,indices=ixs) 
+            if self.verbose:
+                print(f'PSF cut: {len(ixs)} objects left after removing entries psf_q>{psf_quality}')
         return(ixs)
 
     def xy_to_radec(self,xcol='x',ycol='y',racol='ra',deccol='dec',indices=None,
@@ -1040,9 +1054,14 @@ class jwst_photclass(pdastrostatsclass):
 
         image_model = ImageModel(self.im)
         
-        coord = self.sci_wcs.pixel_to_world(self.t.loc[ixs,xcol]+xshift, self.t.loc[ixs,ycol]+yshift)
-        self.t.loc[ixs,racol] = coord.ra.degree
-        self.t.loc[ixs,deccol] = coord.dec.degree
+        #try:
+        #    coord = self.sci_wcs.pixel_to_world(self.t.loc[ixs,xcol]+xshift, self.t.loc[ixs,ycol]+yshift)
+        #except:
+        #    coord = self.sip_wcs.pixel_to_world(self.t.loc[ixs,xcol]+xshift, self.t.loc[ixs,ycol]+yshift)
+        detector_to_world = image_model.meta.wcs.get_transform('detector','world')
+        (self.t.loc[ixs,racol],self.t.loc[ixs,deccol]) = detector_to_world(self.t.loc[ixs,xcol], self.t.loc[ixs,ycol])
+        #self.t.loc[ixs,racol] = coord.ra.degree
+        #self.t.loc[ixs,deccol] = coord.dec.degree
 
     def radec_to_xy(self,racol='ra',deccol='dec',xcol='x',ycol='y',indices=None):
         ixs = self.getindices(indices=indices)
@@ -1469,8 +1488,10 @@ class jwst_photclass(pdastrostatsclass):
         image_model = ImageModel(im)
         if nx is None: nx = int(im['SCI'].header['NAXIS1'])
         if ny is None: ny = int(im['SCI'].header['NAXIS2'])
-                
-        ra0,dec0 = image_model.meta.wcs(nx/2.0-1,ny/2.0-1)
+        
+        detector_to_world = self.sci_wcs.get_transform('detector','world')
+        ra0,dec0 = detector_to_world(nx/2.0-1,ny/2.0-1)
+        #ra0,dec0 = image_model.meta.wcs(nx/2.0-1,ny/2.0-1)
         coord0 = SkyCoord(ra0,dec0,unit=(u.deg, u.deg), frame='icrs')
         radius_deg = []
         for x in [0,nx-1]:        
@@ -1550,12 +1571,14 @@ class jwst_photclass(pdastrostatsclass):
             #aperture phot, saved in self.t
             if photometry_method == 'aperture':
                 self.aperture_phot()
+                psf_quality=None
             elif photometry_method == 'psf':
                 self.psf_phot()
-             
-        
+                psf_quality= 25
+        else:
+            psf_quality=None
         # get the indices of good stars
-        ixs_clean = self.clean_phottable(SNR_min=SNR_min)
+        ixs_clean = self.clean_phottable(SNR_min=SNR_min,psf_quality=psf_quality)
         if self.verbose:
             print(f'{len(ixs_clean)} out of {len(self.getindices())} entries remain in photometry table')
         if len(ixs_clean)<1:
@@ -1988,7 +2011,7 @@ class hst_photclass(jwst_photclass):
         #                                                radius_Nfwhm_sky_out = radius_Nfwhm_sky_out, 
         #                                                radius_Nfwhm_for_mag = radius_Nfwhm_for_mag)
 
-        positions = np.transpose((self.found_stars['xcentroid'], self.found_stars['ycentroid']))
+        positions = np.transpose((self.found_stars['ycentroid'], self.found_stars['xcentroid']))
         
         tic = time.perf_counter()
     
@@ -1999,20 +2022,34 @@ class hst_photclass(jwst_photclass):
             raise RuntimeError('PSF only set up for level 2 at the moment.')
             
         if self.psf_model is None:
-            self.psf_model = space_phot.util.get_hst_psf_grid(obs,num_psfs=4)
-        obs.fast_psf(self.psf_model,positions)
+            self.psf_model = space_phot.util.get_hst_psf_grid(obs)
+        obs.fast_psf(self.psf_model,positions,psf_width=5,local_bkg=True)
         
         table_aper = obs.psf_result.phot_cal_table
-        
-        table_aper['xcentroid'] = obs.psf_result.phot_cal_table['y_fit']
-        table_aper['ycentroid'] = obs.psf_result.phot_cal_table['x_fit']
-        table_aper['x'] = obs.psf_result.phot_cal_table['y_fit']
-        table_aper['y'] = obs.psf_result.phot_cal_table['x_fit']
+        #for i in range(5):
+        import matplotlib.pyplot as plt
+        table_aper['psf_quality'] = np.abs([np.sum(obs.psf_result.resid_arr[i]/obs.psf_result.data_arr[i]) for i in range(len(obs.psf_result.data_arr))])
+        #plt.hist(table_aper['psf_quality'][table_aper['psf_quality']<100])
+        #plt.show()
+        #import matplotlib.pyplot as plt
+        #print(obs.psf_result['local_bkg'][0],obs.psf_result.phot_table[0])
+        #plt.imshow(obs.psf_result['data_arr'][0])
+        #plt.show()
+        #plt.imshow(obs.psf_result['fit_residuals'][0].reshape(5,5))
+        #print(list(obs.psf_result.keys()))
+        #for i in range(5):
+        #   obs.plot_psf_fit(fast_n=i)
+        #   plt.show()
+        #sys.exit()
+        table_aper['ycentroid'] = obs.psf_result.phot_cal_table['y_fit']
+        table_aper['xcentroid'] = obs.psf_result.phot_cal_table['x_fit']
+        table_aper['y'] = obs.psf_result.phot_cal_table['y_fit']
+        table_aper['x'] = obs.psf_result.phot_cal_table['x_fit']
         table_aper.remove_column('flux_fit')
         table_aper.remove_column('flux_err')
         table_aper.rename_column('fluxerr_cal','flux_err')
         table_aper.rename_column('flux_cal','flux')
-        
+        table_aper.rename_column('magerr','dmag')
             #if rad == self.radius_for_mag_px:
                 #table_aper['mag'] = -2.5 * np.log10(table_aper[self.colname('aper_sum_bkgsub',rad)])
                 #table_aper['dmag'] = 1.086 * (table_aper[self.colname('flux_err',rad)] / 
