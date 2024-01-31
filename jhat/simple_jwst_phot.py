@@ -291,6 +291,8 @@ def get_GAIA_sources(ra0,dec0,radius_deg,radius_factor=1.1,
     
     df = tb_gaia.to_pandas()
 
+    Table.from_pandas(df).write('Gaia_reference_catalog.txt',format='ascii')
+
     # renames columns from f'phot_{filt}_mean_mag' to f'{filt}'
     if rename_mag_colnames:
         for filt in ['g','bp','rp']:
