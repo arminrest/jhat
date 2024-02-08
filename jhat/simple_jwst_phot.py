@@ -528,8 +528,7 @@ class jwst_photclass(pdastrostatsclass):
         self.scihdr = self.im['SCI'].header
         #self.sci_wcs = wcs.WCS(self.scihdr)
         self.sci_wcs = self.dm.meta.wcs
-        print(self.sci_wcs(100,100))
-        sys.exit()
+        
         self.sip_wcs = wcs.WCS(self.scihdr)
         try:
             self.err = self.im['ERR'].data
