@@ -1056,7 +1056,7 @@ class jwst_photclass(pdastrostatsclass):
                     xshift=0.0,yshift=0.0):
         ixs = self.getindices(indices=indices)
 
-        #image_model = ImageModel(self.im)
+        image_model = ImageModel(self.im)
         
         #try:
         #    coord = self.sci_wcs.pixel_to_world(self.t.loc[ixs,xcol]+xshift, self.t.loc[ixs,ycol]+yshift)
