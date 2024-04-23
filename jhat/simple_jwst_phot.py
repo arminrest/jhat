@@ -851,16 +851,17 @@ class jwst_photclass(pdastrostatsclass):
         obs.fast_psf(self.psf_model,positions,psf_width=width,local_bkg=True)
         
         table_aper = obs.psf_result.phot_cal_table
-
+        print(table_aper.colnames)
         table_aper['ycentroid'] = obs.psf_result.phot_cal_table['y_fit']
         table_aper['xcentroid'] = obs.psf_result.phot_cal_table['x_fit']
         table_aper['y'] = obs.psf_result.phot_cal_table['y_fit']
         table_aper['x'] = obs.psf_result.phot_cal_table['x_fit']
         table_aper.remove_column('flux_fit')
         table_aper.remove_column('flux_err')
-        table_aper.rename_column('fluxerr_cal','flux_err')
-        table_aper.rename_column('flux_cal','flux')
+        table_aper.rename_column('fluxerr','flux_err')
         table_aper.rename_column('magerr','dmag')
+        
+        table_aper['psf_quality'] = np.abs([np.sum(obs.psf_result.resid_arr[i]/obs.psf_result.data_arr[i]) for i in range(len(obs.psf_result.data_arr))])
         
         
             #if rad == self.radius_for_mag_px:
@@ -2054,8 +2055,8 @@ class hst_photclass(jwst_photclass):
         table_aper['x'] = obs.psf_result.phot_cal_table['x_fit']
         table_aper.remove_column('flux_fit')
         table_aper.remove_column('flux_err')
-        table_aper.rename_column('fluxerr_cal','flux_err')
-        table_aper.rename_column('flux_cal','flux')
+        table_aper.rename_column('fluxerr','flux_err')
+        #table_aper.rename_column('flux_cal','flux')
         table_aper.rename_column('magerr','dmag')
             #if rad == self.radius_for_mag_px:
                 #table_aper['mag'] = -2.5 * np.log10(table_aper[self.colname('aper_sum_bkgsub',rad)])

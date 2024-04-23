@@ -65,6 +65,7 @@ def infoplots(phot,ixs_good,dy_plotlim=(-4,4),dx_plotlim=(-4,4)):
         phot.t.loc[phot.ixs_notuse].plot('sharpness','dmag',ax=sp[4],**plot_style['do_not_use_data'])
         phot.t.loc[phot.ixs_notuse].plot('sharpness','roundness1',ax=sp[5],**plot_style['do_not_use_data'])
 
+    
     if phot.ixs_use is not None:
         ixs_cut = AnotB(phot.ixs_use,ixs_good)
         phot.t.loc[ixs_cut].plot('y','dx',ax=sp[0],ylim=dx_plotlim, **plot_style['cut_data'])
@@ -117,7 +118,8 @@ def plot_rotated(phot,ixs,d_col,col,
     # add a buffer to the min and max values
     histolim[0]-=0.1*(maxval-minval)
     histolim[1]+=0.1*(maxval-minval)
-        
+
+
     if phot.ixs_notuse is not None:
         phot.t.loc[phot.ixs_notuse].plot(col,d_col_rot,ax=sp[spi[0]],**plot_style['do_not_use_data'])
     phot.t.loc[ixs].plot(col,d_col,ax=sp[spi[0]],ylim=histolim,title=title,**plot_style['cut_data'])
@@ -340,6 +342,7 @@ def find_binmax_for_slope(slope,phot,ixs,d_col,col,
     # get the histogram
     d_rotated = phot.t.loc[ixs,d_col_rot]
     bins = np.arange(np.min(d_rotated),np.max(d_rotated)+binsize,binsize)
+    
     if bin_weights_flag:
         histo = np.histogram(d_rotated,bins=bins,weights=phot.t.loc[ixs,'__weights'])
     else:
@@ -408,7 +411,7 @@ def find_binmax_for_slope(slope,phot,ixs,d_col,col,
 def rotate_d_and_find_binmax(phot,ixs,d_col,col,
                              Naxis_px, # Nx or Ny, depending on col
                              apply_rolling_gaussian=True,
-                             gaussian_sigma_px=0.22,
+                             gaussian_sigma_px=0.022,
                              d_col_rot='d_rot_tmp',
                              binsize=0.02,
                              bin_weights_flag=False,
@@ -583,6 +586,7 @@ def histogram_cut(phot,ixs,d_col,col,
                   Nfwhm=2.0,
                   rough_cut_px_min=None,
                   rough_cut_px_max=None,
+                  gaussian_sigma_px=0.2,
                   Nsigma=3.0,
                   showplots=0,
                   verbose=0,
@@ -608,6 +612,7 @@ def histogram_cut(phot,ixs,d_col,col,
                                                         slope_max=slope_max,
                                                         slope_stepsize=slope_stepsize,
                                                         showplots=showplots,
+                                                        gaussian_sigma_px=gaussian_sigma_px,
                                                         sp=sp,
                                                         verbose=verbose,
                                                         spi=[0,1,2,3,4])
@@ -743,6 +748,10 @@ class st_wcs_align:
             first rough cut: best d_rotated+-rough_cut_pix. This is the upper limit for rough_cut 
     d_rotated_Nsigma : float
             Nsigma for sigma cut of d_rotated. If 0.0, then 3-sigma cut is skipped 
+    gaussian_sigma_px: float
+        Nsigma for rolling gaussian fit to histogram
+    binsize_px: float
+        Bin size in pixels for histogram cuts
     """
     def __init__(self):
         self.verbose=0
@@ -761,7 +770,9 @@ class st_wcs_align:
         self.rough_cut_px_min=0.3
         self.rough_cut_px_max=0.8
 
-        self.d_rotated_Nsigma=3.0        
+        self.d_rotated_Nsigma=3.0     
+        self.gaussian_sigma_px=0.2
+        self.binsize_px=0.02
 
     def define_options(self,parser=None,usage=None,conflict_handler='resolve'):
         if parser is None:
@@ -848,7 +859,10 @@ class st_wcs_align:
         parser.add_argument('--rough_cut_px_min', default=0.3, type=float,help='first rough cut: best d_rotated+-rough_cut_pix. This is the lower limit for rough_cut (default=%(default)s)')
         parser.add_argument('--rough_cut_px_max', default=1.0, type=float,help='first rough cut: best d_rotated+-rough_cut_pix. This is the upper limit for rough_cut (default=%(default)s)')
         parser.add_argument('--d_rotated_Nsigma', default=3.0, type=float,help='Nsigma for sigma cut of d_rotated. If 0.0, then 3-sigma cut is skipped (default=%(default)s)')
-
+        parser.add_argument('--gaussian_sigma_px', default=0.2, type=float,help='Nsigma for rolling gaussian fit to histogram (default=%(default)s)')
+        parser.add_argument('--binsize_px', default=0.02, type=float,help='Histogram binsize (default=%(default)s)')
+        
+        
         return(parser)
     
     def set_telescope(self,telescope=None,imname=None):
@@ -1091,7 +1105,7 @@ class st_wcs_align:
                                  plots_dxdy_delta_pix_ylim=20,
                                  # histogram cut parameters
                                  histocut_order = 'dxdy', # this can only be 'dxdy' or 'dydx'
-                                 binsize_px = 0.2, # this is the binsize of the dx/dy histograms
+                                 binsize_px = 0.02, # this is the binsize of the dx/dy histograms
                                  bin_weights_flag=False,# If bin_weights_flag is set to True, 
                                                        #then the dx/dy bins are weighted by 
                                                        # the flux of the detection.
@@ -1184,6 +1198,7 @@ class st_wcs_align:
                                                 Nfwhm=Nfwhm,
                                                 rough_cut_px_min=self.rough_cut_px_min,
                                                 rough_cut_px_max=self.rough_cut_px_max,
+                                                gaussian_sigma_px=self.gaussian_sigma_px,
                                                 Nsigma=self.d_rotated_Nsigma,
                                                 showplots=show_histofit_plots,
                                                 verbose=self.verbose)
@@ -1198,6 +1213,7 @@ class st_wcs_align:
                                                 Nfwhm=Nfwhm,
                                                 rough_cut_px_min=self.rough_cut_px_min,
                                                 rough_cut_px_max=self.rough_cut_px_max,
+                                                gaussian_sigma_px=self.gaussian_sigma_px,
                                                 Nsigma=self.d_rotated_Nsigma,
                                                 showplots=show_histofit_plots,
                                                 verbose=self.verbose)
@@ -1327,12 +1343,20 @@ class st_wcs_align:
             #                        phot.t[refcat_deccol][i],unit=u.deg),oldwcs2)
             phot.t[refcat_xcol] = x1
             phot.t[refcat_ycol] = y1
-        else:
+        elif self.telescope.lower()=='hst':
             phot.t[refcat_xcol], phot.t[refcat_ycol] = skycoord_to_pixel(SkyCoord(phot.t[refcat_racol],
                 phot.t[refcat_deccol],unit=u.deg),imwcs)
             sc = pixel_to_skycoord(phot.t['x'],phot.t['y'],imwcs)
             phot.t['ra'] = sc.ra.value
             phot.t['dec'] = sc.dec.value
+        else:
+            image_model = datamodels.ImageModel(outputfits)
+            phot.t[refcat_xcol], phot.t[refcat_ycol] = image_model.meta.wcs.world_to_pixel(SkyCoord(phot.t[refcat_racol],
+                phot.t[refcat_deccol],unit=u.deg))
+            sc = image_model.meta.wcs.pixel_to_world(phot.t['x'],phot.t['y'])
+            phot.t['ra'] = sc.ra.value
+            phot.t['dec'] = sc.dec.value
+            
 
         # recalculate dx, dy
         phot.t['dx'] = phot.t[refcat_xcol] - phot.t['x']
@@ -1369,7 +1393,6 @@ class st_wcs_align:
 
         # show or save dxdy post WCS correction
         if showplots>=0 or saveplots:
-            print('should be plotting')
             dxdy_plot(phot, ixs_bestmatch,title='after WCS correction',
                       refcat_mainfilter=phot.refcat_mainfilter,
                       refcat_mainfilter_err=phot.refcat_mainfilter_err,
@@ -1496,7 +1519,12 @@ class st_wcs_align:
                 saveplots=0,
                 savephottable=0,
                 psf_model=None,
-                ee_radius=70):
+                ee_radius=70,
+                **kwargs):
+        
+        for k in kwargs.keys():
+            if k in self.__dict__.keys():
+                self.__dict__[k] = kwargs[k]
             
         # set self.outbasename based on option
         self.set_outbasename(outrootdir=outrootdir,outsubdir=outsubdir,inputname=input_image)
@@ -1569,7 +1597,8 @@ class st_wcs_align:
                                                      show_initial_plot=showplots,
                                                      show_histofit_plots=showplots,
                                                      savephottable=savephottable,
-                                                     outbasename=self.outbasename
+                                                     outbasename=self.outbasename,
+                                                     binsize_px=self.binsize_px
                                                      )     
         
         # If iterate with x/yshift
@@ -1606,7 +1635,8 @@ class st_wcs_align:
                                                          show_initial_plot=0,
                                                          show_histofit_plots=showplots,
                                                          savephottable=savephottable,
-                                                         outbasename=self.outbasename
+                                                         outbasename=self.outbasename,
+                                                         binsize_px=self.binsize_px
                                                          )     
 
         jhatfits = f'{self.outbasename}_jhat.fits'
