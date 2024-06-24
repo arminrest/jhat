@@ -50,7 +50,7 @@ from .pdastro import pdastroclass,pdastrostatsclass,makepath4file,unique,AnotB,A
 
 warnings.simplefilter('ignore')
 __all__ = ['jwst_photclass','hst_photclass']
-def hst_get_ee_corr(ap,filt,inst):
+def hst_get_ee_corr(ap,pxscale,filt,inst):
     if inst.lower()=='ir':
         if not os.path.exists('ir_ee_corrections.csv'):
             urllib.request.urlretrieve('https://www.stsci.edu/files/live/sites/www/files/home/hst/'+\
@@ -60,6 +60,7 @@ def hst_get_ee_corr(ap,filt,inst):
         
         ee = Table.read('ir_ee_corrections.csv',format='ascii')
         ee.rename_column('PIVOT','WAVELENGTH')
+     
     else:
         if not os.path.exists('wfc3uvis2_aper_007_syn.csv'):
             urllib.request.urlretrieve('https://www.stsci.edu/files/live/sites/www/files/home/hst/'+\
@@ -67,6 +68,23 @@ def hst_get_ee_corr(ap,filt,inst):
                                    'uvis-encircled-energy/_documents/wfc3uvis2_aper_007_syn.csv',
                                       'wfc3uvis2_aper_007_syn.csv')
         ee = Table.read('wfc3uvis2_aper_007_syn.csv',format='ascii')
+        if filt.upper() not in [x.upper() for x in ee['FILTER']]:
+            if not os.path.exists('bohlin2016_wfc_ee-1.txt'):
+                urllib.request.urlretrieve('https://www.stsci.edu/files/live/sites/www/files/home/hst/'+\
+                    'instrumentation/acs/data-analysis/aperture-corrections/_documents/'+\
+                    'bohlin2016_wfc_ee-1.txt','bohlin2016_wfc_ee-1.txt')
+            ee = Table.read('bohlin2016_wfc_ee-1.txt',format='ascii',data_start=1)
+            ee.rename_column('col1','FILTER')
+            ee['WAVELENGTH'] = [float(x[1:-1])*10 if len(x)==5 else float(x[1:-2])*10 for x in ee['FILTER']]
+            px_cols = [1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,20.0,40.0]
+            n = 0
+            for col in ee.colnames:
+                if col in ['FILTER',"WAVELENGTH"]:
+                    continue
+                ee.rename_column(col,'#'+str(pxscale*px_cols[n]))
+                n+=1
+
+
 
     filts = ee['FILTER']
     ee.remove_column('FILTER')
@@ -76,7 +94,7 @@ def hst_get_ee_corr(ap,filt,inst):
     apps = [float(x.split('#')[1]) for x in ee.colnames]
     interp = scipy.interpolate.interp2d(waves,apps,ee_arr)
     filt_wave = waves[np.where(filts==filt.upper())[0][0]]
-    return(interp(filt_wave,ap))
+    return(interp(filt_wave,ap*pxscale))
 
 def hst_get_zp(filt,zpsys='ab'):
     if zpsys.lower()=='ab':
@@ -2108,7 +2126,7 @@ class hst_photclass(jwst_photclass):
             inst = 'uvis'
         if radii_Nfwhm is not None:
             self.radii_px = radii_Nfwhm*self.dict_utils[self.instrument][self.filtername]['psf fwhm']
-        self.apcorr = hst_get_ee_corr(self.radii_px*self.pixel_scale,self.filtername,inst)
+        self.apcorr = hst_get_ee_corr(self.radii_px,self.pixel_scale,self.filtername,inst)
         self.radius_sky_in_px,self.radius_sky_out_px = self.radii_px*3,self.radii_px*5
 
         self.radii_px = [self.radii_px]
