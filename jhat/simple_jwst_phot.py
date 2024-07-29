@@ -1082,7 +1082,8 @@ class jwst_photclass(pdastrostatsclass):
         #except:
         #    coord = self.sip_wcs.pixel_to_world(self.t.loc[ixs,xcol]+xshift, self.t.loc[ixs,ycol]+yshift)
         detector_to_world = image_model.meta.wcs.get_transform('detector','world')
-        (self.t.loc[ixs,racol],self.t.loc[ixs,deccol]) = detector_to_world(self.t.loc[ixs,xcol], self.t.loc[ixs,ycol])
+        (self.t.loc[ixs,racol],self.t.loc[ixs,deccol]) = detector_to_world(self.t.loc[ixs,xcol]+xshift, 
+                                                                            self.t.loc[ixs,ycol]+yshift)
         #self.t.loc[ixs,racol] = coord.ra.degree
         #self.t.loc[ixs,deccol] = coord.dec.degree
 
@@ -2250,6 +2251,7 @@ class hst_photclass(jwst_photclass):
                     xshift=0.0,yshift=0.0):
         ixs = self.getindices(indices=indices)
         
+
         coord = self.sci_wcs.pixel_to_world(self.t.loc[ixs,xcol]+xshift, self.t.loc[ixs,ycol]+yshift)
         
         
