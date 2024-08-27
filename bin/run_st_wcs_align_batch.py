@@ -35,6 +35,12 @@ ixs_all = align_batch.getindices()
 if len(ixs_all)==0:
     print('NO IMAGES FOUND!! exiting...')
     sys.exit(0)
+
+if args.distortioncoeffs_dir is not None:
+    align_batch.get_distortioncoeff_files(args.distortioncoeffs_dir)
+    align_batch.match_distortioncoeffs(ixs_all)
+
+
     
 # get the output filenames
 ixs_exists,ixs_notexists = align_batch.get_output_filenames(ixs=ixs_all,
@@ -68,7 +74,6 @@ elif do_it.lower() in ['n','no']:
 else:
     print(f'Hmm, \'{do_it}\' is neither yes or no. Don\'t know what to do, so stopping ....')
     sys.exit(0)
-
 
 align_batch.align_wcs(ixs_todo,
                     overwrite = args.overwrite,

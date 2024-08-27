@@ -29,7 +29,8 @@ class align_wcs_batch(pdastroclass):
         self.filter_col = 'filter'
         self.pupil_col = 'pupil'
 
-        
+        self.distortionfiles = pdastroclass()        
+
         self.wcs_align = st_wcs_align()
 
     def define_options(self,parser=None,usage=None,conflict_handler='resolve'):
@@ -52,20 +53,20 @@ class align_wcs_batch(pdastroclass):
         parser.add_argument('--input_dir', default=inputdir, help='Directory in which the input images are located. If $JWST_INPUT_IMAGEDIR is defined, then this dir is taken as default (default=%(default)s)')
         parser.add_argument('--input_files', nargs='+', default=['*_cal.fits'], help='list of cal or rate file(pattern)s to which the distortion files are applied to. "input_dir" is used if not None (default=%(default)s)')
 
-        parser.add_argument('--outrootdir', default=outrootdir, help='output root directory. The output directoy is the output root directory + the outsubdir if not None.  If $JWST_OUTPUT_ROOTDIR is defined, then this dir is taken as default (default=%(default)s)')
-        parser.add_argument('--outsubdir', default=None, help='outsubdir added to output root directory (default=%(default)s)')
+        #parser.add_argument('--outrootdir', default=outrootdir, help='output root directory. The output directoy is the output root directory + the outsubdir if not None.  If $JWST_OUTPUT_ROOTDIR is defined, then this dir is taken as default (default=%(default)s)')
+        #parser.add_argument('--outsubdir', default=None, help='outsubdir added to output root directory (default=%(default)s)')
         parser.add_argument('--addfilter2outsubdir', default=False, action='store_true', help='add the filter to the outsubdir')
-        parser.add_argument('--overwrite', default=False, action='store_true', help='overwrite files if they exist.')
+        #parser.add_argument('--overwrite', default=False, action='store_true', help='overwrite files if they exist.')
 
         parser.add_argument('--skip_if_exists', default=False, action='store_true', help='Skip doing the analysis of a given input image if the cal file already exists, assuming the full analysis has been already done')
 
         parser.add_argument('-v','--verbose', default=0, action='count')
 
-        #parser.add_argument('--apertures', nargs='+', default=None, help='constrain the input file list to these apertures (default=%(default)s)')
         parser.add_argument('--detectors', nargs='+', default=None, help='constrain the input file list to these detectors (default=%(default)s)')
         parser.add_argument('--filters', nargs='+', default=None, help='constrain the input file list to these filters (default=%(default)s)')
         parser.add_argument('--pupils', nargs='+', default=None, help='constrain the input file list to these pupils (default=%(default)s)')
 
+        parser.add_argument('--distortioncoeffs_dir', default=None, help='Directory in which the distortion coefficients are. If directory is specified, then in this directory matching distortion files of the form <aperture>_<filter>_<pupil>.polycoeff.asdf (e.g., nrcb3_full_f187n_clear.polycoeff.asdf) are looked for and then applied before the WCS alignment.')
         
         parser.add_argument('-d','--debug', default=False, action='store_true',help='debug mode: alignment is done outside "try" block!')
 
@@ -145,15 +146,31 @@ class align_wcs_batch(pdastroclass):
         self.t['filename'] = self.get_files(filepatterns,directory=directory)
         ixs = self.getindices()
         for ix in ixs:
+            print(self.t.loc[ix,'filename'])
+            #print(fits.getheader(self.t.loc[ix,'filename']))
             hdr = fits.getheader(self.t.loc[ix,'filename'])
+            #print('CCCC',hdr['TELESCOP'],hdr['DETECTOR'],hdr["INSTRUME"],hdr["FILTER"],hdr["PUPIL"])
             detector = re.sub('long$','5',hdr['DETECTOR'].lower())
-            self.t.loc[ix,self.aperture_col]=f'{detector}_{hdr["SUBARRAY"].lower()}'
+            if hdr['TELESCOP'].lower()=='jwst':
+                self.t.loc[ix,self.aperture_col]=f'{detector}_{hdr["SUBARRAY"].lower()}'
+                self.t.loc[ix,'subarray']=f'{hdr["SUBARRAY"].lower()}'
+            elif hdr['TELESCOP'].lower()=='hst':
+                self.t.loc[ix,self.aperture_col]=f'{detector}'
+            else:
+                raise RuntimeError('Cannot identify the telescope {hdr["TELESCOP"]}! Must be hst or jwst!')
+            self.t.loc[ix,'telescope']=f'{hdr["TELESCOP"].lower()}'
             self.t.loc[ix,'detector']=f'{detector}'
             self.t.loc[ix,'instrument']=f'{hdr["INSTRUME"].lower()}'
-            self.t.loc[ix,'subarray']=f'{hdr["SUBARRAY"].lower()}'
             if self.t.loc[ix,'instrument']=='fgs':
                 self.t.loc[ix,self.filter_col]='clear'
                 self.t.loc[ix,self.pupil_col]='clear'
+            elif self.t.loc[ix,'instrument']=='acs':
+                f1=hdr["FILTER1"].lower()
+                f2=hdr["FILTER2"].lower()
+                if re.search('clear',f1) is not None:
+                    self.t.loc[ix,self.filter_col]=f'{f2}'
+                else:
+                    self.t.loc[ix,self.filter_col]=f'{f1}'
             else:   
                 self.t.loc[ix,self.filter_col]=f'{hdr["FILTER"].lower()}'
                 if "PUPIL" in hdr:
@@ -196,6 +213,61 @@ class align_wcs_batch(pdastroclass):
             print('### Input files:')
             self.write()
 
+    def get_distortioncoeff_files(self,coeffdir,filepatterns=['*.polycoeff.asdf']):
+        self.distortionfiles.t['filename'] = self.get_files(filepatterns,directory=coeffdir)
+        for ix in self.distortionfiles.getindices():
+            
+            # get the filter and save it in the 'filter' column
+            #m = re.search('^([a-zA-Z0-9]+_[a-zA-Z0-9]+)_(f[a-zA-Z0-9]+)_([a-zA-Z0-9]+)',os.path.basename(self.distortionfiles.t.loc[ix,'filename']))
+            #if m is None:
+            #    raise RuntimeError(f'could not parse filename {os.path.basename(self.distortionfiles.t.loc[ix,"filename"])} for aperture, filter and/or pupil!')
+            #aperture,filt,pupil = m.groups()
+
+            # nrcb3_full_f187n_clear.polycoeff.asdf
+
+            m0 = re.search('^([a-zA-Z0-9]+_[a-zA-Z0-9]+)\.polycoeff\.asdf',os.path.basename(self.distortionfiles.t.loc[ix,'filename']))
+            if m0 is not None:
+                aperture, = m0.groups()    
+                filt = pupil = 'clear'
+            else:
+                m1 = re.search('^([a-zA-Z0-9]+_[a-zA-Z0-9]+).*_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)\.polycoeff\.asdf',os.path.basename(self.distortionfiles.t.loc[ix,'filename']))
+                if m1 is not None:
+                    aperture,filt,pupil = m1.groups()        
+                else:
+                    raise RuntimeError(f'could not parse filename {os.path.basename(self.distortionfiles.t.loc[ix,"filename"])} for aperture, filter and/or pupil!')
+
+            m3 = re.search('(^[a-zA-Z0-9]+)',aperture)    
+            if m3 is not None:
+                detector =  m3.groups()[0]
+            else:
+                raise RuntimeError(f'could not parse aperture {aperture} for detector!')
+                
+
+            self.distortionfiles.t.loc[ix,self.aperture_col]=f'{aperture}'
+            self.distortionfiles.t.loc[ix,self.detector_col]=f'{detector}'
+            self.distortionfiles.t.loc[ix,self.filter_col]=f'{filt}'
+            self.distortionfiles.t.loc[ix,self.pupil_col]=f'{pupil}'
+        if self.verbose:
+            print('##################\n### Distortion files:')
+            ixs = self.distortionfiles.ix_sort_by_cols([self.filter_col,self.pupil_col,self.aperture_col])
+            self.distortionfiles.write(indices=ixs)
+
+    def match_distortioncoeffs(self, ixs):
+        for ix in ixs:
+            ixs_distcoeff = self.distortionfiles.getindices()
+            for col in [self.filter_col, self.pupil_col, self.aperture_col]:
+                ixs_distcoeff = self.distortionfiles.ix_equal(col, self.t.loc[ix,col], indices=ixs_distcoeff)
+            if len(ixs_distcoeff)==0:
+                raise RuntimeError(f'no distortion coefficient file found for {self.t.loc[ix,self.aperture_col]}, {self.t.loc[ix,self.filter_col]}, {self.t.loc[ix,self.pupil_col]}')
+            elif len(ixs_distcoeff)>1:
+                self.distortionfiles.write(indices=ixs_distcoeff)
+                raise RuntimeError(f'more than one distortion coefficient files found for {self.t.loc[ix,self.aperture_col]}, {self.t.loc[ix,self.filter_col]}, {self.t.loc[ix,self.pupil_col]}')
+            else:
+                self.t.loc[ix,'distcoefffile']=self.distortionfiles.t.loc[ixs_distcoeff[0],'filename']
+        self.write()
+        sys.exit(0)
+        return(0)
+        
     
     def align_wcs(self, ixs, 
                   outrootdir=None, 
@@ -264,12 +336,21 @@ class align_wcs_batch(pdastroclass):
             self.wcs_align.d_rotated_Nsigma = self.d_rotated_Nsigma
 
             outsubdir_filter = self.addfilter2outsubdir(outsubdir,addfilter2outsubdir,ix)            
+            
+            if telescope is None:
+                if "telescope" in self.t.columns:
+                    telescope4image = self.t.loc[ix,'telescope'].upper()
+                else:
+                    telescope4image = None
+            else:
+                telescope4image = telescope    
+            print(f'Telescope {telescope4image} for image {self.t.loc[ix,"filename"]}')
 
             # If debugging: just run one, outside the try block so that we can get real error messages
             if self.debug:
                 self.wcs_align.run_all(inputfile,
                                        #distortion_file=distfile,  
-                                       telescope = telescope,
+                                       telescope = telescope4image,
                                        outrootdir = outrootdir,
                                        outsubdir = outsubdir_filter,
                                        overwrite = overwrite,
@@ -312,7 +393,7 @@ class align_wcs_batch(pdastroclass):
                 try:
                     self.wcs_align.run_all(inputfile,
                                            #distortion_file=distfile,                     
-                                           telescope = telescope,
+                                           telescope = telescope4image,
                                            outrootdir = outrootdir,
                                            outsubdir = outsubdir_filter,
                                            overwrite = overwrite,

@@ -1586,6 +1586,11 @@ class st_wcs_align:
                                         initialize_only=initialize_refcat_only
                                         )
 
+        # Save the refcat entries!
+        refcatfilename = f'{self.outbasename}.refcat.txt'
+        print(f'Saving refcat file into {refcatfilename}')
+        self.phot.refcat.write(refcatfilename,overwrite=True)
+
         ixs_bestmatch= self.find_good_refcat_matches(ixs=ixs_use,
                                                      d2d_max = d2d_max,
                                                      delta_mag_lim = delta_mag_lim, # limits on mag-refcat_mainfilter
