@@ -49,7 +49,10 @@ from stsci.skypac import pamutils
 from .pdastro import pdastroclass,pdastrostatsclass,makepath4file,unique,AnotB,AorB,AandB,rmfile
 
 warnings.simplefilter('ignore')
+
 __all__ = ['jwst_photclass','hst_photclass']
+
+
 def hst_get_ee_corr(ap,pxscale,filt,inst):
     if inst.lower()=='ir':
         if not os.path.exists('ir_ee_corrections.csv'):
@@ -84,15 +87,13 @@ def hst_get_ee_corr(ap,pxscale,filt,inst):
                 ee.rename_column(col,'#'+str(pxscale*px_cols[n]))
                 n+=1
 
-
-
     filts = ee['FILTER']
     ee.remove_column('FILTER')
     waves = ee['WAVELENGTH']
     ee.remove_column('WAVELENGTH')
     ee_arr = np.array([ee[col] for col in ee.colnames])
     apps = [float(x.split('#')[1]) for x in ee.colnames]
-    interp = scipy.interpolate.interp2d(waves,apps,ee_arr)
+    interp = scipy.interpolate.RectBivariateSpline(waves, apps, ee_arr)
     filt_wave = waves[np.where(filts==filt.upper())[0][0]]
     return(interp(filt_wave,ap*pxscale))
 
