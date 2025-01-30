@@ -18,7 +18,7 @@ class jhattest(TestCommand):
 
 AUTHOR = 'Armin Rest & Justin Pierel'
 AUTHOR_EMAIL = 'arest@stsci.edu'
-VERSION = '0.2.0'
+VERSION = '0.2.3'
 LICENSE = ''
 URL = ''
 
