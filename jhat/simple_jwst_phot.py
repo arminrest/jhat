@@ -310,7 +310,8 @@ def get_GAIA_sources(ra0,dec0,radius_deg,radius_factor=1.1,
     df = tb_gaia.to_pandas()
     if ('SOURCE_ID' in df.columns) and ('source_id' not in df.columns):
         df = df.rename(columns={'SOURCE_ID': 'source_id'})
-    Table.from_pandas(df).write('Gaia_reference_catalog.txt',format='ascii',overwrite=True)
+
+    #Table.from_pandas(df).write('Gaia_reference_catalog.txt',format='ascii',overwrite=True)
 
     # renames columns from f'phot_{filt}_mean_mag' to f'{filt}'
     if rename_mag_colnames:
