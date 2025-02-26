@@ -1045,11 +1045,12 @@ class st_wcs_align:
         tweakreg.telescope = self.telescope
         tweakreg.run(cal_data)
 
-        if not os.path.isfile(outputfits) and not \
-            os.path.isfile(imfilename.replace('.fits','_tweakregstep.fits')):
-            raise RuntimeError(f'Image {outputfits} did not get created!!')
-        elif not os.path.isfile(outputfits):
-            os.rename(imfilename.replace('.fits','_tweakregstep.fits'),outputfits)
+        if not os.path.isfile(outputfits):
+            if not os.path.isfile(outputfits.replace('_jhat.fits','_tweakregstep.fits')):
+                raise RuntimeError(f'Image {outputfits} did not get created!!')
+            else:
+                os.rename(outputfits.replace('_jhat.fits','_tweakregstep.fits'),
+                        outputfits)
         if self.replace_sip and self.phot.pipeline_level==2:
             if self.telescope.lower()=='jwst':
                 print('replacing SIP',outputfits)
