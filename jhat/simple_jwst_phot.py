@@ -1093,9 +1093,9 @@ class jwst_photclass(pdastrostatsclass):
         table_aper['sharpness'] = self.found_stars['sharpness']
         table_aper['roundness1'] = self.found_stars['roundness1']
         table_aper['roundness2'] = self.found_stars['roundness2']
-        #table_aper = table_aper[~np.isnan(table_aper['mag'])]
-        table_aper['mag']=22
-        table_aper['dmag']=.01
+        table_aper = table_aper[~np.isnan(table_aper['mag'])]
+        #table_aper['mag']=22
+        #table_aper['dmag']=.01
         toc = time.perf_counter()
         if self.verbose:
             print("Time Elapsed:", toc - tic)
