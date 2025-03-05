@@ -48,6 +48,31 @@ from astropy.coordinates import SkyCoord, match_coordinates_sky
 from stsci.skypac import pamutils
 from .pdastro import pdastroclass,pdastrostatsclass,makepath4file,unique,AnotB,AorB,AandB,rmfile
 
+
+def create_pixregionfile(x,y,regionname,color,coords='image',radius=1):
+    if isinstance(radius,(int,float)):
+        radius = [radius]*len(x)
+    with open(regionname, 'w') as f:
+        if isinstance(color,str):
+            f.write('global color={0} dashlist=8 3 width=2 font=\"helvetica 10 normal roman\" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 inc\
+lude=1 source=1 \n'.format(color))
+            do_col = False
+        else:
+            do_col = True
+            f.write('global dashlist=8 3 width=2 font=\"helvetica 10 normal roman\" select=1 highlite=1 dash=0 fixed=0 edit=1 move=1 delete=1 include=1 sou\
+rce=1 \n')
+        f.write('%s \n'%coords)
+        for star in range(len(x)):
+            xval = x[star]
+            yval = y[star]
+            if do_col:
+                f.write('circle({ra},{dec},{radius}") # color={color}\n'.format(ra=xval, dec=yval,radius=radius[star],color=color[star]))
+            else:
+                f.write('circle({ra},{dec},{radius}")\n'.format(ra=xval, dec=yval,radius=radius[star]))
+
+#     return (ra_wcs,dec_wcs,flux)                                                                                                                          
+    f.close()
+
 warnings.simplefilter('ignore')
 __all__ = ['jwst_photclass','hst_photclass']
 def hst_get_ee_corr(ap,pxscale,filt,inst):
@@ -772,8 +797,8 @@ class jwst_photclass(pdastrostatsclass):
             if use_sextractor:
                 import sewpy
                 sew = sewpy.SEW(params=["X_IMAGE", "Y_IMAGE", "FLUX_RADIUS(3)", "FLAGS", "XPEAK_WORLD", "YPEAK_WORLD","CLASS_STAR"],
-                        config={"DETECT_MINAREA":5, "PHOT_FLUXFRAC":"0.3, 0.5, 0.8",'DETECT_THRESH':10,
-                                'BACKPHOTO_TYPE':'global'},loglevel=0)#,},,'FILTER_NAME':'gauss_2.0_5x5.conv'
+                        config={"DETECT_MINAREA":3, "PHOT_FLUXFRAC":"0.3, 0.5, 0.8",'DETECT_THRESH':10,
+                                'BACKPHOTO_TYPE':'local'},loglevel=0)#,},,'FILTER_NAME':'gauss_2.0_5x5.conv'
                                 
                 
 
@@ -784,7 +809,7 @@ class jwst_photclass(pdastrostatsclass):
                 
                 
                 centers = np.array([out['table']['X_IMAGE'],out['table']['Y_IMAGE']]).T
-                print('DETECTED',len(out['table']))
+                #print('DETECTED',len(out['table']))
                 self.found_stars = out['table']
                 self.found_stars['sharpness'] = .7
                 self.found_stars['roundness1'] = 0
@@ -792,11 +817,11 @@ class jwst_photclass(pdastrostatsclass):
                 
                 self.found_stars['xcentroid'] = self.found_stars['X_IMAGE']-1
                 self.found_stars['ycentroid'] = self.found_stars['Y_IMAGE']-1
-                print('BEFORE STAR CUT',len(self.found_stars))
+                #print('BEFORE STAR CUT',len(self.found_stars))
                 #self.found_stars = self.found_stars[self.found_stars['CLASS_STAR']>0.01]
-                print('AFTER STAR CUT',len(self.found_stars))
+                #print('AFTER STAR CUT',len(self.found_stars))
                 create_pixregionfile(out['table']['X_IMAGE'],out['table']['Y_IMAGE'],
-                'test.reg','red',coords='image',radius=.5)
+                    'test.reg','red',coords='image',radius=.5)
 
             else:
                 daofind = DAOStarFinder(threshold=threshold * std, fwhm=fwhm_psf, exclude_border=True)
@@ -1695,6 +1720,7 @@ class jwst_photclass(pdastrostatsclass):
                 temp_tab['DEC'] = temp_tab['dec']
             self.t = temp_tab.to_pandas()
             self.write(self.photfilename,indices=ixs_clean)
+            
         return(self.photfilename,photcat_loaded)
 
     def load_and_match_refcat(self,

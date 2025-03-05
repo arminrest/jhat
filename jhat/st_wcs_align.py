@@ -959,11 +959,17 @@ class st_wcs_align:
 
         if self.telescope.lower()=='jwst':
             tweakreg = TweakRegStep()
-            tweakreg.catfile = phot.photfilename
+            tweakreg.catfile = imfilename.replace('.fits','.tweakcat')
+
+            np.savetxt(imfilename.replace('.fits','.tweakcat'),np.atleast_2d([os.path.basename(imfilename),os.path.basename(phot.photcatname)]),
+                delimiter=" ", fmt="%s")
             tweakreg.abs_refcat = phot.refcatname
+            tweakreg.abs_minobj = 3
+            tweakreg.use_custom_catalogs = True
         else:
             tweakreg = tweakreg_hack.TweakRegStep()
             tweakreg.refcat = t
+
         if self.verbose: print(f'{len(ixs)} matches are passed to tweakreg {tweakreg.fitgeometry} fitting')
 
         if self.telescope.lower()=='jwst' or not self.phot.do_driz:
@@ -1241,14 +1247,23 @@ class st_wcs_align:
         #print(f'Saving {outbasename}.good.phot.txt')
         #import pdb
         #pdb.set_trace()
-        phot.refcatname = f'{outbasename}.goodmatches.phot.csv'
+        phot.refcatname = f'{outbasename}.goodmatches.ref.csv'
+        phot.photcatname = f'{outbasename}.goodmatches.phot.csv'
         phot_tab = Table.from_pandas(phot.t)
-        if 'RA' not in phot_tab.colnames:
-            phot_tab.rename_column(phot.refcat_racol,"RA")
-        if 'DEC' not in phot_tab.colnames:
-            phot_tab.rename_column(phot.refcat_deccol,'DEC')
+
+        #if 'RA' not in phot_tab.colnames:
+        phot_tab['RA'] = phot_tab['reffile_ra']
+        #if 'DEC' not in phot_tab.colnames:
+        phot_tab['DEC'] = phot_tab['reffile_dec']
         #phot.t = phot_tab.to_pandas()
-        phot_tab[np.array(ixs_cut2)].write(f'{outbasename}.goodmatches.phot.csv',format='ascii.csv',overwrite=True)#indices=ixs_cut2,verbose=1)
+        phot_tab[np.array(ixs_cut2)].write(f'{outbasename}.goodmatches.ref.csv',format='ascii.csv',overwrite=True)#indices=ixs_cut2,verbose=1)
+
+        phot_tab2 = Table.from_pandas(phot.t)
+        phot_tab2['RA'] = phot_tab2['ra']
+        phot_tab2['DEC'] = phot_tab2['dec']
+        #phot.t = phot_tab.to_pandas()
+        phot_tab2[np.array(ixs_cut2)].write(f'{outbasename}.goodmatches.phot.csv',format='ascii.csv',overwrite=True)#indices=ixs_cut2,verbose=1)
+
         if savephottable:
             #print(f'Saving {outbasename}.all.phot.txt')
             phot.write(f'{outbasename}.allmatches.phot.txt',verbose=1)
