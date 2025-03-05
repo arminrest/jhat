@@ -725,7 +725,7 @@ class jwst_photclass(pdastrostatsclass):
         
         
 
-    def find_stars(self, threshold=3, var_bkg=False, primaryhdr=None, scihdr=None,centers=None):
+    def find_stars(self, threshold=3, var_bkg=False, primaryhdr=None, scihdr=None,centers=None,use_sextractor=False):
         
         '''
         Parameters
@@ -768,16 +768,55 @@ class jwst_photclass(pdastrostatsclass):
         bool_mask = np.where(full_mask>0,True,False)
        
         self.data_bkgsub, std = self.calc_bkg(self.data, mask=bool_mask, var_bkg=var_bkg)
+        if centers is None:
+            if use_sextractor:
+                import sewpy
+                sew = sewpy.SEW(params=["X_IMAGE", "Y_IMAGE", "FLUX_RADIUS(3)", "FLAGS", "XPEAK_WORLD", "YPEAK_WORLD","CLASS_STAR"],
+                        config={"DETECT_MINAREA":5, "PHOT_FLUXFRAC":"0.3, 0.5, 0.8",'DETECT_THRESH':10,
+                                'BACKPHOTO_TYPE':'global'},loglevel=0)#,},,'FILTER_NAME':'gauss_2.0_5x5.conv'
+                                
+                
 
-        daofind = DAOStarFinder(threshold=threshold * std, fwhm=fwhm_psf, exclude_border=True,xycoords=centers)
-        self.found_stars = daofind(self.data_bkgsub, mask=bool_mask)
-        if self.found_stars is None and centers is not None:
-            tab = {'xcentroid':[x[0] for x in centers],
-                    'ycentroid':[y[1] for y in centers],
-                    'sharpness':[.7]*len(centers),
-                    'roundness1':[0]*len(centers),
-                    'roundness2':[0]*len(centers)}
-            self.found_stars = Table(tab)
+                self.data_bkgsub[self.mask>0] = np.nan
+                fits.HDUList([fits.PrimaryHDU(self.data_bkgsub)]).writeto('test.fits',overwrite=True)
+                out = sew('test.fits')
+                os.remove('test.fits')
+                
+                
+                centers = np.array([out['table']['X_IMAGE'],out['table']['Y_IMAGE']]).T
+                print('DETECTED',len(out['table']))
+                self.found_stars = out['table']
+                self.found_stars['sharpness'] = .7
+                self.found_stars['roundness1'] = 0
+                self.found_stars['roundness2'] = 0
+                
+                self.found_stars['xcentroid'] = self.found_stars['X_IMAGE']-1
+                self.found_stars['ycentroid'] = self.found_stars['Y_IMAGE']-1
+                print('BEFORE STAR CUT',len(self.found_stars))
+                #self.found_stars = self.found_stars[self.found_stars['CLASS_STAR']>0.01]
+                print('AFTER STAR CUT',len(self.found_stars))
+                create_pixregionfile(out['table']['X_IMAGE'],out['table']['Y_IMAGE'],
+                'test.reg','red',coords='image',radius=.5)
+
+            else:
+                daofind = DAOStarFinder(threshold=threshold * std, fwhm=fwhm_psf, exclude_border=True)
+                self.found_stars = daofind(self.data_bkgsub, mask=bool_mask)
+                #if self.found_stars is None and centers is not None:
+                #    tab = {'xcentroid':[x[0] for x in centers],
+                #            'ycentroid':[y[1] for y in centers],
+                #            'sharpness':[.7]*len(centers),
+                #            'roundness1':[0]*len(centers),
+                #            'roundness2':[0]*len(centers)}
+                #    self.found_stars = Table(tab)
+        else:
+            print(len(centers), 'Centers')
+            self.found_stars = Table([np.array(centers['x']),
+                                        np.array(centers['y']),
+                                        np.arange(0,len(centers),1).astype(int)],
+                                        names=['xcentroid','ycentroid','id'])
+            self.found_stars['sharpness'] = .7
+            self.found_stars['roundness1'] = 0
+            self.found_stars['roundness2'] = 0
 
 
 
@@ -1560,7 +1599,8 @@ class jwst_photclass(pdastrostatsclass):
                  Nbright4match=None,
                  xshift=0.0,# added to the x coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
                  yshift=0.0, # added to the y coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
-                 ee_radius=70):
+                 ee_radius=70,
+                 use_sextractor=False):
         if self.verbose:
             print(f'\n### Doing photometry on {imagename}')
         self.ee_radius = ee_radius
@@ -1604,9 +1644,9 @@ class jwst_photclass(pdastrostatsclass):
                 
                 ref = Table.read(sci_xy_catalog,format='ascii')
                 xycoords=np.atleast_2d([ref['x'],ref['y']]).T
-                self.find_stars(centers=xycoords, threshold = find_stars_threshold)
+                self.find_stars(centers=xycoords, threshold = find_stars_threshold,use_sextractor=use_sextractor)
             else:
-                self.find_stars(threshold = find_stars_threshold)
+                self.find_stars(threshold = find_stars_threshold,use_sextractor=use_sextractor)
             #aperture phot, saved in self.t
             if photometry_method == 'aperture':
                 self.aperture_phot()

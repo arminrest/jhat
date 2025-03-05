@@ -952,7 +952,7 @@ class st_wcs_align:
             
         if refcat_racol is None: refcat_racol = phot.refcat_racol
         if refcat_deccol is None: refcat_deccol = phot.refcat_deccol
-        if self.verbose: print(f'{len(ixs)} matches are passed to tweakreg {tweakreg.fitgeometry} fitting')
+        
         t =  Table.from_pandas(phot.t.loc[ixs,[xcol,ycol,refcat_racol,refcat_deccol]])
         #t.write(os.path.join(outdir,shortoutputfits.replace('.fits','_matched.txt')),format='ascii')
         
@@ -964,6 +964,7 @@ class st_wcs_align:
         else:
             tweakreg = tweakreg_hack.TweakRegStep()
             tweakreg.refcat = t
+        if self.verbose: print(f'{len(ixs)} matches are passed to tweakreg {tweakreg.fitgeometry} fitting')
 
         if self.telescope.lower()=='jwst' or not self.phot.do_driz:
             cal_image = datamodels.open(imfilename)
@@ -1121,8 +1122,8 @@ class st_wcs_align:
                                                        # the flux of the detection.
                                  slope_min=-10/2048.0, 
                                  slope_Nsteps = 200, # slope_max=-slope_min, slope_stepsize=(slope_max-slope_min)/slope_Nsteps
-                                 Nfwhm = 2.5 
-                                 ):
+                                 Nfwhm = 2.5, 
+                                 already_matched=False):
         if phot is None:
             phot=self.phot
             
@@ -1150,10 +1151,13 @@ class st_wcs_align:
             phot.t['delta_mag'] = np.nan
         
         # do some first very rough cuts on matches
-        ixs = np.arange(0,len(phot.t),1)#self.phot.initial_cut_matches(d2d_max=d2d_max,
-                                        #    delta_mag_lim = delta_mag_lim, # limits on mag-refcat_mainfilter
-                                        #    Nbright=Nbright,
-                                        #    ixs=ixs)
+        if not already_matched:
+            self.phot.initial_cut_matches(d2d_max=d2d_max,
+                                            delta_mag_lim = delta_mag_lim, # limits on mag-refcat_mainfilter
+                                            Nbright=Nbright,
+                                            ixs=ixs)
+        else:
+            ixs = np.arange(0,len(phot.t),1).astype(int)
         
         if len(ixs)<3:
             raise RuntimeError(f'Only {len(ixs)} objects pass the initial cut, at least 3 required!')
@@ -1199,7 +1203,7 @@ class st_wcs_align:
 
 
         # Do the histogram cut on the first dcol (dx or dy, as selected)
-        if False:
+        if not already_matched:
             (ixs_cut1,rot_results1) = histogram_cut(phot,ixs,d_col1,col1,Naxis1_px,
                                                     binsize=binsize_px,
                                                     bin_weights_flag=bin_weights_flag,
@@ -1543,6 +1547,7 @@ class st_wcs_align:
                 savephottable=0,
                 psf_model=None,
                 ee_radius=70,
+                use_sextractor=False,
                 **kwargs):
         
         for k in kwargs.keys():
@@ -1560,6 +1565,11 @@ class st_wcs_align:
             input_image = assignwcs_filename
         else:
             assignwcs_filename = None
+
+        if sci_xy_catalog is None:
+            already_matched = False
+        else:
+            already_matched = True
         
         # do the photometry
         self.phot.verbose = self.verbose
@@ -1577,7 +1587,8 @@ class st_wcs_align:
                                                                   sci_xy_catalog=sci_xy_catalog,
                                                                   psf_model=psf_model,
                                                                   photometry_method=photometry_method,
-                                                                  find_stars_threshold = find_stars_threshold)
+                                                                  find_stars_threshold = find_stars_threshold,
+                                                                  use_sextractor=use_sextractor)
         if (photfilename!=photfilename_4check):
             raise RuntimeError(f'BUG!!! {photfilename}!={photfilename_4check}')
             
@@ -1626,7 +1637,8 @@ class st_wcs_align:
                                                      show_histofit_plots=showplots,
                                                      savephottable=savephottable,
                                                      outbasename=self.outbasename,
-                                                     binsize_px=self.binsize_px
+                                                     binsize_px=self.binsize_px,
+                                                     already_matched=already_matched
                                                      )     
         
         # If iterate with x/yshift
@@ -1664,7 +1676,8 @@ class st_wcs_align:
                                                          show_histofit_plots=showplots,
                                                          savephottable=savephottable,
                                                          outbasename=self.outbasename,
-                                                         binsize_px=self.binsize_px
+                                                         binsize_px=self.binsize_px,
+                                                         already_matched=already_matched
                                                          )     
 
         jhatfits = f'{self.outbasename}_jhat.fits'
