@@ -1246,6 +1246,7 @@ class jwst_photclass(pdastrostatsclass):
         if refcatname.lower()=='gaia':
             self.refcat.t,self.refcat.racol,self.refcat.deccol = get_GAIA_sources(ra0,dec0,radius_deg,mjd=mjd,pm_median=pm_median)
             self.refcat.t['ID']=self.refcat.getindices()
+
         elif os.path.basename(refcatname)=='LMC_gaia_DR3.nrcposs':
             self.refcat.load_spacesep(refcatname)
             self.refcat.t['ID']=self.refcat.getindices()
@@ -1647,6 +1648,12 @@ class jwst_photclass(pdastrostatsclass):
         if self.photfilename is not None:
             if self.verbose:
                 print(f'Saving {self.photfilename}')
+            temp_tab = Table.from_pandas(self.t)
+            if 'RA' not in temp_tab.colnames:
+                temp_tab['RA'] = temp_tab['ra']
+            if 'DEC' not in temp_tab.colnames:
+                temp_tab['DEC'] = temp_tab['dec']
+            self.t = temp_tab.to_pandas()
             self.write(self.photfilename,indices=ixs_clean)
         return(self.photfilename,photcat_loaded)
 

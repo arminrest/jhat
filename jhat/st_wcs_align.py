@@ -9,6 +9,7 @@ Created on Thu Apr 21 14:32:42 2022
 import os,re,sys,copy,warnings
 #from jwst.tweakreg import TweakRegStep
 import tweakreg_hack
+
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,7 +19,7 @@ import astropy.io.fits as fits
 from jwst import datamodels
 from jwst.pipeline.calwebb_image2 import Image2Pipeline
 from jwst.assign_wcs import AssignWcsStep
-
+from jwst.tweakreg import TweakRegStep
 
 from .simple_jwst_phot import jwst_photclass,hst_photclass
 from .pdastro import *
@@ -951,8 +952,19 @@ class st_wcs_align:
             
         if refcat_racol is None: refcat_racol = phot.refcat_racol
         if refcat_deccol is None: refcat_deccol = phot.refcat_deccol
+        if self.verbose: print(f'{len(ixs)} matches are passed to tweakreg {tweakreg.fitgeometry} fitting')
+        t =  Table.from_pandas(phot.t.loc[ixs,[xcol,ycol,refcat_racol,refcat_deccol]])
+        #t.write(os.path.join(outdir,shortoutputfits.replace('.fits','_matched.txt')),format='ascii')
+        
 
-        tweakreg = tweakreg_hack.TweakRegStep()
+        if self.telescope.lower()=='jwst':
+            tweakreg = TweakRegStep()
+            tweakreg.catfile = phot.photfilename
+            tweakreg.abs_refcat = phot.refcatname
+        else:
+            tweakreg = tweakreg_hack.TweakRegStep()
+            tweakreg.refcat = t
+
         if self.telescope.lower()=='jwst' or not self.phot.do_driz:
             cal_image = datamodels.open(imfilename)
             tweakreg.do_driz = False
@@ -1023,10 +1035,7 @@ class st_wcs_align:
         
         tweakreg.already_matched = True
         # phot_cal.t.loc[ixs_cal_good] is the table with the good matches!
-        if self.verbose: print(f'{len(ixs)} matches are passed to tweakreg {tweakreg.fitgeometry} fitting')
-        t =  Table.from_pandas(phot.t.loc[ixs,[xcol,ycol,refcat_racol,refcat_deccol]])
-        #t.write(os.path.join(outdir,shortoutputfits.replace('.fits','_matched.txt')),format='ascii')
-        tweakreg.refcat = t
+        
         tweakreg.ref_racol = refcat_racol
         tweakreg.ref_deccol = refcat_deccol
         
@@ -1222,13 +1231,23 @@ class st_wcs_align:
         else:
             ixs_cut2 = np.arange(0,len(phot.t),1)
 
-
+        #import pdb
+        #pdb.set_trace()
+        #if savephottable or True:
+        #print(f'Saving {outbasename}.good.phot.txt')
+        #import pdb
+        #pdb.set_trace()
+        phot.refcatname = f'{outbasename}.goodmatches.phot.csv'
+        phot_tab = Table.from_pandas(phot.t)
+        if 'RA' not in phot_tab.colnames:
+            phot_tab.rename_column(phot.refcat_racol,"RA")
+        if 'DEC' not in phot_tab.colnames:
+            phot_tab.rename_column(phot.refcat_deccol,'DEC')
+        #phot.t = phot_tab.to_pandas()
+        phot_tab[np.array(ixs_cut2)].write(f'{outbasename}.goodmatches.phot.csv',format='ascii.csv',overwrite=True)#indices=ixs_cut2,verbose=1)
         if savephottable:
-            #print(f'Saving {outbasename}.good.phot.txt')
-            phot.write(f'{outbasename}.goodmatches.phot.txt',indices=ixs_cut2,verbose=1)
-            if savephottable>1:
-                #print(f'Saving {outbasename}.all.phot.txt')
-                phot.write(f'{outbasename}.allmatches.phot.txt',verbose=1)
+            #print(f'Saving {outbasename}.all.phot.txt')
+            phot.write(f'{outbasename}.allmatches.phot.txt',verbose=1)
 
         if show_histofit_plots>1:
             plt.tight_layout()
