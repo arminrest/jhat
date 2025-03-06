@@ -1525,6 +1525,8 @@ class jwst_photclass(pdastrostatsclass):
         #self.refcatshort = refcatshort
         #self.refcat_racol = None
         #self.refcat_deccol = None
+        self.ref_racol = f'{refcatshort}_ra'
+        self.ref_deccol = f'{refcatshort}_dec'
         for refcat_col in cols2copy:
             if not (refcat_col in self.refcat.t.columns):
                 raise RuntimeError(f'Trying to copy column {refcat_col}, but this column is not in {self.refcat.t.columns}')
@@ -2512,6 +2514,9 @@ class hst_photclass(jwst_photclass):
         #self.refcatshort = refcatshort
         #self.refcat_racol = None
         #self.refcat_deccol = None
+        self.ref_racol = f'{refcatshort}_ra'
+        self.ref_deccol = f'{refcatshort}_dec'
+
         for refcat_col in cols2copy:
             if not (refcat_col in self.refcat.t.columns):
                 raise RuntimeError(f'Trying to copy column {refcat_col}, but this column is not in {self.refcat.t.columns}')

@@ -961,7 +961,7 @@ class st_wcs_align:
             tweakreg = TweakRegStep()
             tweakreg.catfile = imfilename.replace('.fits','.tweakcat')
 
-            np.savetxt(imfilename.replace('.fits','.tweakcat'),np.atleast_2d([os.path.basename(imfilename),os.path.basename(phot.photcatname)]),
+            np.savetxt(imfilename.replace('.fits','.tweakcat'),np.atleast_2d([os.path.basename(imfilename),phot.photcatname]),
                 delimiter=" ", fmt="%s")
             tweakreg.abs_refcat = phot.refcatname
             tweakreg.abs_minobj = 3
@@ -1252,9 +1252,9 @@ class st_wcs_align:
         phot_tab = Table.from_pandas(phot.t)
 
         #if 'RA' not in phot_tab.colnames:
-        phot_tab['RA'] = phot_tab['reffile_ra']
+        phot_tab['RA'] = phot_tab[phot.ref_racol]
         #if 'DEC' not in phot_tab.colnames:
-        phot_tab['DEC'] = phot_tab['reffile_dec']
+        phot_tab['DEC'] = phot_tab[phot.ref_deccol]
         #phot.t = phot_tab.to_pandas()
         phot_tab[np.array(ixs_cut2)].write(f'{outbasename}.goodmatches.ref.csv',format='ascii.csv',overwrite=True)#indices=ixs_cut2,verbose=1)
 
