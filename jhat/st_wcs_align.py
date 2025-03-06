@@ -960,8 +960,11 @@ class st_wcs_align:
         if self.telescope.lower()=='jwst':
             tweakreg = TweakRegStep()
             tweakreg.catfile = imfilename.replace('.fits','.tweakcat')
-
-            np.savetxt(imfilename.replace('.fits','.tweakcat'),np.atleast_2d([os.path.basename(imfilename),phot.photcatname]),
+            os.rename(phot.photcatname,
+                os.path.join(os.path.dirname(imfilename),os.path.basename(phot.photcatname)))
+            phot.photcatname = os.path.join(os.path.dirname(imfilename),os.path.basename(phot.photcatname))
+            np.savetxt(imfilename.replace('.fits','.tweakcat'),np.atleast_2d([os.path.basename(imfilename),
+                                                                phot.photcatname]),
                 delimiter=" ", fmt="%s")
             tweakreg.abs_refcat = phot.refcatname
             tweakreg.abs_minobj = 3
@@ -1094,7 +1097,11 @@ class st_wcs_align:
         #print(gwcs_header)
         #imcat.meta['image_model'].wcs = astropy.wcs.WCS(header=gwcs_header)
         #make sure the image got created
-        
+        try:
+            os.remove(phot.photcatname)
+            os.remove(imfilename.replace('.fits','.tweakcat'))
+        except:
+            pass
 
         # return True means that tweakrun did run
         return(True,outputfits)
@@ -1247,7 +1254,7 @@ class st_wcs_align:
         #print(f'Saving {outbasename}.good.phot.txt')
         #import pdb
         #pdb.set_trace()
-        phot.refcatname = f'{outbasename}.goodmatches.ref.csv'
+        phot.refcatname = f'{outbasename}.goodmatches.csv'
         phot.photcatname = f'{outbasename}.goodmatches.phot.csv'
         phot_tab = Table.from_pandas(phot.t)
 
