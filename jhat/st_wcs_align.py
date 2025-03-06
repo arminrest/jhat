@@ -1263,7 +1263,7 @@ class st_wcs_align:
         #if 'DEC' not in phot_tab.colnames:
         phot_tab['DEC'] = phot_tab[phot.ref_deccol]
         #phot.t = phot_tab.to_pandas()
-        phot_tab[np.array(ixs_cut2)].write(f'{outbasename}.goodmatches.ref.csv',format='ascii.csv',overwrite=True)#indices=ixs_cut2,verbose=1)
+        phot_tab[np.array(ixs_cut2)].write(f'{outbasename}.goodmatches.csv',format='ascii.csv',overwrite=True)#indices=ixs_cut2,verbose=1)
 
         phot_tab2 = Table.from_pandas(phot.t)
         phot_tab2['RA'] = phot_tab2['ra']
