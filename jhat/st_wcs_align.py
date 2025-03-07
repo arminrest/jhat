@@ -964,7 +964,7 @@ class st_wcs_align:
                 os.path.join(os.path.dirname(imfilename),os.path.basename(phot.photcatname)))
             phot.photcatname = os.path.join(os.path.dirname(imfilename),os.path.basename(phot.photcatname))
             np.savetxt(imfilename.replace('.fits','.tweakcat'),np.atleast_2d([os.path.basename(imfilename),
-                                                                phot.photcatname]),
+                                                                os.path.basename(phot.photcatname)]),
                 delimiter=" ", fmt="%s")
             tweakreg.abs_refcat = phot.refcatname
             tweakreg.abs_minobj = 3
@@ -1263,13 +1263,13 @@ class st_wcs_align:
         #if 'DEC' not in phot_tab.colnames:
         phot_tab['DEC'] = phot_tab[phot.ref_deccol]
         #phot.t = phot_tab.to_pandas()
-        phot_tab[np.array(ixs_cut2)].write(f'{outbasename}.goodmatches.csv',format='ascii.csv',overwrite=True)#indices=ixs_cut2,verbose=1)
+        phot_tab[np.array(ixs_cut2)].write(phot.refcatname,format='ascii.csv',overwrite=True)#indices=ixs_cut2,verbose=1)
 
         phot_tab2 = Table.from_pandas(phot.t)
         phot_tab2['RA'] = phot_tab2['ra']
         phot_tab2['DEC'] = phot_tab2['dec']
         #phot.t = phot_tab.to_pandas()
-        phot_tab2[np.array(ixs_cut2)].write(f'{outbasename}.goodmatches.phot.csv',format='ascii.csv',overwrite=True)#indices=ixs_cut2,verbose=1)
+        phot_tab2[np.array(ixs_cut2)].write(phot.photcatname,format='ascii.csv',overwrite=True)#indices=ixs_cut2,verbose=1)
 
         if savephottable:
             #print(f'Saving {outbasename}.all.phot.txt')
