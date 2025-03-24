@@ -957,7 +957,7 @@ class st_wcs_align:
         #t.write(os.path.join(outdir,shortoutputfits.replace('.fits','_matched.txt')),format='ascii')
         
 
-        if self.telescope.lower()=='jwst':
+        if self.telescope.lower()=='jwst' and self.phot.pipeline_level==2:
             tweakreg = TweakRegStep()
             tweakreg.catfile = imfilename.replace('.fits','.tweakcat')
             os.rename(phot.photcatname,
