@@ -750,7 +750,8 @@ class jwst_photclass(pdastrostatsclass):
         
         
 
-    def find_stars(self, threshold=3, var_bkg=False, primaryhdr=None, scihdr=None,centers=None,use_sextractor=False):
+    def find_stars(self, threshold=3, var_bkg=False, primaryhdr=None, scihdr=None,centers=None,use_sextractor=False,
+        sexpath='sex',workdir=None):
         
         '''
         Parameters
@@ -798,7 +799,8 @@ class jwst_photclass(pdastrostatsclass):
                 import sewpy
                 sew = sewpy.SEW(params=["X_IMAGE", "Y_IMAGE", "FLUX_RADIUS(3)", "FLAGS", "XPEAK_WORLD", "YPEAK_WORLD","CLASS_STAR"],
                         config={"DETECT_MINAREA":3, "PHOT_FLUXFRAC":"0.3, 0.5, 0.8",'DETECT_THRESH':10,
-                                'BACKPHOTO_TYPE':'local'},loglevel=0)#,},,'FILTER_NAME':'gauss_2.0_5x5.conv'
+                                'BACKPHOTO_TYPE':'local'},
+                                sexpath=sexpath,workdir=sexworkdir)#,},,'FILTER_NAME':'gauss_2.0_5x5.conv'
                                 
                 
 
@@ -1627,7 +1629,8 @@ class jwst_photclass(pdastrostatsclass):
                  xshift=0.0,# added to the x coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
                  yshift=0.0, # added to the y coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
                  ee_radius=70,
-                 use_sextractor=False):
+                 use_sextractor=False,
+                 sexpath='sex',sexworkdir=None):
         if self.verbose:
             print(f'\n### Doing photometry on {imagename}')
         self.ee_radius = ee_radius
@@ -1671,9 +1674,11 @@ class jwst_photclass(pdastrostatsclass):
                 
                 ref = Table.read(sci_xy_catalog,format='ascii')
                 xycoords=np.atleast_2d([ref['x'],ref['y']]).T
-                self.find_stars(centers=xycoords, threshold = find_stars_threshold,use_sextractor=use_sextractor)
+                self.find_stars(centers=xycoords, threshold = find_stars_threshold,use_sextractor=use_sextractor,
+                    sexpath=sexpath,sexworkdir=sexworkdir)
             else:
-                self.find_stars(threshold = find_stars_threshold,use_sextractor=use_sextractor)
+                self.find_stars(threshold = find_stars_threshold,use_sextractor=use_sextractor,
+                    sexpath=sexpath,sexworkdir=sexworkdir)
             #aperture phot, saved in self.t
             if photometry_method == 'aperture':
                 self.aperture_phot()

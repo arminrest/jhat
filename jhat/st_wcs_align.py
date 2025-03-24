@@ -1570,6 +1570,8 @@ class st_wcs_align:
                 psf_model=None,
                 ee_radius=70,
                 use_sextractor=False,
+                sexpath='sex',
+                sexworkdir=None,
                 **kwargs):
         
         for k in kwargs.keys():
@@ -1610,7 +1612,8 @@ class st_wcs_align:
                                                                   psf_model=psf_model,
                                                                   photometry_method=photometry_method,
                                                                   find_stars_threshold = find_stars_threshold,
-                                                                  use_sextractor=use_sextractor)
+                                                                  use_sextractor=use_sextractor,
+                                                                  sexpath=sexpath,sexworkdir=sexworkdir)
         if (photfilename!=photfilename_4check):
             raise RuntimeError(f'BUG!!! {photfilename}!={photfilename_4check}')
             
