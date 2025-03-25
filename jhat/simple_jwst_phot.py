@@ -751,7 +751,7 @@ class jwst_photclass(pdastrostatsclass):
         
 
     def find_stars(self, threshold=3, var_bkg=False, primaryhdr=None, scihdr=None,centers=None,use_sextractor=False,
-        sexpath='sex',workdir=None):
+        sexpath='sex',sexworkdir=None):
         
         '''
         Parameters
