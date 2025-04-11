@@ -265,7 +265,6 @@ class align_wcs_batch(pdastroclass):
             else:
                 self.t.loc[ix,'distcoefffile']=self.distortionfiles.t.loc[ixs_distcoeff[0],'filename']
         self.write()
-        sys.exit(0)
         return(0)
         
     

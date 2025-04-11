@@ -1009,7 +1009,7 @@ class st_wcs_align:
         tweakreg.save_results = True
         # minimum number of objects required for fit
         tweakreg.save_catalogs = False
-        tweakreg.minobj = 4
+        tweakreg.minobj = 2
         
         # the following parameters should have not impact, since these steps in tweakreg are skipped
         if 1==1:
@@ -1145,8 +1145,8 @@ class st_wcs_align:
                                             Nbright=Nbright,
                                             ixs=ixs)
         
-        if len(ixs)<4:
-            raise RuntimeError(f'Only {len(ixs)} objects pass the initial cut, at least 3 required!')
+        if len(ixs)<2:
+            raise RuntimeError(f'Only {len(ixs)} objects pass the initial cut, at least 2 required!')
         
         # do the initial dx,dy plot and other important plots
         # it shows the initial cut.
