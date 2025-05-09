@@ -28,7 +28,7 @@ align_batch.d_rotated_Nsigma = args.d_rotated_Nsigma
 # get the input files
 align_batch.get_input_files(args.input_files,directory=args.input_dir,
                             detectors=args.detectors,
-                            filters=args.filters,pupils=args.pupils)
+                            filters=args.filters,pupils=args.pupils,subarrays=args.subarrays)
 
 ixs_all = align_batch.getindices()
 
@@ -79,6 +79,7 @@ align_batch.align_wcs(ixs_todo,
                     overwrite = args.overwrite,
                     outrootdir= args.outrootdir,
                     outsubdir = args.outsubdir,
+                    coron_info_file = args.coron_info_file,
                     addfilter2outsubdir = args.addfilter2outsubdir,
                     telescope = args.telescope,
                     #skip_applydistortions_if_exists=args.skip_applydistortions_if_exists,

@@ -19,10 +19,10 @@ wcs_align.d_rotated_Nsigma = args.d_rotated_Nsigma
 
 wcs_align.run_all(args.cal_image,
                  telescope = args.telescope,
-                 #distortion_file = args.distortion_file,
                  outrootdir = args.outrootdir,
                  outsubdir = args.outsubdir,
                  distortion_file = args.distortion_file,
+                 coron_info_file = args.coron_info_file,
                  overwrite = args.overwrite,
                  photometry_method = args.photometry_method,
                  find_stars_threshold = args.find_stars_threshold,
