@@ -32,6 +32,41 @@ plot_style['good_data']={'style':'o','color':'blue', 'ms':5 ,'alpha':0.5}
 plot_style['cut_data']={'style':'o','color':'red', 'ms':5 ,'alpha':0.3}
 plot_style['do_not_use_data']={'style':'o','color':'gray', 'ms':3 ,'alpha':0.3}
 
+def make_nircam_psf(detector: str, filt: str, pupil: str, npsf: int, date: str, save=True, outputdir='./psf_models'):
+    bla = nrc.load_wss_opd_by_date(date, plot=False)
+    #print('xxx',nrc)
+    #print(dir(nrc))
+    #print(vars(nrc))
+    #print(inspect.getmembers(bla))
+    #sys.exit(0)
+    """Get GriddedPSFModel for a given combination of nircam detector/optical element"""
+    detector = detector.upper()
+    detector = re.sub('LONG$','5',detector)
+    nrc.detector = detector
+
+    #if detector.lower() in ['along', 'blong']:
+    #    detector = detector.lower().replace('long', '5')
+    #nrc.detector = 'nrc'+detector.upper()
+
+    if pupil.upper() == 'CLEAR':
+        nrc.filter = filt.lower()
+    else:
+        nrc.filter = pupil.lower()
+
+    # Fix for known issue with F150W2
+    if filt == 'F150W2':
+        nrc.SHORT_WAVELENGTH_MAX = 2.5e-6
+
+    if save:
+        outfile = f'{outputdir}/{nrc.detector}_{nrc.filter}_fovp101_samp4_npsfs{npsf}.{date}.fits'
+        makepath4file(outfile)
+    else:
+        outfile = None
+    print(f'Getting PSF models for {nrc.detector} {nrc.filter}')
+    grid = nrc.psf_grid(num_psfs=npsf, all_detectors=False, save=save, outfile=outfile)
+    return grid
+
+
 def initplot(nrows=1, ncols=1, figsize4subplot=5, **kwargs):
     sp=[]
     xfigsize=figsize4subplot*ncols
@@ -807,7 +842,7 @@ class st_wcs_align:
 
         parser.add_argument('--telescope', default=None, help='If None, then telescope is determined automatically from the filename ("jw*" and "hst*" for JWST and HST, respectively) (default=%(default)s)')
 
-        parser.add_argument('--skip_if_exists', default=False, action='store_true', help='Skip doing the analysis of a given input image if the cal file already exists, assuming the full analysis has been already done')
+        parser.add_argument('--skip_if_exists', default=False, action='store_true', help='Skip doing the analysis of a given input image if the cal file already exists, assuming the full analysis has been already done (default=%(default)s)')
 
         parser.add_argument('-v','--verbose', default=0, action='count')
 
@@ -826,7 +861,7 @@ class st_wcs_align:
         parser.add_argument('--photfilename', default='auto', help='photometry output filename. if "auto", the fits in the image filename is substituted with phot.txt (default=%(default)s)')
 #        parser.add_argument('--photfilename', default='auto', help='photometry output filename. if "auto", the fits in the image filename is substituted with phot.txt (default=%(default)s)')
 
-        parser.add_argument('--photometry_method', default='aperture', choices=['aperture','psf'], help='photometry method (default=%(default)s)')
+        parser.add_argument('--photometry_method', default='aperture', choices=['aperture','psf','1pass'], help='photometry method (default=%(default)s)')
         parser.add_argument('--find_stars_threshold', default=3.0, type=float, help='Nsigma threshold used for the  photutils find_stars method (default=%(default)s)')
         parser.add_argument('--sci_xy_catalog', default=None, help='Pass a file with xy positions, which are used instead of the internal photometry x,y positions. The column names need to be called "x" and "y".')
 
@@ -863,6 +898,7 @@ class st_wcs_align:
         parser.add_argument('--gaussian_sigma_px', default=0.2, type=float,help='Nsigma for rolling gaussian fit to histogram (default=%(default)s)')
         parser.add_argument('--binsize_px', default=0.02, type=float,help='Histogram binsize (default=%(default)s)')
         
+        parser.add_argument('--coron_info_file', default=None, help='This file is usually called CoronInfo.txt and contains the information which xy windows to use for the coronographic astrometry (default=%(default)s)')
         
         return(parser)
     
@@ -1521,6 +1557,10 @@ class st_wcs_align:
         else:
             print(f'distortions {distortion_file} applied to {assignwcsfilename}!!')
         return(True,assignwcsfilename)
+    
+    def psfphot_1pass(self,ixs=None):
+        ixs=self.phot.get_indices(ixs)
+        
 
     def run_all(self,input_image,
                 telescope=None,
@@ -1528,6 +1568,7 @@ class st_wcs_align:
                 outsubdir = None,
                 overwrite = False,
                 distortion_file = None,
+                coron_info_file = None,
                 skip_if_exists = False,
                 #skip_applydistortions_if_exists = False,
                 use_dq=False,
@@ -1584,6 +1625,7 @@ class st_wcs_align:
         # set the telescope
         self.set_telescope(telescope=telescope,imname=input_image)
         
+        
         if distortion_file is not None:
             runflag,assignwcs_filename = self.apply_distortion_coefficients(input_image,distortion_file,outdir=os.path.dirname(self.outbasename))
             input_image = assignwcs_filename
@@ -1593,7 +1635,7 @@ class st_wcs_align:
         if sci_xy_catalog is None:
             already_matched = False
         else:
-            already_matched = True
+            already_matched = True           
         
         # do the photometry
         self.phot.verbose = self.verbose
@@ -1616,13 +1658,50 @@ class st_wcs_align:
                                                                   sexpath=sexpath,sexworkdir=sexworkdir)
         if (photfilename!=photfilename_4check):
             raise RuntimeError(f'BUG!!! {photfilename}!={photfilename_4check}')
+
+        print(f'DDD {self.phot.instrument} {self.phot.filtername} {self.phot.pupil} ggg {distortion_file}')
+        print(f'####### coron {coron_info_file}')
+        
+        ixs = self.phot.getindices()
+        # If coronography, check if only certain regions should be used!
+        if self.phot.instrument=='NIRCAM' and (re.search('^MASK',self.phot.pupil) is not None):
+            if coron_info_file is None:
+                raise RuntimeError(f'pupil={self.phot.pupil} means coronography, but no coronography info file got passed! This file is usually called CoronInfo.txt.')
+            coroninfo = pdastroclass()
+            coroninfo.load(coron_info_file)
+            ixs_coroninfo = coroninfo.ix_equal('apername',self.phot.aperture.lower())
+            ixs_coroninfo = coroninfo.ix_equal('filter',self.phot.filtername.lower(),indices=ixs_coroninfo)
+            ixs_coroninfo = coroninfo.ix_equal('pupil',self.phot.pupil.lower(),indices=ixs_coroninfo)
             
+            if len(ixs_coroninfo)>0:
+                if len(ixs_coroninfo)>1:
+                    coroninfo.write(indices=ixs_coroninfo)
+                    raise RuntimeError(f'More than one entrye to {self.phot.aperture.lower()} {self.phot.filtername.lower()} {self.phot.pupil.lower()} in {coron_info_file}!')
+                ix_coroninfo = ixs_coroninfo[0]
+                ixs = self.phot.ix_inrange('x',coroninfo.t.loc[ix_coroninfo,'xmin1'],coroninfo.t.loc[ix_coroninfo,'xmax1'])
+                ixs = self.phot.ix_inrange('y',coroninfo.t.loc[ix_coroninfo,'ymin1'],coroninfo.t.loc[ix_coroninfo,'ymax1'],indices=ixs)
+                
+                if coroninfo.t.loc[ix_coroninfo,'xmin2']!=np.nan:
+                    ixs_tmp = self.phot.ix_inrange('x',coroninfo.t.loc[ix_coroninfo,'xmin2'],coroninfo.t.loc[ix_coroninfo,'xmax2'])
+                    ixs_tmp = self.phot.ix_inrange('y',coroninfo.t.loc[ix_coroninfo,'ymin2'],coroninfo.t.loc[ix_coroninfo,'ymax2'],indices=ixs_tmp)
+                    ixs = np.concatenate((ixs,ixs_tmp),axis=0)
+            
+        
         # make the initial cut on the image photometry catalog on magnitudes, sharpness, roundness etc
         ixs_use = self.phot.initial_cut_photcat(dmag_max = dmag_max,
                                                 sharpness_lim = sharpness_lim, # sharpness limits
                                                 roundness1_lim = roundness1_lim, # roundness1 limits 
                                                 objmag_lim = objmag_lim, # limits on mag, the magnitude of the objects in the image
-                                                Nbright = Nbright)
+                                                Nbright = Nbright,
+                                                ixs=ixs)
+        
+        #self.psfphot_1pass(ixs=ixs_use[:10])
+
+
+
+        #print(f'DDD {self.phot.instrument} {self.phot.filtername} {self.phot.pupil}')
+        #sys.exit(0)
+
         
         # initialize an (existing!) matched refcat only, instead of loading
         # and matching the refcat for the following reasons:

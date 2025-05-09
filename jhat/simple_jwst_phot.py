@@ -1680,7 +1680,7 @@ class jwst_photclass(pdastrostatsclass):
                 self.find_stars(threshold = find_stars_threshold,use_sextractor=use_sextractor,
                     sexpath=sexpath,sexworkdir=sexworkdir)
             #aperture phot, saved in self.t
-            if photometry_method == 'aperture':
+            if photometry_method == 'aperture' or photometry_method == '1pass' :
                 self.aperture_phot()
                 psf_quality=None
             elif photometry_method == 'psf':

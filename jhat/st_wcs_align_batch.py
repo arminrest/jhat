@@ -28,6 +28,7 @@ class align_wcs_batch(pdastroclass):
         self.detector_col = 'detector'
         self.filter_col = 'filter'
         self.pupil_col = 'pupil'
+        self.subarray_col = 'subarray'
 
         self.distortionfiles = pdastroclass()        
 
@@ -58,13 +59,14 @@ class align_wcs_batch(pdastroclass):
         parser.add_argument('--addfilter2outsubdir', default=False, action='store_true', help='add the filter to the outsubdir')
         #parser.add_argument('--overwrite', default=False, action='store_true', help='overwrite files if they exist.')
 
-        parser.add_argument('--skip_if_exists', default=False, action='store_true', help='Skip doing the analysis of a given input image if the cal file already exists, assuming the full analysis has been already done')
+        parser.add_argument('--skip_if_exists', default=False, action='store_true', help='Skip doing the analysis of a given input image if the jhat file already exists, assuming the full analysis has been already done  (default=%(default)s)')
 
         parser.add_argument('-v','--verbose', default=0, action='count')
 
         parser.add_argument('--detectors', nargs='+', default=None, help='constrain the input file list to these detectors (default=%(default)s)')
         parser.add_argument('--filters', nargs='+', default=None, help='constrain the input file list to these filters (default=%(default)s)')
         parser.add_argument('--pupils', nargs='+', default=None, help='constrain the input file list to these pupils (default=%(default)s)')
+        parser.add_argument('--subarrays', nargs='+', default=None, help='constrain the input file list to these subarrays (default=%(default)s)')
 
         parser.add_argument('--distortioncoeffs_dir', default=None, help='Directory in which the distortion coefficients are. If directory is specified, then in this directory matching distortion files of the form <aperture>_<filter>_<pupil>.polycoeff.asdf (e.g., nrcb3_full_f187n_clear.polycoeff.asdf) are looked for and then applied before the WCS alignment.')
         
@@ -142,7 +144,7 @@ class align_wcs_batch(pdastroclass):
         return(filenames)
     
     
-    def get_input_files(self,filepatterns,directory=None,detectors=None,filters=None,pupils=None):
+    def get_input_files(self,filepatterns,directory=None,detectors=None,filters=None,pupils=None,subarrays=None):
         self.t['filename'] = self.get_files(filepatterns,directory=directory)
         ixs = self.getindices()
         for ix in ixs:
@@ -209,6 +211,13 @@ class align_wcs_batch(pdastroclass):
             print(f'### after pupils cut ({pupils}): {len(ixs_pupils)} input files left')
             self.t = self.t.loc[ixs_pupils]
             
+        if subarrays is not None:
+            ixs_subarrays = []
+            for subarray in subarrays:
+                ixs_subarrays.extend(self.ix_equal(self.subarray_col,subarray.lower()))
+            print(f'### after subarrays cut ({subarrays}): {len(ixs_subarrays)} input files left')
+            self.t = self.t.loc[ixs_subarrays]
+            
         if self.verbose>2:
             print('### Input files:')
             self.write()
@@ -271,6 +280,7 @@ class align_wcs_batch(pdastroclass):
     def align_wcs(self, ixs, 
                   outrootdir=None, 
                   outsubdir=None,
+                  coron_info_file = None,
                   addfilter2outsubdir=False,
                   overwrite = False,
                   skip_if_exists = False,
@@ -345,10 +355,16 @@ class align_wcs_batch(pdastroclass):
                 telescope4image = telescope    
             print(f'Telescope {telescope4image} for image {self.t.loc[ix,"filename"]}')
 
+            if 'distcoefffile' in self.t.columns:
+                distfile = self.t.loc[ix,"distcoefffile"]
+            else:
+                distfile = None
+
             # If debugging: just run one, outside the try block so that we can get real error messages
             if self.debug:
                 self.wcs_align.run_all(inputfile,
-                                       #distortion_file=distfile,  
+                                       distortion_file=distfile,  
+                                       coron_info_file = coron_info_file,
                                        telescope = telescope4image,
                                        outrootdir = outrootdir,
                                        outsubdir = outsubdir_filter,
@@ -391,7 +407,8 @@ class align_wcs_batch(pdastroclass):
             else:
                 try:
                     self.wcs_align.run_all(inputfile,
-                                           #distortion_file=distfile,                     
+                                           distortion_file=distfile,                     
+                                           coron_info_file = coron_info_file,
                                            telescope = telescope4image,
                                            outrootdir = outrootdir,
                                            outsubdir = outsubdir_filter,
