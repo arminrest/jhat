@@ -9,17 +9,12 @@ Created on Thu Apr 21 14:32:42 2022
 import os,re,sys,copy,warnings
 #from jwst.tweakreg import TweakRegStep
 import tweakreg_hack
-
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from astropy.table import Table
-import astropy.io.fits as fits
 
 from jwst import datamodels
-from jwst.pipeline.calwebb_image2 import Image2Pipeline
-from jwst.assign_wcs import AssignWcsStep
-from jwst.tweakreg import TweakRegStep
 
 from .simple_jwst_phot import jwst_photclass,hst_photclass
 from .pdastro import *
@@ -66,7 +61,6 @@ def infoplots(phot,ixs_good,dy_plotlim=(-4,4),dx_plotlim=(-4,4)):
         phot.t.loc[phot.ixs_notuse].plot('sharpness','dmag',ax=sp[4],**plot_style['do_not_use_data'])
         phot.t.loc[phot.ixs_notuse].plot('sharpness','roundness1',ax=sp[5],**plot_style['do_not_use_data'])
 
-    
     if phot.ixs_use is not None:
         ixs_cut = AnotB(phot.ixs_use,ixs_good)
         phot.t.loc[ixs_cut].plot('y','dx',ax=sp[0],ylim=dx_plotlim, **plot_style['cut_data'])
@@ -119,8 +113,7 @@ def plot_rotated(phot,ixs,d_col,col,
     # add a buffer to the min and max values
     histolim[0]-=0.1*(maxval-minval)
     histolim[1]+=0.1*(maxval-minval)
-
-
+        
     if phot.ixs_notuse is not None:
         phot.t.loc[phot.ixs_notuse].plot(col,d_col_rot,ax=sp[spi[0]],**plot_style['do_not_use_data'])
     phot.t.loc[ixs].plot(col,d_col,ax=sp[spi[0]],ylim=histolim,title=title,**plot_style['cut_data'])
@@ -343,7 +336,6 @@ def find_binmax_for_slope(slope,phot,ixs,d_col,col,
     # get the histogram
     d_rotated = phot.t.loc[ixs,d_col_rot]
     bins = np.arange(np.min(d_rotated),np.max(d_rotated)+binsize,binsize)
-    
     if bin_weights_flag:
         histo = np.histogram(d_rotated,bins=bins,weights=phot.t.loc[ixs,'__weights'])
     else:
@@ -412,7 +404,7 @@ def find_binmax_for_slope(slope,phot,ixs,d_col,col,
 def rotate_d_and_find_binmax(phot,ixs,d_col,col,
                              Naxis_px, # Nx or Ny, depending on col
                              apply_rolling_gaussian=True,
-                             gaussian_sigma_px=0.022,
+                             gaussian_sigma_px=0.22,
                              d_col_rot='d_rot_tmp',
                              binsize=0.02,
                              bin_weights_flag=False,
@@ -526,30 +518,17 @@ def sigmacut_d_rot(phot,ixs,
                    verbose=0,
                    spi=[0]):
 
-    if verbose:
-        print(f'\n####################\n### d_rotated cut (rough_cut_px={rough_cut_px} pixels, Nsigma={Nsigma})')
-
     ### recover the slope and intercept of the best binning
     phot.t[d_col_rot] = phot.t[d_col] - f(phot.t[col],slope,intercept)
     
     # Now make the rough cut! only keep data for with dx_rotated within  d_rot_bestguess+-rough_cut_px
     ixs_roughcut = phot.ix_inrange(d_col_rot,d_rot_bestguess-rough_cut_px,d_rot_bestguess+rough_cut_px,indices=ixs)
+    #d_rotated = phot.t.loc[ixs,d_col_rot]
     if verbose:
-        print(f'\nrough_cut_px={rough_cut_px} pixels removes {len(ixs)-len(ixs_roughcut)} from {len(ixs)} entries')
-    
-    
-   #if Nsigma is None or Nsigma==0.0:
-       # don't do percentile cut if there are no iterations!
-    #   percentile_cut_firstiteration = None
-        
+        print(f'\n####################\n### d_rotated cut (Nsigma={Nsigma})')
     if Nsigma is None or Nsigma==0.0:
-        if verbose:
-            print(f'Nisgma={Nsigma}, thus skipping Nsigma cut!')
-        return(ixs_roughcut,ixs_roughcut)
-        
-        
-        
-        
+        # don't do percentile cut if there are no iterations!
+        percentile_cut_firstiteration = None
     #ixs_clean4average = phot_clear.ix_inrange(d_col,0,3,indices=ixs_clear_cut)
     phot.calcaverage_sigmacutloop(d_col_rot,verbose=3,indices=ixs_roughcut,Nsigma=Nsigma,percentile_cut_firstiteration=percentile_cut_firstiteration)
     ixs_cut = phot.statparams['ix_good']
@@ -587,7 +566,6 @@ def histogram_cut(phot,ixs,d_col,col,
                   Nfwhm=2.0,
                   rough_cut_px_min=None,
                   rough_cut_px_max=None,
-                  gaussian_sigma_px=0.2,
                   Nsigma=3.0,
                   showplots=0,
                   verbose=0,
@@ -613,7 +591,6 @@ def histogram_cut(phot,ixs,d_col,col,
                                                         slope_max=slope_max,
                                                         slope_stepsize=slope_stepsize,
                                                         showplots=showplots,
-                                                        gaussian_sigma_px=gaussian_sigma_px,
                                                         sp=sp,
                                                         verbose=verbose,
                                                         spi=[0,1,2,3,4])
@@ -749,10 +726,6 @@ class st_wcs_align:
             first rough cut: best d_rotated+-rough_cut_pix. This is the upper limit for rough_cut 
     d_rotated_Nsigma : float
             Nsigma for sigma cut of d_rotated. If 0.0, then 3-sigma cut is skipped 
-    gaussian_sigma_px: float
-        Nsigma for rolling gaussian fit to histogram
-    binsize_px: float
-        Bin size in pixels for histogram cuts
     """
     def __init__(self):
         self.verbose=0
@@ -771,9 +744,7 @@ class st_wcs_align:
         self.rough_cut_px_min=0.3
         self.rough_cut_px_max=0.8
 
-        self.d_rotated_Nsigma=3.0     
-        self.gaussian_sigma_px=0.2
-        self.binsize_px=0.02
+        self.d_rotated_Nsigma=3.0        
 
     def define_options(self,parser=None,usage=None,conflict_handler='resolve'):
         if parser is None:
@@ -781,8 +752,6 @@ class st_wcs_align:
 
         #parser.add_argument('--rate_dir', default=ratedir, help='Directory in which the rate images are located, which will be used to test the distortions. (default=%(default)s)')
         parser.add_argument('cal_image',  help='cal.fits filename or any other image that is at a similar reduction stage.')
-        parser.add_argument('--distortion_file', default=None, help='apply distortion coefficients from given file to image before aligning the image (default=%(default)s)')
-
 
         parser = self.default_options(parser)
         return(parser)
@@ -813,7 +782,8 @@ class st_wcs_align:
 
         parser.add_argument('--SNR_min', default=None,type=float, help='mininum SNR for object in image to be used for analysis (default=%(default)s)')
 
-        parser.add_argument('--skip_use_dq', default=False, action='store_true', help='skip using the DQ extensions for masking')
+        parser.add_argument('--use_dq', default=False, action='store_true', help='use the DQ extensions for masking')
+
 
         parser.add_argument('--refcat', default='Gaia', help='reference catalog. Can be a filename or Gaia (default=%(default)s)')
         parser.add_argument('--refcat_racol', default=None, help='RA column of reference catalog. If None, then automatically determined (default=%(default)s)')
@@ -825,10 +795,6 @@ class st_wcs_align:
         parser.add_argument('--refcat_pmmedian', default=False, action='store_true', help='Apply the MEDIAN proper motion correction (only for catalogs it is applicable, e.g., gaia')
         parser.add_argument('--photfilename', default='auto', help='photometry output filename. if "auto", the fits in the image filename is substituted with phot.txt (default=%(default)s)')
 #        parser.add_argument('--photfilename', default='auto', help='photometry output filename. if "auto", the fits in the image filename is substituted with phot.txt (default=%(default)s)')
-
-        parser.add_argument('--photometry_method', default='aperture', choices=['aperture','psf'], help='photometry method (default=%(default)s)')
-        parser.add_argument('--find_stars_threshold', default=3.0, type=float, help='Nsigma threshold used for the  photutils find_stars method (default=%(default)s)')
-        parser.add_argument('--sci_xy_catalog', default=None, help='Pass a file with xy positions, which are used instead of the internal photometry x,y positions. The column names need to be called "x" and "y".')
 
         parser.add_argument('--load_photcat_if_exists', default=False, action='store_true', help='If the photometric catalog file already exists, skip recreating it.')
         parser.add_argument('--rematch_refcat', default=False, action='store_true', help='if --load_photcat_if_exists and the photcat already exists, load the photcat, but rematch with refcat')
@@ -843,7 +809,6 @@ class st_wcs_align:
         parser.add_argument('--slope_min', default=-0.008, type=float, help='minimum slope for linear correction applied to dx/dy. This effectively accounts for rotation. slopes go from slopemin to -slopemin (default=%(default)s)')
         parser.add_argument('--Nbright4match', default=None, type=int, help='Use only Nbright brightest objects for matching to the ref cat (default=%(default)s)')
         parser.add_argument('--Nbright', default=None, type=int, help='Use only Nbright brightest objects in image that are matched to refcat for alignment (default=%(default)s)')
-
         parser.add_argument('--histocut_order', default='dxdy', choices=['dxdy','dydx'], help='histocut_order defines whether the histogram cut is first done for dx or first for dy (default=%(default)s)')
         parser.add_argument('--xshift', default=0.0, type=float, help='added to the x coordinate before calculating ra,dec (only impacts ra,dec, not x). This can be used to correct for large shifts before matching! (default=%(default)s)')
         parser.add_argument('--yshift', default=0.0, type=float, help='added to the y coordinate before calculating ra,dec (only impacts ra,dec, not y). This can be used to correct for large shifts before matching! (default=%(default)s)')
@@ -852,18 +817,15 @@ class st_wcs_align:
         parser.add_argument('--saveplots', default=0, action='count',help='saveplots=1: most important plots. saveplots=2: all plots (debug/test/finetune)')
         parser.add_argument('-t','--savephottable', default=0, action='count',help='Save the final photometry table')
         parser.add_argument('--replace_sip', default=True, action='store_true',help='Replace the tweaked fits image wcs with the SIP representation.')
-        parser.add_argument('--sip_err', default=0.3, type=float,help='max_pix_error for SIP transformation.  (default=%(default)s)')
-        parser.add_argument('--sip_degree', default=3, type=int,help='degree for SIP transformation.  (default=%(default)s)')
-        parser.add_argument('--sip_points', default=128, type=int,help='npoints for SIP transformation.  (default=%(default)s)')
-        parser.add_argument('--ee_radius', default=70, type=int, help='encircled energy percentage (multiples of 10) for photometry.  (default=%(default)s)')
+        parser.add_argument('--sip_err', default=0.3, type=float,help='max_pix_error for SIP transformation.')
+        parser.add_argument('--sip_degree', default=3, type=int,help='degree for SIP transformation.')
+        parser.add_argument('--sip_points', default=128, type=int,help='npoints for SIP transformation.')
+        parser.add_argument('--ee_radius', default=70, type=int, help='encircled energy percentage (multiples of 10) for photometry')
         parser.add_argument('--is_hst', default=False, action='store_true', help='set if your image is from hst not jwst')
         parser.add_argument('--rough_cut_px_min', default=0.3, type=float,help='first rough cut: best d_rotated+-rough_cut_pix. This is the lower limit for rough_cut (default=%(default)s)')
         parser.add_argument('--rough_cut_px_max', default=1.0, type=float,help='first rough cut: best d_rotated+-rough_cut_pix. This is the upper limit for rough_cut (default=%(default)s)')
         parser.add_argument('--d_rotated_Nsigma', default=3.0, type=float,help='Nsigma for sigma cut of d_rotated. If 0.0, then 3-sigma cut is skipped (default=%(default)s)')
-        parser.add_argument('--gaussian_sigma_px', default=0.2, type=float,help='Nsigma for rolling gaussian fit to histogram (default=%(default)s)')
-        parser.add_argument('--binsize_px', default=0.02, type=float,help='Histogram binsize (default=%(default)s)')
-        
-        
+
         return(parser)
     
     def set_telescope(self,telescope=None,imname=None):
@@ -889,6 +851,7 @@ class st_wcs_align:
             self.replace_sip = True
         else:
             raise RuntimeError(f'unknown telescope {telescope}')
+        self.phot.verbose = self.verbose
         self.phot.ixs4use=None            
         if self.verbose: print(f'telescope set to {self.telescope}')
 
@@ -941,7 +904,7 @@ class st_wcs_align:
                 self.set_outdir()
             outdir=self.outdir
         
-
+        
 #        if (racol is None) or (deccol is None): 
 #            if refcat_short is None:
 #                refcat_short = phot.refcat.short
@@ -952,30 +915,9 @@ class st_wcs_align:
             
         if refcat_racol is None: refcat_racol = phot.refcat_racol
         if refcat_deccol is None: refcat_deccol = phot.refcat_deccol
-        
-        t =  Table.from_pandas(phot.t.loc[ixs,[xcol,ycol,refcat_racol,refcat_deccol]])
-        #t.write(os.path.join(outdir,shortoutputfits.replace('.fits','_matched.txt')),format='ascii')
-        
 
-        if self.telescope.lower()=='jwst' and self.phot.pipeline_level==2:
-            tweakreg = TweakRegStep()
-            tweakreg.catfile = imfilename.replace('.fits','.tweakcat')
-            os.rename(phot.photcatname,
-                os.path.join(os.path.dirname(imfilename),os.path.basename(phot.photcatname)))
-            phot.photcatname = os.path.join(os.path.dirname(imfilename),os.path.basename(phot.photcatname))
-            np.savetxt(imfilename.replace('.fits','.tweakcat'),np.atleast_2d([os.path.basename(imfilename),
-                                                                os.path.basename(phot.photcatname)]),
-                delimiter=" ", fmt="%s")
-            tweakreg.abs_refcat = phot.refcatname
-            tweakreg.abs_minobj = 3
-            tweakreg.use_custom_catalogs = True
-        else:
-            tweakreg = tweakreg_hack.TweakRegStep()
-            tweakreg.refcat = t
-
-        if self.verbose: print(f'{len(ixs)} matches are passed to tweakreg {tweakreg.fitgeometry} fitting')
-
-        if self.telescope.lower()=='jwst' or not self.phot.do_driz:
+        tweakreg = tweakreg_hack.TweakRegStep()
+        if self.telescope=='jwst' or not self.phot.do_driz:
             cal_image = datamodels.open(imfilename)
             tweakreg.do_driz = False
             tweakreg.input_file = imfilename
@@ -1022,7 +964,7 @@ class st_wcs_align:
 
         # It is important to set fitgeometry to rshift for level 2
         tweakreg.pipeline_level = self.phot.pipeline_level
-        if self.phot.pipeline_level==2 and not (self.telescope.lower()=='hst' and self.phot.do_driz):
+        if self.phot.pipeline_level==2 and not (self.telescope=='hst' and self.phot.do_driz):
             tweakreg.fitgeometry = 'rshift'
         else:    
             tweakreg.fitgeometry = 'general'
@@ -1031,21 +973,24 @@ class st_wcs_align:
         tweakreg.save_results = True
         # minimum number of objects required for fit
         tweakreg.save_catalogs = False
-        tweakreg.minobj = 2
+        tweakreg.minobj = 4
         
         # the following parameters should have not impact, since these steps in tweakreg are skipped
         if 1==1:
             tweakreg.snr_threshold = 50
             tweakreg.separation = 9
             tweakreg.searchrad = 0.5
-            tweakreg.min_gaia = 3
+            tweakreg.min_gaia = 30
             tweakreg.xoffset = 0
             tweakreg.yoffset = 0
             tweakreg.brightest = 4000        
         
         tweakreg.already_matched = True
         # phot_cal.t.loc[ixs_cal_good] is the table with the good matches!
-        
+        if self.verbose: print(f'{len(ixs)} matches are passed to tweakreg {tweakreg.fitgeometry} fitting')
+        t =  Table.from_pandas(phot.t.loc[ixs,[xcol,ycol,refcat_racol,refcat_deccol]])
+        #t.write(os.path.join(outdir,shortoutputfits.replace('.fits','_matched.txt')),format='ascii')
+        tweakreg.refcat = t
         tweakreg.ref_racol = refcat_racol
         tweakreg.ref_deccol = refcat_deccol
         
@@ -1064,25 +1009,19 @@ class st_wcs_align:
         tweakreg.telescope = self.telescope
         tweakreg.run(cal_data)
 
-        if not os.path.isfile(outputfits):
-            if not os.path.isfile(outputfits.replace('_jhat.fits','_tweakregstep.fits')):
-                raise RuntimeError(f'Image {outputfits} did not get created!!')
-            else:
-                os.rename(outputfits.replace('_jhat.fits','_tweakregstep.fits'),
-                        outputfits)
+        if not os.path.isfile(outputfits) and not \
+            os.path.isfile(outputfits.replace('jhat.fits','tweakregstep.fits')):
+            raise RuntimeError(f'Image {outputfits} did not get created!!')
+        elif not os.path.isfile(outputfits):
+            os.rename(outputfits.replace('jhat.fits','tweakregstep.fits'),outputfits)
         if self.replace_sip and self.phot.pipeline_level==2:
             if self.telescope.lower()=='jwst':
                 print('replacing SIP',outputfits)
                 dm = datamodels.open(outputfits)
-                try:
-                    gwcs_header = dm.meta.wcs.to_fits_sip(max_pix_error=self.sip_err,
-                                                          max_inv_pix_error=self.sip_err,
-                                                          degree=self.sip_degree,
-                                                          npoints=self.sip_points)
-                except Exception as error:
-                    print("An exception occurred:", type(error).__name__, "–", error) 
-                    print(f"NOTE: This exception is most likely caused because the uncertainty in the SIP conversion exceed {self.sip_err}. You can change this limit with --sip_err!")
-                    sys.exit(0)
+                gwcs_header = dm.meta.wcs.to_fits_sip(max_pix_error=self.sip_err,
+                                                       max_inv_pix_error=self.sip_err,
+                                                       degree=self.sip_degree,
+                                                       npoints=self.sip_points)
                 from astropy.io import fits
                 dm_fits = fits.open(outputfits)
                 dm_fits['SCI',1].header.update(gwcs_header)
@@ -1097,11 +1036,7 @@ class st_wcs_align:
         #print(gwcs_header)
         #imcat.meta['image_model'].wcs = astropy.wcs.WCS(header=gwcs_header)
         #make sure the image got created
-        try:
-            os.remove(phot.photcatname)
-            os.remove(imfilename.replace('.fits','.tweakcat'))
-        except:
-            pass
+        
 
         # return True means that tweakrun did run
         return(True,outputfits)
@@ -1129,14 +1064,14 @@ class st_wcs_align:
                                  plots_dxdy_delta_pix_ylim=20,
                                  # histogram cut parameters
                                  histocut_order = 'dxdy', # this can only be 'dxdy' or 'dydx'
-                                 binsize_px = 0.02, # this is the binsize of the dx/dy histograms
+                                 binsize_px = 0.2, # this is the binsize of the dx/dy histograms
                                  bin_weights_flag=False,# If bin_weights_flag is set to True, 
                                                        #then the dx/dy bins are weighted by 
                                                        # the flux of the detection.
                                  slope_min=-10/2048.0, 
                                  slope_Nsteps = 200, # slope_max=-slope_min, slope_stepsize=(slope_max-slope_min)/slope_Nsteps
-                                 Nfwhm = 2.5, 
-                                 already_matched=False):
+                                 Nfwhm = 2.5 
+                                 ):
         if phot is None:
             phot=self.phot
             
@@ -1164,16 +1099,13 @@ class st_wcs_align:
             phot.t['delta_mag'] = np.nan
         
         # do some first very rough cuts on matches
-        if not already_matched:
-            self.phot.initial_cut_matches(d2d_max=d2d_max,
+        ixs = self.phot.initial_cut_matches(d2d_max=d2d_max,
                                             delta_mag_lim = delta_mag_lim, # limits on mag-refcat_mainfilter
                                             Nbright=Nbright,
                                             ixs=ixs)
-        else:
-            ixs = np.arange(0,len(phot.t),1).astype(int)
         
-        if len(ixs)<2:
-            raise RuntimeError(f'Only {len(ixs)} objects pass the initial cut, at least 2 required!')
+        if len(ixs)<4:
+            raise RuntimeError(f'Only {len(ixs)} objects pass the initial cut, at least 3 required!')
         
         # do the initial dx,dy plot and other important plots
         # it shows the initial cut.
@@ -1216,64 +1148,40 @@ class st_wcs_align:
 
 
         # Do the histogram cut on the first dcol (dx or dy, as selected)
-        if not already_matched:
-            (ixs_cut1,rot_results1) = histogram_cut(phot,ixs,d_col1,col1,Naxis1_px,
-                                                    binsize=binsize_px,
-                                                    bin_weights_flag=bin_weights_flag,
-                                                    slope_min=slope_min,
-                                                    slope_max=slope_max,
-                                                    slope_stepsize=slope_stepsize,
-                                                    Nfwhm=Nfwhm,
-                                                    rough_cut_px_min=self.rough_cut_px_min,
-                                                    rough_cut_px_max=self.rough_cut_px_max,
-                                                    gaussian_sigma_px=self.gaussian_sigma_px,
-                                                    Nsigma=self.d_rotated_Nsigma,
-                                                    showplots=show_histofit_plots,
-                                                    verbose=self.verbose)
+        (ixs_cut1,rot_results1) = histogram_cut(phot,ixs,d_col1,col1,Naxis1_px,
+                                                binsize=binsize_px,
+                                                bin_weights_flag=bin_weights_flag,
+                                                slope_min=slope_min,
+                                                slope_max=slope_max,
+                                                slope_stepsize=slope_stepsize,
+                                                Nfwhm=Nfwhm,
+                                                rough_cut_px_min=self.rough_cut_px_min,
+                                                rough_cut_px_max=self.rough_cut_px_max,
+                                                Nsigma=self.d_rotated_Nsigma,
+                                                showplots=show_histofit_plots,
+                                                verbose=self.verbose)
 
-            # Do the histogram cut on the second dcol (dx or dy, as selected)
-            (ixs_cut2,rot_results2) = histogram_cut(phot,ixs_cut1,d_col2,col2,Naxis2_px,
-                                                    binsize=binsize_px,
-                                                    bin_weights_flag=bin_weights_flag,
-                                                    slope_min=slope_min,
-                                                    slope_max=slope_max,
-                                                    slope_stepsize=slope_stepsize,
-                                                    Nfwhm=Nfwhm,
-                                                    rough_cut_px_min=self.rough_cut_px_min,
-                                                    rough_cut_px_max=self.rough_cut_px_max,
-                                                    gaussian_sigma_px=self.gaussian_sigma_px,
-                                                    Nsigma=self.d_rotated_Nsigma,
-                                                    showplots=show_histofit_plots,
-                                                    verbose=self.verbose)
-        else:
-            ixs_cut2 = np.arange(0,len(phot.t),1)
+        # Do the histogram cut on the second dcol (dx or dy, as selected)
+        (ixs_cut2,rot_results2) = histogram_cut(phot,ixs_cut1,d_col2,col2,Naxis2_px,
+                                                binsize=binsize_px,
+                                                bin_weights_flag=bin_weights_flag,
+                                                slope_min=slope_min,
+                                                slope_max=slope_max,
+                                                slope_stepsize=slope_stepsize,
+                                                Nfwhm=Nfwhm,
+                                                rough_cut_px_min=self.rough_cut_px_min,
+                                                rough_cut_px_max=self.rough_cut_px_max,
+                                                Nsigma=self.d_rotated_Nsigma,
+                                                showplots=show_histofit_plots,
+                                                verbose=self.verbose)
 
-        #import pdb
-        #pdb.set_trace()
-        #if savephottable or True:
-        #print(f'Saving {outbasename}.good.phot.txt')
-        #import pdb
-        #pdb.set_trace()
-        phot.refcatname = f'{outbasename}.goodmatches.csv'
-        phot.photcatname = f'{outbasename}.goodmatches.phot.csv'
-        phot_tab = Table.from_pandas(phot.t)
-
-        #if 'RA' not in phot_tab.colnames:
-        phot_tab['RA'] = phot_tab[phot.ref_racol]
-        #if 'DEC' not in phot_tab.colnames:
-        phot_tab['DEC'] = phot_tab[phot.ref_deccol]
-        #phot.t = phot_tab.to_pandas()
-        phot_tab[np.array(ixs_cut2)].write(phot.refcatname,format='ascii.csv',overwrite=True)#indices=ixs_cut2,verbose=1)
-
-        phot_tab2 = Table.from_pandas(phot.t)
-        phot_tab2['RA'] = phot_tab2['ra']
-        phot_tab2['DEC'] = phot_tab2['dec']
-        #phot.t = phot_tab.to_pandas()
-        phot_tab2[np.array(ixs_cut2)].write(phot.photcatname,format='ascii.csv',overwrite=True)#indices=ixs_cut2,verbose=1)
 
         if savephottable:
-            #print(f'Saving {outbasename}.all.phot.txt')
-            phot.write(f'{outbasename}.allmatches.phot.txt',verbose=1)
+            #print(f'Saving {outbasename}.good.phot.txt')
+            phot.write(f'{outbasename}.goodmatches.phot.txt',indices=ixs_cut2,verbose=1)
+            if savephottable>1:
+                #print(f'Saving {outbasename}.all.phot.txt')
+                phot.write(f'{outbasename}.allmatches.phot.txt',verbose=1)
 
         if show_histofit_plots>1:
             plt.tight_layout()
@@ -1346,7 +1254,7 @@ class st_wcs_align:
         from astropy.wcs.utils import skycoord_to_pixel,pixel_to_skycoord
         from astropy import units as u
         imwcs = wcs.WCS(image_model['SCI',1],image_model)
-        if self.telescope.lower()=='hst' and self.phot.do_driz:
+        if self.telescope=='hst' and self.phot.do_driz:
             old_model = fits.open(self.phot.imagename)
             oldwcs1 = wcs.WCS(old_model['SCI',1],old_model)
             oldwcs2 = wcs.WCS(old_model['SCI',2],old_model)
@@ -1392,20 +1300,12 @@ class st_wcs_align:
             #                        phot.t[refcat_deccol][i],unit=u.deg),oldwcs2)
             phot.t[refcat_xcol] = x1
             phot.t[refcat_ycol] = y1
-        elif self.telescope.lower()=='hst':
+        else:
             phot.t[refcat_xcol], phot.t[refcat_ycol] = skycoord_to_pixel(SkyCoord(phot.t[refcat_racol],
                 phot.t[refcat_deccol],unit=u.deg),imwcs)
             sc = pixel_to_skycoord(phot.t['x'],phot.t['y'],imwcs)
             phot.t['ra'] = sc.ra.value
             phot.t['dec'] = sc.dec.value
-        else:
-            image_model = datamodels.ImageModel(outputfits)
-            phot.t[refcat_xcol], phot.t[refcat_ycol] = image_model.meta.wcs.world_to_pixel(SkyCoord(phot.t[refcat_racol],
-                phot.t[refcat_deccol],unit=u.deg))
-            sc = image_model.meta.wcs.pixel_to_world(phot.t['x'],phot.t['y'])
-            phot.t['ra'] = sc.ra.value
-            phot.t['dec'] = sc.dec.value
-            
 
         # recalculate dx, dy
         phot.t['dx'] = phot.t[refcat_xcol] - phot.t['x']
@@ -1442,6 +1342,7 @@ class st_wcs_align:
 
         # show or save dxdy post WCS correction
         if showplots>=0 or saveplots:
+            print('should be plotting')
             dxdy_plot(phot, ixs_bestmatch,title='after WCS correction',
                       refcat_mainfilter=phot.refcat_mainfilter,
                       refcat_mainfilter_err=phot.refcat_mainfilter_err,
@@ -1457,83 +1358,17 @@ class st_wcs_align:
                 plt.show()
             plt.close()
 
-    def apply_distortion_coefficients(self,input_image,distortion_file,outdir=None,
-                                      overwrite=True, skip_if_exists=False):
-        
-        scihdr = fits.getheader(input_image)
-        dummy_filename = f'{scihdr["APERNAME"].lower()}_{scihdr["FILTER"].lower()}_{scihdr["PUPIL"].lower()}.polycoeff.asdf'
-        if dummy_filename != os.path.basename(distortion_file):
-            print(f'\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!! WARNING! distortion file {os.path.basename(distortion_file)} is not as expected {dummy_filename}!'
-                  f' The image has aperture={scihdr["APERNAME"]}, filter={scihdr["FILTER"]}, and pupil={scihdr["PUPIL"]}, is that consistent with the distortion file???\n'
-                  '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
 
-        print(f'assigning WCS to file {input_image} using distortion file {distortion_file}')
-        step = AssignWcsStep()
-
-        if not os.path.isfile(input_image):
-            raise RuntimeError(f'image {input_image} does not exist')
-
-        if distortion_file.lower() == 'none':
-            print('WARNING!! not applying any distortion file!!')
-        else:
-            if re.search('\.asdf$',distortion_file) is None:
-                raise RuntimeError(f'distortion file {distortion_file} does not have .asdf suffix. asdf format required.')
-            if not os.path.isfile(distortion_file):
-                raise RuntimeError(f'distortion file {distortion_file} does not exist')
-            step.override_distortion = distortion_file
-
-        step.save_results = True
- 
-        if outdir is None:
-            outdir=os.path.dirname(input_image)
-        if self.verbose: print(f'Setting output directory for assignwcsstep.fits file to {outdir}')
-        
-        assignwcsfilename = re.sub('\_[a-zA-Z0-9]+\.fits$','_assignwcsstep.fits',os.path.basename(input_image))
-        if assignwcsfilename == os.path.basename(input_image):
-            raise RuntimeError('Could not get assignwcsstep filename from {os.path.basename(input_image)}!')
-        assignwcsfilename = f'{outdir}/{assignwcsfilename}'
-
-        
-        
-        step.output_dir = outdir
-        if not os.path.isdir(outdir):
-            makepath(outdir)
-
-        if os.path.isfile(assignwcsfilename):
-            if skip_if_exists:
-                # return False means that rate2cal did not run
-                print(f'Image {assignwcsfilename} already exists, skipping recreating it...')
-                return(False,assignwcsfilename)
-            else:
-                if overwrite:
-                    print(f'WARNING! {assignwcsfilename} exists, deleting it since "overwrite" is set!')
-                    # make sure cal frame is deleted
-                    rmfile(assignwcsfilename)
-                else:
-                    raise RuntimeError(f'Image {assignwcsfilename} already exists! exiting. If you want to overwrite or skip, you can use "overwrite" or "skip_if_exists"')
-                
-        print(f'Creating {assignwcsfilename}')
-        step.run(input_image)
-        
-        #make sure the image got created
-        if not os.path.isfile(assignwcsfilename):
-            raise RuntimeError(f'Image {assignwcsfilename} did not get created!!')
-        else:
-            print(f'distortions {distortion_file} applied to {assignwcsfilename}!!')
-        return(True,assignwcsfilename)
 
     def run_all(self,input_image,
                 telescope=None,
+                #distortion_file=None,
                 outrootdir = None,
                 outsubdir = None,
                 overwrite = False,
-                distortion_file = None,
                 skip_if_exists = False,
                 #skip_applydistortions_if_exists = False,
                 use_dq=False,
-                photometry_method='aperture',
-                find_stars_threshold = 3.0,
-                sci_xy_catalog=None,
                 # refcat parameters
                 refcatname = 'Gaia',
                 refcat_racol='auto',
@@ -1567,34 +1402,16 @@ class st_wcs_align:
                 showplots=0,
                 saveplots=0,
                 savephottable=0,
-                psf_model=None,
                 ee_radius=70,
-                use_sextractor=False,
-                sexpath='sex',
-                sexworkdir=None,
-                **kwargs):
-        
-        for k in kwargs.keys():
-            if k in self.__dict__.keys():
-                self.__dict__[k] = kwargs[k]
+                check_only=False,
+                photometry_method='aperture'                ):
             
         # set self.outbasename based on option
         self.set_outbasename(outrootdir=outrootdir,outsubdir=outsubdir,inputname=input_image)
         
         # set the telescope
         self.set_telescope(telescope=telescope,imname=input_image)
-        
-        if distortion_file is not None:
-            runflag,assignwcs_filename = self.apply_distortion_coefficients(input_image,distortion_file,outdir=os.path.dirname(self.outbasename))
-            input_image = assignwcs_filename
-        else:
-            assignwcs_filename = None
-
-        if sci_xy_catalog is None:
-            already_matched = False
-        else:
-            already_matched = True
-        
+            
         # do the photometry
         self.phot.verbose = self.verbose
         photfilename = f'{self.outbasename}.phot.txt'
@@ -1608,15 +1425,10 @@ class st_wcs_align:
                                                                   xshift=xshift,
                                                                   yshift=yshift,
                                                                   ee_radius=ee_radius,
-                                                                  sci_xy_catalog=sci_xy_catalog,
-                                                                  psf_model=psf_model,
-                                                                  photometry_method=photometry_method,
-                                                                  find_stars_threshold = find_stars_threshold,
-                                                                  use_sextractor=use_sextractor,
-                                                                  sexpath=sexpath,sexworkdir=sexworkdir)
+                                                                  photometry_method=photometry_method)
         if (photfilename!=photfilename_4check):
             raise RuntimeError(f'BUG!!! {photfilename}!={photfilename_4check}')
-            
+        
         # make the initial cut on the image photometry catalog on magnitudes, sharpness, roundness etc
         ixs_use = self.phot.initial_cut_photcat(dmag_max = dmag_max,
                                                 sharpness_lim = sharpness_lim, # sharpness limits
@@ -1645,11 +1457,6 @@ class st_wcs_align:
                                         initialize_only=initialize_refcat_only
                                         )
 
-        # Save the refcat entries!
-        refcatfilename = f'{self.outbasename}.refcat.txt'
-        print(f'Saving refcat file into {refcatfilename}')
-        self.phot.refcat.write(refcatfilename,overwrite=True)
-
         ixs_bestmatch= self.find_good_refcat_matches(ixs=ixs_use,
                                                      d2d_max = d2d_max,
                                                      delta_mag_lim = delta_mag_lim, # limits on mag-refcat_mainfilter
@@ -1661,9 +1468,7 @@ class st_wcs_align:
                                                      show_initial_plot=showplots,
                                                      show_histofit_plots=showplots,
                                                      savephottable=savephottable,
-                                                     outbasename=self.outbasename,
-                                                     binsize_px=self.binsize_px,
-                                                     already_matched=already_matched
+                                                     outbasename=self.outbasename
                                                      )     
         
         # If iterate with x/yshift
@@ -1700,19 +1505,31 @@ class st_wcs_align:
                                                          show_initial_plot=0,
                                                          show_histofit_plots=showplots,
                                                          savephottable=savephottable,
-                                                         outbasename=self.outbasename,
-                                                         binsize_px=self.binsize_px,
-                                                         already_matched=already_matched
+                                                         outbasename=self.outbasename
                                                          )     
 
+        if check_only:
+            dxdy_plot(self.phot, ixs_bestmatch,title='pre WCS correction',
+                      refcat_mainfilter=self.phot.refcat_mainfilter,
+                      refcat_mainfilter_err=self.phot.refcat_mainfilter_err,
+                      refcat_maincolor=self.phot.refcat_maincolor
+                     )
+            if saveplots:
+                outfilename = f'{outbasename}.phot.prewcs.png'
+                if os.path.isfile(outfilename):
+                    rmfile(outfilename)
+                if self.verbose:
+                    print(f'Saving {outfilename}')
+                plt.savefig(outfilename)
+            if showplots>0:
+                plt.show()
+            plt.close()
+            return(0)
         jhatfits = f'{self.outbasename}_jhat.fits'
         (runflag,jhatfits) = self.run_align2refcat(input_image,
                                                    outputfits=jhatfits,
                                                    ixs=ixs_bestmatch,
                                                    overwrite=overwrite,skip_if_exists=skip_if_exists)
-        if assignwcs_filename is not None:
-            rmfile(assignwcs_filename)
-        
         #if self.telescope.lower()=='jwst':
         self.update_phottable_final_wcs(jhatfits,
                                             ixs_bestmatch = ixs_bestmatch,
