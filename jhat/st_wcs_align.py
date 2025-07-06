@@ -861,7 +861,7 @@ class st_wcs_align:
         parser.add_argument('--photfilename', default='auto', help='photometry output filename. if "auto", the fits in the image filename is substituted with phot.txt (default=%(default)s)')
 #        parser.add_argument('--photfilename', default='auto', help='photometry output filename. if "auto", the fits in the image filename is substituted with phot.txt (default=%(default)s)')
 
-        parser.add_argument('--photometry_method', default='aperture', choices=['aperture','psf','1pass'], help='photometry method (default=%(default)s)')
+        parser.add_argument('--photometry_method', default='aperture', choices=['aperture','psf'], help='photometry method (default=%(default)s)')
         parser.add_argument('--find_stars_threshold', default=3.0, type=float, help='Nsigma threshold used for the  photutils find_stars method (default=%(default)s)')
         parser.add_argument('--sci_xy_catalog', default=None, help='Pass a file with xy positions, which are used instead of the internal photometry x,y positions. The column names need to be called "x" and "y".')
 
@@ -1299,11 +1299,17 @@ class st_wcs_align:
         #if 'DEC' not in phot_tab.colnames:
         phot_tab['DEC'] = phot_tab[phot.ref_deccol]
         #phot.t = phot_tab.to_pandas()
+        if 'ra' in phot_tab.colnames:
+            phot_tab.remove_column('ra')
+        if 'dec' in phot_tab.colnames:
+            phot_tab.remove_column('dec')
         phot_tab[np.array(ixs_cut2)].write(phot.refcatname,format='ascii.csv',overwrite=True)#indices=ixs_cut2,verbose=1)
 
         phot_tab2 = Table.from_pandas(phot.t)
         phot_tab2['RA'] = phot_tab2['ra']
         phot_tab2['DEC'] = phot_tab2['dec']
+        phot_tab2.remove_column('ra')
+        phot_tab2.remove_column('dec')
         #phot.t = phot_tab.to_pandas()
         phot_tab2[np.array(ixs_cut2)].write(phot.photcatname,format='ascii.csv',overwrite=True)#indices=ixs_cut2,verbose=1)
 
@@ -1558,9 +1564,6 @@ class st_wcs_align:
             print(f'distortions {distortion_file} applied to {assignwcsfilename}!!')
         return(True,assignwcsfilename)
     
-    def psfphot_1pass(self,ixs=None):
-        ixs=self.phot.get_indices(ixs)
-        
 
     def run_all(self,input_image,
                 telescope=None,
@@ -1695,8 +1698,6 @@ class st_wcs_align:
                                                 Nbright = Nbright,
                                                 ixs=ixs)
         
-        #self.psfphot_1pass(ixs=ixs_use[:10])
-
 
 
         #print(f'DDD {self.phot.instrument} {self.phot.filtername} {self.phot.pupil}')

@@ -87,6 +87,7 @@ def hst_get_ee_corr(ap,pxscale,filt,inst):
         ee.rename_column('PIVOT','WAVELENGTH')
      
     else:
+        #if inst.lower()=='uvis':
         if not os.path.exists('wfc3uvis2_aper_007_syn.csv'):
             urllib.request.urlretrieve('https://www.stsci.edu/files/live/sites/www/files/home/hst/'+\
                                    'instrumentation/wfc3/data-analysis/photometric-calibration/'+\
@@ -114,7 +115,11 @@ def hst_get_ee_corr(ap,pxscale,filt,inst):
     filts = ee['FILTER']
     ee.remove_column('FILTER')
     waves = ee['WAVELENGTH']
+    sort = np.argsort(waves)
     ee.remove_column('WAVELENGTH')
+    ee = ee[sort]
+    waves = waves[sort]
+
     ee_arr = np.array([ee[col] for col in ee.colnames])
     apps = [float(x.split('#')[1]) for x in ee.colnames]
     interp = scipy.interpolate.RectBivariateSpline(waves,apps,ee_arr.T)
@@ -805,10 +810,26 @@ class jwst_photclass(pdastrostatsclass):
                 
 
                 self.data_bkgsub[self.mask>0] = np.nan
-                fits.HDUList([fits.PrimaryHDU(self.data_bkgsub)]).writeto('test.fits',overwrite=True)
-                out = sew('test.fits')
-                os.remove('test.fits')
-                
+                fail = True
+                ntry = 10
+                n = 0
+                while fail and n<ntry:
+                    randint = np.random.randint(0,1e8)
+                    while os.path.exists('test_%i.fits'%randint):
+                        randint = np.random.randint(0,1e8)
+
+                    try:
+                        fits.HDUList([fits.PrimaryHDU(self.data_bkgsub)]).writeto('test_%i.fits'%randint,overwrite=True)
+                        out = sew('test_%i.fits'%randint)
+                        os.remove('test_%i.fits'%randint)
+                        fail = False
+                    except:
+                        n+=1
+                        pass
+                if fail:
+                    fits.HDUList([fits.PrimaryHDU(self.data_bkgsub)]).writeto('test_%i.fits'%randint,overwrite=True)
+                    out = sew('test_%i.fits'%randint)
+
                 
                 centers = np.array([out['table']['X_IMAGE'],out['table']['Y_IMAGE']]).T
                 #print('DETECTED',len(out['table']))
@@ -837,8 +858,10 @@ class jwst_photclass(pdastrostatsclass):
                 #    self.found_stars = Table(tab)
         else:
             print(len(centers), 'Centers')
-            self.found_stars = Table([np.array(centers['x']),
-                                        np.array(centers['y']),
+            #import pdb
+            #pdb.set_trace()
+            self.found_stars = Table([np.array(centers.T[0]),
+                                        np.array(centers.T[1]),
                                         np.arange(0,len(centers),1).astype(int)],
                                         names=['xcentroid','ycentroid','id'])
             self.found_stars['sharpness'] = .7
@@ -1090,7 +1113,7 @@ class jwst_photclass(pdastrostatsclass):
                 fluxerr = phot['aperture_sum_err']
 
 
-
+            
             phot['aper_sum_bkgsub']*=self.apcorr
             fluxerr*=self.apcorr
             flux_units = u.MJy / u.sr * (self.pixel_scale * u.arcsec)**2
@@ -1131,9 +1154,15 @@ class jwst_photclass(pdastrostatsclass):
 
         return table_aper
 
-    def clean_phottable(self,SNR_min=3.0,indices=None,psf_quality=None):
+    def clean_phottable(self,SNR_min=3.0,indices=None,psf_quality=None,remove_nans=True):
         # remove nans
-        ixs = self.ix_not_null(['mag','dmag'],indices=indices)
+        if remove_nans:
+            ixs = self.ix_not_null(['mag','dmag'],indices=indices)
+        elif indices is not None:
+            ixs = indices
+        else:
+            ixs = np.arange(0,len(self.t),1)
+
         if self.verbose:
             print(f'{len(ixs)} objects left after removing entries with NaNs in mag or dmag column')
         #self.write()
@@ -1630,7 +1659,7 @@ class jwst_photclass(pdastrostatsclass):
                  yshift=0.0, # added to the y coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
                  ee_radius=70,
                  use_sextractor=False,
-                 sexpath='sex',sexworkdir=None):
+                 sexpath='sex',sexworkdir=None,remove_nans=True):
         if self.verbose:
             print(f'\n### Doing photometry on {imagename}')
         self.ee_radius = ee_radius
@@ -1680,7 +1709,7 @@ class jwst_photclass(pdastrostatsclass):
                 self.find_stars(threshold = find_stars_threshold,use_sextractor=use_sextractor,
                     sexpath=sexpath,sexworkdir=sexworkdir)
             #aperture phot, saved in self.t
-            if photometry_method == 'aperture' or photometry_method == '1pass' :
+            if photometry_method == 'aperture':
                 self.aperture_phot()
                 psf_quality=None
             elif photometry_method == 'psf':
@@ -1690,7 +1719,7 @@ class jwst_photclass(pdastrostatsclass):
         else:
             psf_quality=None
         # get the indices of good stars
-        ixs_clean = self.clean_phottable(SNR_min=SNR_min,psf_quality=psf_quality)
+        ixs_clean = self.clean_phottable(SNR_min=SNR_min,psf_quality=psf_quality,remove_nans=remove_nans)
         if self.verbose:
             print(f'{len(ixs_clean)} out of {len(self.getindices())} entries remain in photometry table')
         if len(ixs_clean)<1:
@@ -1979,7 +2008,11 @@ class hst_photclass(jwst_photclass):
         self.instrument = self.primaryhdr['INSTRUME']
         if 'FILTER' in self.primaryhdr:
             self.filterkey = 'FILTER'
-            
+        elif 'FILTNAM1' in self.primaryhdr:
+            if 'CLEAR' not in self.primaryhdr['FILTNAM1']:
+                self.filterkey = 'FILTNAM1'
+            else:
+                self.filterkey = 'FILTNAM2'  
         elif 'CLEAR' not in self.primaryhdr['FILTER1']:
             self.filterkey = 'FILTER1'
         else:
@@ -2219,6 +2252,7 @@ class hst_photclass(jwst_photclass):
             inst = 'ir'
         except:
             inst = 'uvis'
+
         if radii_Nfwhm is not None:
             self.radii_px = radii_Nfwhm*self.dict_utils[self.instrument][self.filtername]['psf fwhm']
         self.apcorr = hst_get_ee_corr(self.radii_px,self.pixel_scale,self.filtername,inst)

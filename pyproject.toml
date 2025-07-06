@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jhat"
+version = "0.3.2"
+description = ""
+authors = [
+    { name = "Armin Rest & Justin Pierel", email = "arest@stsci.edu" }
+]
+license = { text = "" }
+readme = "README.md"
+requires-python = ">=3.0"
+dependencies = [
+    "argparse",
+    "numpy",
+    "matplotlib",
+    "astropy",
+    "jwst>=1.17",
+    "scipy",
+    "photutils",
+    "pysiaf",
+    "astroquery",
+    "pandas>=1.5",
+    "stsci.skypac",
+    "tweakreg_hack",
+    "tweakwcs>=0.8",
+    "pytest-astropy"
+]
+
+[project.urls]
+Homepage = "https://jhat.readthedocs.io/en/latest/"
+
+[tool.setuptools]
+packages = ["jhat"]  # Ensure this matches the actual package structure
+
+[tool.setuptools.dynamic]
+# This section can be used if additional files (like data files) are needed
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
