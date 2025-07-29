@@ -31,8 +31,8 @@ from one_pass_fitting import make_jwst_tweakreg_catfile, merge_catalogs, create_
 from one_pass_fitting.data_handlers import  NIRCamHandler
 from jwst.datamodels import ImageModel
 
-import webbpsf
-from webbpsf.utils import to_griddedpsfmodel
+#import webbpsf
+#from webbpsf.utils import to_griddedpsfmodel
 
 
 warnings.simplefilter('ignore')
@@ -1583,6 +1583,10 @@ class st_wcs_align:
                            pmax = 300,  # should be ignored
                            savePSF=False
                            ):
+        
+        import webbpsf
+        #from webbpsf.utils import to_griddedpsfmodel
+
         
         ixs=self.phot.getindices(ixs)
         print(f'#########\n### Doing 1pass photometry for {len(ixs)} objects\n')
