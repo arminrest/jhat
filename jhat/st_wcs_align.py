@@ -26,9 +26,9 @@ from jwst.tweakreg import TweakRegStep
 from .simple_jwst_phot import jwst_photclass,hst_photclass
 from .pdastro import *
 
-import one_pass_fitting
-from one_pass_fitting import make_jwst_tweakreg_catfile, merge_catalogs, create_image_handlers
-from one_pass_fitting.data_handlers import  NIRCamHandler
+#import one_pass_fitting
+#from one_pass_fitting import make_jwst_tweakreg_catfile, merge_catalogs, create_image_handlers
+#from one_pass_fitting.data_handlers import  NIRCamHandler
 from jwst.datamodels import ImageModel
 
 #import webbpsf
@@ -1585,6 +1585,8 @@ class st_wcs_align:
                            ):
         
         import webbpsf
+        import one_pass_fitting
+
         #from webbpsf.utils import to_griddedpsfmodel
 
         
