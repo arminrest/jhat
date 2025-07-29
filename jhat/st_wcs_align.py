@@ -15,6 +15,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from astropy.table import Table
 import astropy.io.fits as fits
+from astropy.time import Time
+import astropy.units as u
 
 from jwst import datamodels
 from jwst.pipeline.calwebb_image2 import Image2Pipeline
@@ -24,6 +26,15 @@ from jwst.tweakreg import TweakRegStep
 from .simple_jwst_phot import jwst_photclass,hst_photclass
 from .pdastro import *
 
+import one_pass_fitting
+from one_pass_fitting import make_jwst_tweakreg_catfile, merge_catalogs, create_image_handlers
+from one_pass_fitting.data_handlers import  NIRCamHandler
+from jwst.datamodels import ImageModel
+
+import webbpsf
+from webbpsf.utils import to_griddedpsfmodel
+
+
 warnings.simplefilter('ignore')
 __all__ = ['st_wcs_align']
 
@@ -32,7 +43,7 @@ plot_style['good_data']={'style':'o','color':'blue', 'ms':5 ,'alpha':0.5}
 plot_style['cut_data']={'style':'o','color':'red', 'ms':5 ,'alpha':0.3}
 plot_style['do_not_use_data']={'style':'o','color':'gray', 'ms':3 ,'alpha':0.3}
 
-def make_nircam_psf(detector: str, filt: str, pupil: str, npsf: int, date: str, save=True, outputdir='./psf_models'):
+def make_nircam_psf(nrc, detector: str, filt: str, pupil: str, npsf: int, date: str, save=True, outputdir='./psf_models'):
     bla = nrc.load_wss_opd_by_date(date, plot=False)
     #print('xxx',nrc)
     #print(dir(nrc))
@@ -1558,9 +1569,65 @@ class st_wcs_align:
             print(f'distortions {distortion_file} applied to {assignwcsfilename}!!')
         return(True,assignwcsfilename)
     
-    def psfphot_1pass(self,ixs=None):
-        ixs=self.phot.get_indices(ixs)
+    def psfphot_1pass_jwst(self,input_image, ixs=None, 
+                           num_psfs = 25, 
+                           #num_psfs = 4, 
+                           sky_in=10, sky_out=20, 
+                           fmin = 10,  # should be ignored
+                           pmax = 300,  # should be ignored
+                           savePSF=False
+                           ):
         
+        ixs=self.phot.getindices(ixs)
+        print(f'#########\n### Doing 1pass photometry for {len(ixs)} objects\n')
+
+        nrc = webbpsf.NIRCam()
+        
+        hdr = fits.getheader(input_image)
+        date = f'{hdr["DATE-OBS"]}T{hdr["TIME-OBS"]}'
+        
+        det = self.phot.detector
+        filt = self.phot.filtername
+        pupil = self.phot.pupil
+        
+        print(f'### Creating PSF model for date={date}, detector={det}, filter={filt}, pupil={pupil}')
+        if hdr["DATE-OBS"]>'2022-07-01' and hdr["DATE-OBS"]<'2022-07-30':
+            print('Testing the OPD since the date is close to 07/13/2022, in which a telescope jump occured!!')
+            psf_model_test = make_nircam_psf(nrc, det, filt, pupil, npsf=1, date=date, save=False)
+            if psf_model_test._meta["opd_file"][0] == 'R2022071302-NRCA3_FP1-1.fits':
+                date='2022-07-11T04:07:54.427'
+                print(f'WARNING: this image would by default use OPD file {psf_model_test._meta["opd_file"][0]}, but this is after a mirror segment jump event, and we therefore use instead the opd file associated with date={date}!')
+
+        psf_model = make_nircam_psf(nrc, det, filt, pupil, npsf=num_psfs, date=date, save=savePSF)
+        # set up the fitting
+        ophot = one_pass_fitting.OnePassPhot(psf_model, hmin=5, fmin=fmin, pmax=pmax, sky_in=10, sky_out=20)
+        # Load the image
+        mod = ImageModel(input_image)
+        
+        # do the fitting
+        t1 = Time.now()
+        output_file = None
+        input_catalog_filename_1pass = f'{self.outbasename}.1pass.input.txt'
+        self.phot.write(input_catalog_filename_1pass,indices=ixs)
+        output = ophot(mod.data, mod.meta.wcs, output_file, do_sat=False, 
+                       input_catalog=input_catalog_filename_1pass)
+        t2 = Time.now()
+        dt = t2 - t1
+        print('GGG',t1,t2,dt)
+        print('HHH',dt.to_value(u.min))
+
+        self.phot.t.loc[ixs,'x_1p'] = output['x']
+        self.phot.t.loc[ixs,'y_1p'] = output['y']
+        self.phot.t.loc[ixs,'m_1p'] = output['m']
+        self.phot.t.loc[ixs,'q_1p'] = output['q']
+        self.phot.t.loc[ixs,'s_1p'] = output['s']
+        self.phot.t.loc[ixs,'sat_1p'] = output['sat']
+        self.phot.t.loc[ixs,'x_old'] = self.phot.t.loc[ixs,'x']
+        self.phot.t.loc[ixs,'y_old'] = self.phot.t.loc[ixs,'y']
+        self.phot.t.loc[ixs,'x'] = self.phot.t.loc[ixs,'x_1p']
+        self.phot.t.loc[ixs,'y'] = self.phot.t.loc[ixs,'y_1p']
+
+        return(0)
 
     def run_all(self,input_image,
                 telescope=None,
@@ -1695,8 +1762,10 @@ class st_wcs_align:
                                                 Nbright = Nbright,
                                                 ixs=ixs)
         
-        #self.psfphot_1pass(ixs=ixs_use[:10])
-
+        print('f!@$#@#!$@#R#$%#@$%^$@#%^$#%^$#%^#$%^##$%^#$%^$#%^$#%^$%#$^#%')
+        #self.psfphot_1pass_jwst(input_image, ixs=ixs_use[:10])
+        if photometry_method=='1pass':
+            self.psfphot_1pass_jwst(input_image, ixs=ixs_use)
 
 
         #print(f'DDD {self.phot.instrument} {self.phot.filtername} {self.phot.pupil}')
