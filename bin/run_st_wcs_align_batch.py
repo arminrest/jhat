@@ -129,7 +129,7 @@ if args.condor:
         condor_dir = f'{args.outrootdir}/condor/{os.environ["USER"]}/{s_now}'
     else:
         condor_dir = args.condor_dir
-    condor_dir+='/{s_now}'
+    condor_dir+=f'/{s_now}'
     condor_dir = os.path.abspath(condor_dir)
     user = os.environ["USER"]
     if user == '': user = 'unknown'
