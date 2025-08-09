@@ -1706,15 +1706,19 @@ class jwst_photclass(pdastrostatsclass):
                 self.find_stars(centers=xycoords, threshold = find_stars_threshold,use_sextractor=use_sextractor,
                     sexpath=sexpath,sexworkdir=sexworkdir)
             else:
+                print('find_stars')
                 self.find_stars(threshold = find_stars_threshold,use_sextractor=use_sextractor,
                     sexpath=sexpath,sexworkdir=sexworkdir)
             #aperture phot, saved in self.t
-            if photometry_method == 'aperture':
+            if photometry_method in ['aperture','1pass']:
                 self.aperture_phot()
                 psf_quality=None
             elif photometry_method == 'psf':
                 self.psf_phot()
                 psf_quality= 25
+            else:
+                psf_quality=None
+                
 
         else:
             psf_quality=None

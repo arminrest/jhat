@@ -872,7 +872,7 @@ class st_wcs_align:
         parser.add_argument('--photfilename', default='auto', help='photometry output filename. if "auto", the fits in the image filename is substituted with phot.txt (default=%(default)s)')
 #        parser.add_argument('--photfilename', default='auto', help='photometry output filename. if "auto", the fits in the image filename is substituted with phot.txt (default=%(default)s)')
 
-        parser.add_argument('--photometry_method', default='aperture', choices=['aperture','psf'], help='photometry method (default=%(default)s)')
+        parser.add_argument('--photometry_method', default='aperture', choices=['aperture','psf','1pass'], help='photometry method (default=%(default)s)')
         parser.add_argument('--find_stars_threshold', default=3.0, type=float, help='Nsigma threshold used for the  photutils find_stars method (default=%(default)s)')
         parser.add_argument('--sci_xy_catalog', default=None, help='Pass a file with xy positions, which are used instead of the internal photometry x,y positions. The column names need to be called "x" and "y".')
 
@@ -1625,8 +1625,7 @@ class st_wcs_align:
                        input_catalog=input_catalog_filename_1pass)
         t2 = Time.now()
         dt = t2 - t1
-        print('GGG',t1,t2,dt)
-        print('HHH',dt.to_value(u.min))
+        print(f'1pass: {dt.to_value(u.min)} minutes to run.')
 
         self.phot.t.loc[ixs,'x_1p'] = output['x']
         self.phot.t.loc[ixs,'y_1p'] = output['y']
