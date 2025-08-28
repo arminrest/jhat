@@ -74,7 +74,7 @@ rce=1 \n')
     f.close()
 
 warnings.simplefilter('ignore')
-__all__ = ['jwst_photclass','hst_photclass']
+__all__ = ['jwst_photclass','hst_photclass','spitz_photclass']
 def hst_get_ee_corr(ap,pxscale,filt,inst):
     if inst.lower()=='ir':
         if not os.path.exists('ir_ee_corrections.csv'):
@@ -87,7 +87,6 @@ def hst_get_ee_corr(ap,pxscale,filt,inst):
         ee.rename_column('PIVOT','WAVELENGTH')
      
     else:
-        #if inst.lower()=='uvis':
         if not os.path.exists('wfc3uvis2_aper_007_syn.csv'):
             urllib.request.urlretrieve('https://www.stsci.edu/files/live/sites/www/files/home/hst/'+\
                                    'instrumentation/wfc3/data-analysis/photometric-calibration/'+\
@@ -115,11 +114,7 @@ def hst_get_ee_corr(ap,pxscale,filt,inst):
     filts = ee['FILTER']
     ee.remove_column('FILTER')
     waves = ee['WAVELENGTH']
-    sort = np.argsort(waves)
     ee.remove_column('WAVELENGTH')
-    ee = ee[sort]
-    waves = waves[sort]
-
     ee_arr = np.array([ee[col] for col in ee.colnames])
     apps = [float(x.split('#')[1]) for x in ee.colnames]
     interp = scipy.interpolate.RectBivariateSpline(waves,apps,ee_arr.T)
@@ -565,6 +560,8 @@ class jwst_photclass(pdastrostatsclass):
         parser.add_argument('--overwrite', default=False, action='store_true', help='overwrite files if they exist.')
         parser.add_argument('--ee_radius', default=70, type=int, help='encircled energy percentage (multiples of 10) for photometry')
         parser.add_argument('--is_hst', default=False, action='store_true', help='set if your image is from hst not jwst')
+        parser.add_argument('--is_spitz', default=False, action='store_true', help='set if your image is from spitz not jwst')
+
         parser.add_argument('-v','--verbose', default=0, action='count')
 
         return(parser)
@@ -755,8 +752,7 @@ class jwst_photclass(pdastrostatsclass):
         
         
 
-    def find_stars(self, threshold=3, var_bkg=False, primaryhdr=None, scihdr=None,centers=None,use_sextractor=False,
-        sexpath='sex',sexworkdir=None):
+    def find_stars(self, threshold=3, var_bkg=False, primaryhdr=None, scihdr=None, centers=None, use_sextractor=False, bool_mask=None):
         
         '''
         Parameters
@@ -794,47 +790,35 @@ class jwst_photclass(pdastrostatsclass):
         zero_mask = np.where(self.data == 0.0,1,0)
         nan_mask  = np.where(np.isnan(self.data),1,0)
         full_mask = np.bitwise_or(nan_mask,zero_mask)
-        if self.mask is not None: 
-             full_mask = np.bitwise_or(full_mask,self.mask)
-        bool_mask = np.where(full_mask>0,True,False)
+        if bool_mask is not None:
+            print(f"Boolean mask filename provided: {bool_mask}")
+        else:
+            print("No boolean mask filename provided.")
+            if self.mask is not None: 
+                full_mask = np.bitwise_or(full_mask,self.mask)
+            bool_mask = np.where(full_mask>0,True,False)
+        
        
         self.data_bkgsub, std = self.calc_bkg(self.data, mask=bool_mask, var_bkg=var_bkg)
         if centers is None:
             if use_sextractor:
                 import sewpy
                 sew = sewpy.SEW(params=["X_IMAGE", "Y_IMAGE", "FLUX_RADIUS(3)", "FLAGS", "XPEAK_WORLD", "YPEAK_WORLD","CLASS_STAR"],
-                        config={"DETECT_MINAREA":3, "PHOT_FLUXFRAC":"0.3, 0.5, 0.8",'DETECT_THRESH':10,
-                                'BACKPHOTO_TYPE':'local'},
-                                sexpath=sexpath,workdir=sexworkdir)#,},,'FILTER_NAME':'gauss_2.0_5x5.conv'
-                                
-                
+                        config={"DETECT_MINAREA":3, "PHOT_FLUXFRAC":"0.3, 0.5, 0.8",'DETECT_THRESH':0.1,
+                                'BACKPHOTO_TYPE':'local'},loglevel=0)#,},,'FILTER_NAME':'gauss_2.0_5x5.conv'
+                #sew = sewpy.SEW(params=["X_IMAGE", "Y_IMAGE", "FLUX_RADIUS(3)", "FLAGS", "XPEAK_WORLD", "YPEAK_WORLD"],
+                #        config={"DETECT_MINAREA":3, 'DETECT_THRESH':"35,27",'ANALYSIS_THRESH':"35,27",
+                #                'BACKPHOTO_TYPE':'local','PIXEL_SCALE':0.6},loglevel=0)#,},,'FILTER_NAME':'gauss_2.0_5x5.conv'
 
                 self.data_bkgsub[self.mask>0] = np.nan
-                fail = True
-                ntry = 10
-                n = 0
-                while fail and n<ntry:
-                    randint = np.random.randint(0,1e8)
-                    while os.path.exists('test_%i.fits'%randint):
-                        randint = np.random.randint(0,1e8)
-
-                    try:
-                        fits.HDUList([fits.PrimaryHDU(self.data_bkgsub)]).writeto('test_%i.fits'%randint,overwrite=True)
-                        out = sew('test_%i.fits'%randint)
-                        os.remove('test_%i.fits'%randint)
-                        fail = False
-                    except:
-                        n+=1
-                        pass
-                if fail:
-                    fits.HDUList([fits.PrimaryHDU(self.data_bkgsub)]).writeto('test_%i.fits'%randint,overwrite=True)
-                    out = sew('test_%i.fits'%randint)
-
+                fits.HDUList([fits.PrimaryHDU(self.data_bkgsub)]).writeto('test.fits',overwrite=True)
+                out = sew('test.fits')
+                os.remove('test.fits')                
                 
                 centers = np.array([out['table']['X_IMAGE'],out['table']['Y_IMAGE']]).T
                 #print('DETECTED',len(out['table']))
                 self.found_stars = out['table']
-                self.found_stars['sharpness'] = .7
+                self.found_stars['sharpness'] = .6
                 self.found_stars['roundness1'] = 0
                 self.found_stars['roundness2'] = 0
                 
@@ -849,6 +833,7 @@ class jwst_photclass(pdastrostatsclass):
             else:
                 daofind = DAOStarFinder(threshold=threshold * std, fwhm=fwhm_psf, exclude_border=True)
                 self.found_stars = daofind(self.data_bkgsub, mask=bool_mask)
+                #print(self.found_stars)
                 #if self.found_stars is None and centers is not None:
                 #    tab = {'xcentroid':[x[0] for x in centers],
                 #            'ycentroid':[y[1] for y in centers],
@@ -858,10 +843,8 @@ class jwst_photclass(pdastrostatsclass):
                 #    self.found_stars = Table(tab)
         else:
             print(len(centers), 'Centers')
-            #import pdb
-            #pdb.set_trace()
-            self.found_stars = Table([np.array(centers.T[0]),
-                                        np.array(centers.T[1]),
+            self.found_stars = Table([np.array(centers['x']),
+                                        np.array(centers['y']),
                                         np.arange(0,len(centers),1).astype(int)],
                                         names=['xcentroid','ycentroid','id'])
             self.found_stars['sharpness'] = .7
@@ -1112,8 +1095,6 @@ class jwst_photclass(pdastrostatsclass):
             else:
                 fluxerr = phot['aperture_sum_err']
 
-
-            
             phot['aper_sum_bkgsub']*=self.apcorr
             fluxerr*=self.apcorr
             flux_units = u.MJy / u.sr * (self.pixel_scale * u.arcsec)**2
@@ -1154,15 +1135,9 @@ class jwst_photclass(pdastrostatsclass):
 
         return table_aper
 
-    def clean_phottable(self,SNR_min=3.0,indices=None,psf_quality=None,remove_nans=True):
+    def clean_phottable(self,SNR_min=3.0,indices=None,psf_quality=None):
         # remove nans
-        if remove_nans:
-            ixs = self.ix_not_null(['mag','dmag'],indices=indices)
-        elif indices is not None:
-            ixs = indices
-        else:
-            ixs = np.arange(0,len(self.t),1)
-
+        ixs = self.ix_not_null(['mag','dmag'],indices=indices)
         if self.verbose:
             print(f'{len(ixs)} objects left after removing entries with NaNs in mag or dmag column')
         #self.write()
@@ -1659,7 +1634,7 @@ class jwst_photclass(pdastrostatsclass):
                  yshift=0.0, # added to the y coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
                  ee_radius=70,
                  use_sextractor=False,
-                 sexpath='sex',sexworkdir=None,remove_nans=True):
+                 bool_mask=None):
         if self.verbose:
             print(f'\n### Doing photometry on {imagename}')
         self.ee_radius = ee_radius
@@ -1703,27 +1678,21 @@ class jwst_photclass(pdastrostatsclass):
                 
                 ref = Table.read(sci_xy_catalog,format='ascii')
                 xycoords=np.atleast_2d([ref['x'],ref['y']]).T
-                self.find_stars(centers=xycoords, threshold = find_stars_threshold,use_sextractor=use_sextractor,
-                    sexpath=sexpath,sexworkdir=sexworkdir)
+                self.find_stars(centers=xycoords, threshold = find_stars_threshold,use_sextractor=use_sextractor,bool_mask=bool_mask)
             else:
-                print('find_stars')
-                self.find_stars(threshold = find_stars_threshold,use_sextractor=use_sextractor,
-                    sexpath=sexpath,sexworkdir=sexworkdir)
+                self.find_stars(threshold = find_stars_threshold,use_sextractor=use_sextractor,bool_mask=bool_mask)
             #aperture phot, saved in self.t
-            if photometry_method in ['aperture','1pass']:
+            if photometry_method == 'aperture':
                 self.aperture_phot()
                 psf_quality=None
             elif photometry_method == 'psf':
                 self.psf_phot()
                 psf_quality= 25
-            else:
-                psf_quality=None
-                
 
         else:
             psf_quality=None
         # get the indices of good stars
-        ixs_clean = self.clean_phottable(SNR_min=SNR_min,psf_quality=psf_quality,remove_nans=remove_nans)
+        ixs_clean = self.clean_phottable(SNR_min=SNR_min,psf_quality=psf_quality)
         if self.verbose:
             print(f'{len(ixs_clean)} out of {len(self.getindices())} entries remain in photometry table')
         if len(ixs_clean)<1:
@@ -2012,11 +1981,7 @@ class hst_photclass(jwst_photclass):
         self.instrument = self.primaryhdr['INSTRUME']
         if 'FILTER' in self.primaryhdr:
             self.filterkey = 'FILTER'
-        elif 'FILTNAM1' in self.primaryhdr:
-            if 'CLEAR' not in self.primaryhdr['FILTNAM1']:
-                self.filterkey = 'FILTNAM1'
-            else:
-                self.filterkey = 'FILTNAM2'  
+            
         elif 'CLEAR' not in self.primaryhdr['FILTER1']:
             self.filterkey = 'FILTER1'
         else:
@@ -2256,7 +2221,6 @@ class hst_photclass(jwst_photclass):
             inst = 'ir'
         except:
             inst = 'uvis'
-
         if radii_Nfwhm is not None:
             self.radii_px = radii_Nfwhm*self.dict_utils[self.instrument][self.filtername]['psf fwhm']
         self.apcorr = hst_get_ee_corr(self.radii_px,self.pixel_scale,self.filtername,inst)
@@ -2588,7 +2552,613 @@ class hst_photclass(jwst_photclass):
         self.set_important_refcatcols(refcatshort=refcatshort)
 
         return(0)
+
+
+class spitz_photclass(jwst_photclass):
+    """The photometry class for Spitzer images.
+    """
+        
+    def __init__(self,psf_fwhm=3,aperture_radius = None,verbose=0):
+        """
+        Constructor for SPITZER photometry class
+
+        Parameters
+        ----------
+        psf_fwhm : float
+            PSF FWHM for image
+        aperture_radius : float
+            Radius for aperture photometry
+            
+        Returns
+        -------
+        spitz_photclass : :class:`~jhat.spitz_photclass`
+        """        
+
+        jwst_photclass.__init__(self)
+
+
+        #self.filters = {instrument : [image_filter]}
+
+        self.psf_fwhm = psf_fwhm
+        
+        
+        #self.instrument = instrument
+        self.detector = None
+        #self.filtername = image_filter
+        self.pupil = None
+        #self.subarray = subarray
+        #self.aperture = aperture_name
+        if aperture_radius is None:
+            print('Warning: Setting aperture radius to twice the psf_fwhm (%f)'%(2*psf_fwhm))
+            self.radii_px = 2*self.psf_fwhm
+        else:
+            self.radii_px = aperture_radius
+
+        self.apcorr=1.
+
+    def load_image(self, imagename, imagetype=None, DNunits=False, use_dq=False,skip_preparing=False):
+        self.imagename = imagename
+        self.im = fits.open(imagename)
+        self.primaryhdr = self.im[0].header
+        self.scihdr = self.im[0].header
+        self.sci_wcs = wcs.WCS(self.scihdr)
+        #self.sci_wcs = self.dm.meta.wcs
+        
+        self.sip_wcs = wcs.WCS(self.scihdr)
+        try:
+            self.err = self.im['ERR'].data
+        except:
+            self.err = None
+#        self.pixel_scale = wcs.utils.proj_plane_pixel_scales(self.sip_wcs)[0]  *\
+#         self.sip_wcs.wcs.cunit[0].to('arcsec')
+#        self.instrument = self.dm.meta.instrument.name
+#        self.detector = self.dm.meta.instrument.detector
+#        self.filtername = self.dm.meta.instrument.filter
+#        self.pupil = self.dm.meta.instrument.pupil
+#        self.subarray = self.dm.meta.subarray.name
+#        self.aperture  = self.dm.meta.aperture.name
+
+        self.pixel_scale = 0.6
+        self.sip_wcs.wcs.cunit[0].to('arcsec')
+        self.instrument = 'IRAC'
+        self.detector = 'IR'
+        #self.pupil = self.dm.meta.instrument.pupil
+        #self.subarray = self.dm.meta.subarray.name
+        #self.aperture  = self.dm.meta.aperture.name
+
+####;;;;
+        self.NAXIS1 = self.scihdr['NAXIS1']
+        self.NAXIS2 = self.scihdr['NAXIS2']
+        self.filterkey = 'FILTER'
+        self.filtername = self.primaryhdr['CHNLNUM']
+        
+        self.filters = {self.instrument:[self.primaryhdr['CHNLNUM']]}
+        self.psf_fwhm = {self.instrument : [self.psf_fwhm]}
+        self.dict_utils = {}
+        for instrument in self.filters:
+            self.dict_utils[instrument.upper()] = {self.filters[instrument.upper()][i]: {'psf fwhm': self.psf_fwhm[instrument.upper()][i]} for i in range(len(self.filters[instrument]))}
+
+        #self.pixel_scale = wcs.utils.proj_plane_pixel_scales(self.sci_wcs)[0]  *\
+        # self.sci_wcs.wcs.cunit[0].to('arcsec')
+
+####        
+        
+        if self.verbose: print(f'Instrument: {self.instrument}, aperture:{self.aperture}')
+
+        self.imagetype = 'maic'
+        self.pipeline_level = 3
+                
+        if not skip_preparing:
+            # prepare the data.
+            if self.imagetype == 'cal':
+                #print('VVVVV',self.im.info())
+                #sys.exit(0)
+                dq=None
+                if use_dq: 
+                    dq = self.im['DQ'].data
+                    print('Using DQ extension!!')
+                if self.im['AREA'].data.shape != self.im['SCI'].data.shape:
+                    print(f'WARNING: AREA extension has different dimensions ({self.im["AREA"].data.shape}) than SCI extension ({self.im["SCI"].data.shape})! Using image header info to fix this...')
+                    SUBSTRT1=self.primaryhdr['SUBSTRT1']
+                    SUBSTRT2=self.primaryhdr['SUBSTRT2']
+                    SUBSIZE1=self.primaryhdr['SUBSIZE1']
+                    SUBSIZE2=self.primaryhdr['SUBSIZE2']
+                    print(f'subarray area = AREA[{SUBSTRT2}-1:{SUBSTRT2}-1+{SUBSIZE2},{SUBSTRT1}-1:{SUBSTRT1}-1+{SUBSIZE1}]')
+                    area = self.im['AREA'].data[SUBSTRT2-1:SUBSTRT2-1+SUBSIZE2,SUBSTRT1-1:SUBSTRT1-1+SUBSIZE1]
+                else:
+                    area = self.im['AREA'].data
+                    
+                (self.data,self.mask,self.DNunits) = self.prepare_image(self.im['SCI'].data, self.im['SCI'].header,
+                                                                        area = area,
+                                                                        dq = dq,
+                                                                        DNunits=DNunits)
+            elif self.imagetype == 'maic':
+                (self.data,self.mask,self.DNunits) = self.prepare_image(self.im[0].data, self.im[0].header,
+                                                                        DNunits=DNunits)
+            else:
+                raise RuntimeError(f'image type {self.imagetype} not yet implemented!')
+
+    def run_phot(self,imagename, 
+                 photfilename=None,
+                 outrootdir=None,
+                 outsubdir=None,
+                 overwrite=False,                
+                 load_photcat_if_exists=False,
+                 use_dq = False,
+                 DNunits=False, 
+                 SNR_min=2.0,
+                 do_photometry_flag=True,
+                 photometry_method='aperture',
+                 find_stars_threshold = 2.0,
+                 psf_model=None,
+                 sci_xy_catalog=None,
+                 photcat_loaded = False,
+                 Nbright4match=None,
+                 xshift=0.0,# added to the x coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
+                 yshift=0.0, # added to the y coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
+                 ee_radius=70,
+                 use_sextractor=False,
+                 bool_mask=None):
+        if self.verbose:
+            print(f'\n### Doing photometry on {imagename}')
+        self.ee_radius = ee_radius
+        self.psf_model = psf_model
+        
+        # get the photfilename. photfilename='auto' removes fits from image name and replaces it with phot.txt
+        self.photfilename = self.get_photfilename(photfilename,outrootdir=outrootdir,outsubdir=outsubdir,imagename=imagename)
+        print(self.verbose,self.photfilename)
+        # Load photcat if wanted
+        photcat_loaded = False
+        if (self.photfilename is not None):
+            if self.verbose:
+                print(f'photometry catalog filename: {self.photfilename}')
+            if os.path.isfile(self.photfilename):
+                if load_photcat_if_exists:
+                    if self.verbose:
+                        print(f'photcat {self.photfilename} already exists, loading it instead of recreating it')
+                    self.load(self.photfilename)
+                    photcat_loaded = True
+                    # skip redoing the photometry
+                    do_photometry_flag=False
+                elif overwrite:
+                    if self.verbose:
+                        print(f'photcat {self.photfilename} already exists, but recreating it since overwrite=True')
+                    rmfile(self.photfilename)
+                else:
+                    raise RuntimeError(f'photcat {self.photfilename} already exists, exiting! if you want to overwrite, use --overwrite option!')
+        else:
+            if self.verbose:
+                print('NO photometry catalog filename')
+        
+        # load the image, and prepare it. The data and mask are saved in 
+        # self.data and self.mask
+        self.load_image(imagename,DNunits=DNunits,use_dq=use_dq)
+        # only do the photometry if not reloaded
+        if do_photometry_flag:
     
+            # find the stars, saved in self.found_stars
+            
+            if sci_xy_catalog is not None:
+                
+                ref = Table.read(sci_xy_catalog,format='ascii')
+                xycoords=np.atleast_2d([ref['x'],ref['y']]).T
+                self.find_stars(centers=xycoords, threshold = find_stars_threshold,use_sextractor=use_sextractor,bool_mask=bool_mask)
+            else:
+                self.find_stars(threshold = find_stars_threshold,use_sextractor=use_sextractor,bool_mask=bool_mask)
+            #aperture phot, saved in self.t
+            if photometry_method == 'aperture':
+                self.aperture_phot()
+                psf_quality=None
+            elif photometry_method == 'psf':
+                self.psf_phot()
+                psf_quality= 25
+
+        else:
+            psf_quality=None
+        # get the indices of good stars
+        ixs_clean = self.clean_phottable(SNR_min=SNR_min,psf_quality=psf_quality)
+        if self.verbose:
+            print(f'{len(ixs_clean)} out of {len(self.getindices())} entries remain in photometry table')
+        if len(ixs_clean)<1:
+            self.write()
+            raise RuntimeError('NO  OBJECTS FOUND IN  IMAGE!!')
+        
+        #self.write('DELME0.txt',columns=['x','y','mag','dmag'])
+        #self.write('DELME1.txt',indices=ixs_clean,columns=['x','y','mag','dmag'])
+        #sys.exit(0)
+        
+        if Nbright4match is not None:
+            ixs_sort = self.ix_sort_by_cols(['mag'],indices=ixs_clean)
+            ixs_clean = ixs_sort[:Nbright4match]
+            if self.verbose:
+                print(f'keeping the britghtest {Nbright4match} sources: {len(ixs_clean)} out of {len(self.getindices())} entries remain in photometry table')
+        
+        # calculate the ra,dec
+        self.xy_to_radec(indices=ixs_clean,xshift=xshift,yshift=yshift)
+         
+        # calculate the ideal coordinates
+        #self.radec_to_idl(indices=ixs_clean)
+        self.xy_to_idl(indices=ixs_clean)
+                
+        #self.write(self.get_photfilename()+'.all')
+        # save the catalog
+
+        if self.photfilename is not None:
+            if self.verbose:
+                print(f'Saving {self.photfilename}')
+            temp_tab = Table.from_pandas(self.t)
+            if 'RA' not in temp_tab.colnames:
+                temp_tab['RA'] = temp_tab['ra']
+            if 'DEC' not in temp_tab.colnames:
+                temp_tab['DEC'] = temp_tab['dec']
+            self.t = temp_tab.to_pandas()
+            self.write(self.photfilename,indices=ixs_clean)
+            
+        return(self.photfilename,photcat_loaded)
+
+    def aperture_phot(self, filt=None, pupil=None, 
+                      radii_Nfwhm = None,
+                      radius_Nfwhm_sky_in = None, 
+                      radius_Nfwhm_sky_out = None, 
+                      radius_Nfwhm_for_mag =None,
+                      primaryhdr=None, scihdr=None):
+        
+        """
+        Aperture photometry routine for Spitzer.
+            
+        Returns
+        -------
+        table_aper : :class:`astropy.table.Table`
+
+        """
+        if primaryhdr is None: primaryhdr=self.primaryhdr
+        if scihdr is None: scihdr=self.scihdr
+        self.radii_px,self.apcorr,self.radius_sky_in_px,self.radius_sky_out_px = get_apcorr_params(self.imagename,self.ee_radius)
+        self.radii_px = [self.radii_px]
+        self.radius_for_mag_px = self.radii_px
+
+        # det = primaryhdr['DETECTOR']
+        # if filt is None:
+        #     if det in ['GUIDER1','GUIDER2']:
+        #         filt = 'NA'
+        #     else:
+        #         filt = primaryhdr['FILTER']
+        # if pupil is None: 
+        #     if det in ['GUIDER1','GUIDER2']:
+        #         pupil = 'NA'
+        #     else:
+        #         pupil = primaryhdr['PUPIL']
+
+        # (self.radii_px,
+        #  self.radius_sky_in_px,
+        #  self.radius_sky_out_px,
+        #  self.radius_for_mag_px) = self.get_radii_phot(filt,pupil,
+        #                                                radii_Nfwhm = radii_Nfwhm,
+        #                                                radius_Nfwhm_sky_in = radius_Nfwhm_sky_in, 
+        #                                                radius_Nfwhm_sky_out = radius_Nfwhm_sky_out, 
+        #                                                radius_Nfwhm_for_mag = radius_Nfwhm_for_mag)
+        if self.verbose: print(f'radii:{self.radii_px}pixels radius_sky_in:{self.radius_sky_in_px} radius_sky_out:{self.radius_sky_out_px}  radius_for_mag:{self.radius_for_mag_px}')
+
+        positions = np.transpose((self.found_stars['xcentroid'], self.found_stars['ycentroid']))
+        
+        tic = time.perf_counter()
+    
+        table_aper = Table()
+        
+        for rad in self.radii_px:
+            if self.verbose:
+                print(f'Performing aperture photometry for radius r = {rad} px')
+            aperture = CircularAperture(positions, r=rad)
+            
+            annulus_aperture = CircularAnnulus(positions, 
+                                               r_in=self.radius_sky_in_px, 
+                                               r_out=self.radius_sky_out_px)
+            annulus_masks = annulus_aperture.to_mask(method='center')
+    
+            local_sky_median = []
+            local_sky_stdev = []
+            
+            for annulus_mask in annulus_masks:
+                
+                annulus_data = annulus_mask.multiply(self.data)
+                ok =np.logical_and(annulus_mask.data > 0, np.isfinite(annulus_data))
+                if (np.sum(ok) >= 10):
+                    annulus_data_1d = annulus_data[ok]
+                    mean_sigclip, median_sigclip, stdev_sigclip = sigma_clipped_stats(annulus_data_1d, 
+                                                                                     sigma=3.5, maxiters=5)
+                    if mean_sigclip < 0 or median_sigclip == 0:
+                        median_sigclip = -99.99
+                        stdev_sigclip = -9.99
+                
+                else:
+                    median_sigclip = -99.99
+                    stdev_sigclip = -9.99
+                
+                local_sky_median.append(median_sigclip)
+                local_sky_stdev.append(stdev_sigclip)
+            
+            local_sky_median = np.array(local_sky_median)
+            local_sky_stdev = np.array(local_sky_stdev)
+            
+#            if select_dq:        
+#                
+#                phot = aperture_photometry(data, aperture, method='exact')
+            
+#            else:
+                
+#                zero_mask = np.where(data == 0,0,1)
+#                nan_mask  = np.where(np.isnan(data),0,1)
+#                zero_mask = nan_mask * zero_mask
+#        
+#                nan_mask = np.where(zero_mask == 0,True,False)
+            boolmask = self.get_bool_mask(self.data,mask=self.mask)
+            
+            phot = aperture_photometry(self.data, aperture,error=self.err, method='exact', mask=boolmask)
+            
+            phot['annulus_median'] = local_sky_median
+            phot['aper_bkg'] = local_sky_median * aperture.area
+            phot['aper_sum_bkgsub'] = phot['aperture_sum']# - phot['aper_bkg']
+            epadu = scihdr['GAIN']*scihdr['FLUXCONV']
+            if self.err is None:
+                error_poisson = np.sqrt(phot['aper_sum_bkgsub'])
+                error_scatter_sky = aperture.area * local_sky_stdev**2
+                error_mean_sky = local_sky_stdev**2 * aperture.area**2 / annulus_aperture.area
+                fluxerr = np.sqrt(error_poisson**2/epadu + error_scatter_sky + error_mean_sky)
+            else:
+                fluxerr = phot['aperture_sum_err']
+
+
+
+            phot['aper_sum_bkgsub']*=self.apcorr
+            fluxerr*=self.apcorr
+            flux_units = u.MJy / u.sr * (self.pixel_scale*u.arcsec)**2
+            print('Flux Units = ',flux_units)
+            flux = phot['aper_sum_bkgsub']*flux_units
+            fluxerr = fluxerr*flux_units
+            fluxerr = fluxerr.value
+            
+            phot['mag'] = flux.to(u.ABmag).value
+            flux = flux.value
+            phot['magerr'] = 2.5 * np.log10(1.0 + (fluxerr/flux))
+
+            table_aper.add_column(phot['aperture_sum'], name=self.colname('aper_sum',rad))
+            table_aper.add_column(phot['annulus_median'], name=self.colname('annulus_median',rad))
+            table_aper.add_column(phot['aper_bkg'], name=self.colname('aper_bkg',rad))
+            table_aper.add_column(phot['aper_sum_bkgsub'], name=self.colname('aper_sum_bkgsub',rad))
+            table_aper.add_column(fluxerr, name=self.colname('flux_err',rad))
+            table_aper.add_column(phot['mag'], name='mag')
+            table_aper.add_column(phot['magerr'], name='dmag')
+
+            #if rad == self.radius_for_mag_px:
+                #table_aper['mag'] = -2.5 * np.log10(table_aper[self.colname('aper_sum_bkgsub',rad)])
+                #table_aper['dmag'] = 1.086 * (table_aper[self.colname('flux_err',rad)] / 
+                #                              table_aper[self.colname('aper_sum_bkgsub',rad)])      
+
+        table_aper['x'] = self.found_stars['xcentroid']
+        table_aper['y'] = self.found_stars['ycentroid']
+        table_aper['sharpness'] = self.found_stars['sharpness']
+        table_aper['roundness1'] = self.found_stars['roundness1']
+        table_aper['roundness2'] = self.found_stars['roundness2']
+        table_aper = table_aper[~np.isnan(table_aper['mag'])]
+        #table_aper['mag']=22
+        #table_aper['dmag']=.01
+        toc = time.perf_counter()
+        if self.verbose:
+            print("Time Elapsed:", toc - tic)
+    
+        self.t = table_aper.to_pandas()
+
+        return table_aper
+
+    def xy_to_radec(self,xcol='x',ycol='y',racol='ra',deccol='dec',indices=None,
+                    xshift=0.0,yshift=0.0):
+        ixs = self.getindices(indices=indices)
+        
+
+        coord = self.sci_wcs.pixel_to_world(self.t.loc[ixs,xcol]+xshift, self.t.loc[ixs,ycol]+yshift)
+        
+        
+        self.t.loc[ixs,racol] = coord.ra.degree
+        self.t.loc[ixs,deccol] = coord.dec.degree
+
+    def xy_to_idl(self,xcol='x', ycol='y', xcol_idl='x_idl', ycol_idl='y_idl',
+                     aperturename=None,
+                     primaryhdr=None, scihdr=None, indices=None):
+
+        return
+        # if primaryhdr is None: primaryhdr=self.primaryhdr
+        # if scihdr is None: scihdr=self.scihdr
+    
+        # indices = self.getindices()
+        
+        # x_idl, y_idl = xy_to_idl(self.t.loc[indices,xcol], 
+        #                               self.t.loc[indices,ycol],
+        #                               primaryhdr, scihdr,
+        #                               aperturename = 'APERTURE', instrument='TELESCOP',
+        #                               pysiaf_name = self.aperture)
+        # self.t.loc[indices,xcol_idl]=x_idl
+        # self.t.loc[indices,ycol_idl]=y_idl
+  
+        # return x_idl, y_idl
+
+    def get_radecinfo_image(self,im=None,nx=None,ny=None):
+        #if im is None: im=self.im
+        if nx is None: nx = self.NAXIS1#int(im['SCI'].header['NAXIS1'])
+        if ny is None: ny = self.NAXIS2#int(im['SCI'].header['NAXIS2'])
+        coord0 = self.sci_wcs.pixel_to_world(nx/2.0-1,ny/2.0-1)
+        radius_deg = []
+        for x in [0,nx-1]:        
+            for y in [0,ny-1]:     
+                sc = self.sci_wcs.pixel_to_world(x,y)
+                radius_deg.append(coord0.separation(sc).deg)
+        radius_deg = np.amax(radius_deg)
+
+        
+        return(coord0.ra.degree,coord0.dec.degree,radius_deg)
+
+
+
+    def match_refcat(self,
+                     max_sep = 1.0,
+                     borderpadding=40,
+                     refcatshort=None,
+                     ixs_obj=None,
+                     ixs_refcat=None):
+        """
+        Matches the photometry catalog to the reference catalog.
+        
+        Parameters
+        ----------
+        max_sep : float
+            Maximum separation between sources in arcseconds
+        borderpadding : float
+            Pixel separation required from border of image
+        refcatshort : string, optional
+            Short name of reference catalog that is used as prefix for the column names. The default is None.
+            If None, then refcatshort is set to self.refcat.short
+        indices : list
+            The indices to access the photometry catalog, default None (use the full catalog)
+            
+        Returns
+        -------
+        None.
+
+        """
+        if self.verbose:
+            print(f'Matching reference catalog {self.refcat.name}')
+
+        if refcatshort is None: refcatshort = self.refcat.short
+
+        #if primaryhdr is None: primaryhdr=self.primaryhdr
+        #if scihdr is None: scihdr=self.scihdr
+        
+        #if aperturename is None:
+        #    aperturename = self.aperture
+
+        # make sure there are no NaNs        
+        ixs_obj = self.ix_not_null(['ra','dec'],indices=ixs_obj)
+        # get SkyCoord objects (needed for matching)
+        objcoord = SkyCoord(self.t.loc[ixs_obj,'ra'],self.t.loc[ixs_obj,'dec'], unit='deg')
+
+        
+        # find the x_idl and y_idl range, so that we can cut down the objects from the outside catalog!!
+        # xmin = self.t.loc[ixs_obj,'x_idl'].min()
+        # xmax = self.t.loc[ixs_obj,'x_idl'].max()
+        # ymin = self.t.loc[ixs_obj,'y_idl'].min()
+        # ymax = self.t.loc[ixs_obj,'y_idl'].max()
+        # if self.verbose:
+        #     print(f'image objects are in x_idl=[{xmin:.2f},{xmax:.2f}] and y_idl=[{ymin:.2f},{ymax:.2f}] range')
+
+        #### gaia catalog
+        # get ideal coords into table
+        #self.refcat.t['x_idl'], self.refcat.t['y_idl'] = radec_to_idl(self.refcat.t[self.refcat.racol], 
+        #                                                              self.refcat.t[self.refcat.deccol],
+        #                                                              aperturename, 
+        #                                                              primaryhdr, scihdr)
+        #xmin = self.refcat.t['x_idl'].min()
+        #xmax = self.refcat.t['x_idl'].max()
+        #ymin = self.refcat.t['y_idl'].min()
+        #ymax = self.refcat.t['y_idl'].max()
+        #print(f'refcat objects are in x_idl=[{xmin:.2f},{xmax:.2f}] and y_idl=[{ymin:.2f},{ymax:.2f}] range')
+
+        # cut down to the objects that are within the image
+        #ixs_cat = self.refcat.ix_inrange('x_idl',xmin-max_sep,xmax+max_sep)
+        #ixs_cat = self.refcat.ix_inrange('y_idl',ymin-max_sep,ymax+max_sep,indices=ixs_cat)
+        #print(f'Keeping {len(ixs_cat)} out of {len(self.refcat.getindices())} catalog objects')
+        #ixs_cat = self.refcat.ix_not_null([self.refcat.racol,self.refcat.deccol],indices=ixs_cat)
+        #print(f'Keeping {len(ixs_cat)}  after removing NaNs from ra/dec')
+        
+        self.refcat.t['x'], self.refcat.t['y'] = self.sci_wcs.world_to_pixel(SkyCoord(self.refcat.t[self.refcat.racol],
+                                                                                    self.refcat.t[self.refcat.deccol],
+                                                                                    unit=u.deg))
+
+        #xmin = self.refcat.t['x'].min()
+        #xmax = self.refcat.t['x'].max()
+        #ymin = self.refcat.t['y'].min()
+        #ymax = self.refcat.t['y'].max()
+        #print(f'refcat objects are in x=[{xmin:.2f},{xmax:.2f}] and y=[{ymin:.2f},{ymax:.2f}] range')
+        
+        #sys.exit(0)
+
+        # cut down to the objects that are within the image
+        xmin = 0.0+borderpadding
+        xmax = self.NAXIS1-borderpadding
+        ymin = 0.0+borderpadding
+        ymax = self.NAXIS2-borderpadding
+        
+        ixs_refcat = self.refcat.ix_inrange('x',xmin,xmax,indices=ixs_refcat)
+        ixs_refcat = self.refcat.ix_inrange('y',ymin,ymax,indices=ixs_refcat)
+        if self.verbose:
+            print(f'Keeping {len(ixs_refcat)} out of {len(self.refcat.getindices())} catalog objects within x={xmin}-{xmax} and y={ymin}-{ymax}')
+        ixs_refcat = self.refcat.ix_not_null([self.refcat.racol,self.refcat.deccol],indices=ixs_refcat)
+        if self.verbose:
+            print(f'Keeping {len(ixs_refcat)}  after removing NaNs from ra/dec')
+
+        if len(ixs_refcat) == 0:
+            print('WARNING!!!! 0 Gaia sources from catalog within the image bounderies! skipping the rest of the steps calculating x,y of the Gaia sources etc... ')
+            return(0)
+
+        # Get the detector x,y position
+        self.refcat.t.loc[ixs_refcat,'x'], self.refcat.t.loc[ixs_refcat,'y'] = self.sci_wcs.world_to_pixel(SkyCoord(self.refcat.t.loc[ixs_refcat,self.refcat.racol],
+                                                                                                            self.refcat.t.loc[ixs_refcat,self.refcat.deccol],
+                                                                                                            unit=u.deg))
+
+        refcatcoord = SkyCoord(self.refcat.t.loc[ixs_refcat,self.refcat.racol],self.refcat.t.loc[ixs_refcat,self.refcat.deccol], unit='deg')
+        if self.verbose:
+            print(f'!! Matching {len(ixs_obj)} image objects to {len(ixs_refcat)} refcat objects!')
+        #idx, d2d, _ = match_coordinates_sky(self.t.loc[ixs_obj,'coord'], self.refcat.t.loc[ixs_refcat,'coord'])
+        idx, d2d, _ = match_coordinates_sky(objcoord,refcatcoord)
+        # ixs_cat4obj has the same length as ixs_obj
+        # for each object in ixs_obj, it contains the index to the self.refcat entry
+        ixs_cat4obj = ixs_refcat[idx]
+
+
+        # copy over the relevant columns from refcat. The columns are preceded with '{refcatshort}_'
+        cols2copy = [self.refcat.racol,self.refcat.deccol,'x','y','ID']
+        if self.refcat.mainfilter is not None:
+            cols2copy.append(self.refcat.mainfilter)
+        if self.refcat.mainfilter_err is not None:
+            cols2copy.append(self.refcat.mainfilter_err)
+        if self.refcat.maincolor is not None:
+            cols2copy.append(self.refcat.maincolor)
+        cols2copy.extend(self.refcat.cols2copy)
+        cols2copy = unique(cols2copy)
+
+        #self.refcatshort = refcatshort
+        #self.refcat_racol = None
+        #self.refcat_deccol = None
+        self.ref_racol = f'{refcatshort}_ra'
+        self.ref_deccol = f'{refcatshort}_dec'
+
+        for refcat_col in cols2copy:
+            if not (refcat_col in self.refcat.t.columns):
+                raise RuntimeError(f'Trying to copy column {refcat_col}, but this column is not in {self.refcat.t.columns}')
+            if refcat_col == self.refcat.racol:
+                obj_col = f'{refcatshort}_ra'
+                #self.refcat_racol = f'{refcatshort}_ra'
+            elif refcat_col == self.refcat.deccol:
+                obj_col = f'{refcatshort}_dec'
+                #self.refcat_deccol = f'{refcatshort}_dec'
+            else:
+                obj_col = f'{refcatshort}_{refcat_col}'
+                
+            self.t.loc[ixs_obj,obj_col]=list(self.refcat.t.loc[ixs_cat4obj,refcat_col])
+            if refcat_col == 'source_id':
+                #print('############################################ converting source_id')
+                #bla_ixs = self.ix_not_null(obj_col)
+                #print(f'XXXXXXX {len(bla_ixs)} {len(self.t[obj_col])}')
+                #print(self.t[obj_col])
+                self.t[obj_col]=self.t[obj_col].astype(pd.Int64Dtype())
+        # also add d2d
+        self.t.loc[ixs_obj,f'{refcatshort}_d2d']=d2d.arcsec
+
+        #self.refcat_xcol = f'{refcatshort}_x'
+        #self.refcat_ycol = f'{refcatshort}_y'
+
+        self.set_important_refcatcols(refcatshort=refcatshort)
+
+        return(0)
+
 
 if __name__ == '__main__':
     phot = jwst_photclass()
@@ -2596,6 +3166,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.is_hst:
         phot = hst_photclass()
+    if args.is_spitz:
+        phot = spitz_photclass()
 
     phot.verbose=args.verbose
     
