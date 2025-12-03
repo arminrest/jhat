@@ -804,16 +804,34 @@ class jwst_photclass(pdastrostatsclass):
             if use_sextractor:
                 import sewpy
                 sew = sewpy.SEW(params=["X_IMAGE", "Y_IMAGE", "FLUX_RADIUS(3)", "FLAGS", "XPEAK_WORLD", "YPEAK_WORLD","CLASS_STAR"],
-                        config={"DETECT_MINAREA":3, "PHOT_FLUXFRAC":"0.3, 0.5, 0.8",'DETECT_THRESH':0.1,
-                                'BACKPHOTO_TYPE':'local'},loglevel=0)#,},,'FILTER_NAME':'gauss_2.0_5x5.conv'
-                #sew = sewpy.SEW(params=["X_IMAGE", "Y_IMAGE", "FLUX_RADIUS(3)", "FLAGS", "XPEAK_WORLD", "YPEAK_WORLD"],
-                #        config={"DETECT_MINAREA":3, 'DETECT_THRESH':"35,27",'ANALYSIS_THRESH':"35,27",
-                #                'BACKPHOTO_TYPE':'local','PIXEL_SCALE':0.6},loglevel=0)#,},,'FILTER_NAME':'gauss_2.0_5x5.conv'
+
+                        config={"DETECT_MINAREA":3, "PHOT_FLUXFRAC":"0.3, 0.5, 0.8",'DETECT_THRESH':10,
+                                'BACKPHOTO_TYPE':'local','FILTER_NAME':'space.conv'},
+                                sexpath=sexpath,workdir=sexworkdir)
+                                
+                
 
                 self.data_bkgsub[self.mask>0] = np.nan
-                fits.HDUList([fits.PrimaryHDU(self.data_bkgsub)]).writeto('test.fits',overwrite=True)
-                out = sew('test.fits')
-                os.remove('test.fits')                
+                fail = True
+                ntry = 100
+                n = 0
+                while fail and n<ntry:
+                    randint = np.random.randint(0,1e8)
+                    while os.path.exists('test_%i.fits'%randint):
+                        randint = np.random.randint(0,1e8)
+
+                    try:
+                        fits.HDUList([fits.PrimaryHDU(self.data_bkgsub)]).writeto('test_%i.fits'%randint,overwrite=True)
+                        out = sew('test_%i.fits'%randint)
+                        os.remove('test_%i.fits'%randint)
+                        fail = False
+                    except:
+                        n+=1
+                        pass
+                if fail:
+                    fits.HDUList([fits.PrimaryHDU(self.data_bkgsub)]).writeto('test_%i.fits'%randint,overwrite=True)
+                    out = sew('test_%i.fits'%randint)
+
                 
                 centers = np.array([out['table']['X_IMAGE'],out['table']['Y_IMAGE']]).T
                 #print('DETECTED',len(out['table']))
@@ -843,8 +861,10 @@ class jwst_photclass(pdastrostatsclass):
                 #    self.found_stars = Table(tab)
         else:
             print(len(centers), 'Centers')
-            self.found_stars = Table([np.array(centers['x']),
-                                        np.array(centers['y']),
+            #import pdb
+            #pdb.set_trace()
+            self.found_stars = Table([np.array(centers.T[0]),
+                                        np.array(centers.T[1]),
                                         np.arange(0,len(centers),1).astype(int)],
                                         names=['xcentroid','ycentroid','id'])
             self.found_stars['sharpness'] = .7
@@ -1095,6 +1115,7 @@ class jwst_photclass(pdastrostatsclass):
             else:
                 fluxerr = phot['aperture_sum_err']
 
+
             phot['aper_sum_bkgsub']*=self.apcorr
             fluxerr*=self.apcorr
             flux_units = u.MJy / u.sr * (self.pixel_scale * u.arcsec)**2
@@ -1135,9 +1156,15 @@ class jwst_photclass(pdastrostatsclass):
 
         return table_aper
 
-    def clean_phottable(self,SNR_min=3.0,indices=None,psf_quality=None):
+    def clean_phottable(self,SNR_min=3.0,indices=None,psf_quality=None,remove_nans=True):
         # remove nans
-        ixs = self.ix_not_null(['mag','dmag'],indices=indices)
+        if remove_nans:
+            ixs = self.ix_not_null(['mag','dmag'],indices=indices)
+        elif indices is not None:
+            ixs = indices
+        else:
+            ixs = np.arange(0,len(self.t),1)
+
         if self.verbose:
             print(f'{len(ixs)} objects left after removing entries with NaNs in mag or dmag column')
         #self.write()
@@ -1634,7 +1661,8 @@ class jwst_photclass(pdastrostatsclass):
                  yshift=0.0, # added to the y coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
                  ee_radius=70,
                  use_sextractor=False,
-                 bool_mask=None):
+                 sexpath='sex',sexworkdir=None,remove_nans=True):
+
         if self.verbose:
             print(f'\n### Doing photometry on {imagename}')
         self.ee_radius = ee_radius
@@ -1692,7 +1720,7 @@ class jwst_photclass(pdastrostatsclass):
         else:
             psf_quality=None
         # get the indices of good stars
-        ixs_clean = self.clean_phottable(SNR_min=SNR_min,psf_quality=psf_quality)
+        ixs_clean = self.clean_phottable(SNR_min=SNR_min,psf_quality=psf_quality,remove_nans=remove_nans)
         if self.verbose:
             print(f'{len(ixs_clean)} out of {len(self.getindices())} entries remain in photometry table')
         if len(ixs_clean)<1:

@@ -967,7 +967,7 @@ class st_wcs_align:
                                                                 os.path.basename(phot.photcatname)]),
                 delimiter=" ", fmt="%s")
             tweakreg.abs_refcat = phot.refcatname
-            tweakreg.abs_minobj = 3
+            tweakreg.abs_minobj = 1
             tweakreg.use_custom_catalogs = True
         else:
             tweakreg = tweakreg_hack.TweakRegStep()
@@ -1051,6 +1051,7 @@ class st_wcs_align:
         
         ### Provide your own source catalog, to be used in place of the default daofinder stuff. If you actually have a list
         ### of images, it's okay to provide a source catalog for each. 
+
         cal_image.source_catalog = t
         cal_data = [cal_image]
         tweakreg.source_xcol = xcol
@@ -1263,6 +1264,9 @@ class st_wcs_align:
         #if 'DEC' not in phot_tab.colnames:
         phot_tab['DEC'] = phot_tab[phot.ref_deccol]
         #phot.t = phot_tab.to_pandas()
+        phot_tab.remove_column('RA')
+        phot_tab.remove_column('DEC')
+
         phot_tab[np.array(ixs_cut2)].write(phot.refcatname,format='ascii.csv',overwrite=True)#indices=ixs_cut2,verbose=1)
 
         phot_tab2 = Table.from_pandas(phot.t)
@@ -1570,6 +1574,9 @@ class st_wcs_align:
                 psf_model=None,
                 ee_radius=70,
                 use_sextractor=False,
+                sexpath='sex',
+                sexworkdir=None,
+                remove_nans=True,
                 **kwargs):
         
         for k in kwargs.keys():
@@ -1610,7 +1617,10 @@ class st_wcs_align:
                                                                   psf_model=psf_model,
                                                                   photometry_method=photometry_method,
                                                                   find_stars_threshold = find_stars_threshold,
-                                                                  use_sextractor=use_sextractor)
+                                                                  use_sextractor=use_sextractor,
+                                                                  sexpath=sexpath,sexworkdir=sexworkdir,
+                                                                  remove_nans=remove_nans)
+
         if (photfilename!=photfilename_4check):
             raise RuntimeError(f'BUG!!! {photfilename}!={photfilename_4check}')
             
