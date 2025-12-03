@@ -1577,6 +1577,7 @@ class st_wcs_align:
                 sexpath='sex',
                 sexworkdir=None,
                 remove_nans=True,
+                bool_mask=None,
                 **kwargs):
         
         for k in kwargs.keys():
@@ -1619,7 +1620,7 @@ class st_wcs_align:
                                                                   find_stars_threshold = find_stars_threshold,
                                                                   use_sextractor=use_sextractor,
                                                                   sexpath=sexpath,sexworkdir=sexworkdir,
-                                                                  remove_nans=remove_nans)
+                                                                  remove_nans=remove_nans,bool_mask=bool_mask)
 
         if (photfilename!=photfilename_4check):
             raise RuntimeError(f'BUG!!! {photfilename}!={photfilename_4check}')

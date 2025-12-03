@@ -1661,7 +1661,7 @@ class jwst_photclass(pdastrostatsclass):
                  yshift=0.0, # added to the y coordinate before calculating ra,dec. This can be used to correct for large shifts before matching!
                  ee_radius=70,
                  use_sextractor=False,
-                 sexpath='sex',sexworkdir=None,remove_nans=True):
+                 sexpath='sex',sexworkdir=None,remove_nans=True,bool_mask=None):
 
         if self.verbose:
             print(f'\n### Doing photometry on {imagename}')
