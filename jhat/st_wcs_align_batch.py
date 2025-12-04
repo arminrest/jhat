@@ -34,21 +34,15 @@ class align_wcs_batch(pdastroclass):
 
         self.wcs_align = st_wcs_align()
 
-    def define_options(self,parser=None,usage=None,conflict_handler='resolve'):
+    def define_options_batch_only(self,parser=None,usage=None,conflict_handler='resolve'):
         if parser is None:
             parser = argparse.ArgumentParser(usage=usage,conflict_handler=conflict_handler)
-        
+
         # default directory for input images
         if 'JWST_INPUT_IMAGEDIR' in os.environ:
             inputdir = os.environ['JWST_INPUT_IMAGEDIR']
         else:
             inputdir = None
-
-        # default directory for output
-        if 'JWST_OUTPUT_ROOTDIR' in os.environ:
-            outrootdir = os.environ['JWST_OUTPUT_ROOTDIR']
-        else:
-            outrootdir = None
 
 
         parser.add_argument('--input_dir', default=inputdir, help='Directory in which the input images are located. If $JWST_INPUT_IMAGEDIR is defined, then this dir is taken as default (default=%(default)s)')
@@ -60,8 +54,8 @@ class align_wcs_batch(pdastroclass):
         #parser.add_argument('--overwrite', default=False, action='store_true', help='overwrite files if they exist.')
 
         parser.add_argument('--skip_if_exists', default=False, action='store_true', help='Skip doing the analysis of a given input image if the jhat file already exists, assuming the full analysis has been already done  (default=%(default)s)')
+        parser.add_argument('--batch', default=False, action='store_true', help='Skip doing the analysis of a given input image if the jhat file already exists, assuming the full analysis has been already done  (default=%(default)s)')
 
-        parser.add_argument('-v','--verbose', default=0, action='count')
 
         parser.add_argument('--detectors', nargs='+', default=None, help='constrain the input file list to these detectors (default=%(default)s)')
         parser.add_argument('--filters', nargs='+', default=None, help='constrain the input file list to these filters (default=%(default)s)')
@@ -70,17 +64,36 @@ class align_wcs_batch(pdastroclass):
 
         parser.add_argument('--distortioncoeffs_dir', default=None, help='Directory in which the distortion coefficients are. If directory is specified, then in this directory matching distortion files of the form <aperture>_<filter>_<pupil>.polycoeff.asdf (e.g., nrcb3_full_f187n_clear.polycoeff.asdf) are looked for and then applied before the WCS alignment.')
         
+        parser.add_argument('--condor', default=False, action='store_true',help='Send the commands condor.')
+        parser.add_argument('--condor_dir', default=None, help='Directory in which the condor log files are put. If None, it is set to outrootdir/condor (default=%(default)s)')
+
         parser.add_argument('-d','--debug', default=False, action='store_true',help='debug mode: alignment is done outside "try" block!')
 
+        return(parser)
+        
+
+    def define_options(self,parser=None,usage=None,conflict_handler='resolve'):
+        if parser is None:
+            parser = argparse.ArgumentParser(usage=usage,conflict_handler=conflict_handler)
+ 
         parser = self.wcs_align.default_options(parser)
+ 
+        parser = self.define_options_batch_only(parser=parser)
 
         return(parser)
 
     def addfilter2outsubdir(self,outsubdir,addfilter2outsubdir,ix,filt=None,pupil=None):
         outsubdir_filter = outsubdir
         if addfilter2outsubdir:
+            if outsubdir_filter is None:
+                outsubdir_filter=''
+            else:
+                outsubdir_filter+='/'
+            print('FFFFF',filt,self.t.loc[ix,"filter"].lower())
+            print('JJJ',self.t.loc[ix])
             if filt is None: filt = self.t.loc[ix,"filter"].lower()
-            outsubdir_filter+=f'/{filt}'
+            print('FFFFF2',filt,self.t.loc[ix,"filter"].lower())
+            outsubdir_filter+=f'{filt}'
             if (pupil is not None) or  (isinstance(pupil,str) and self.t.loc[ix,"pupil"].lower()!='clear'):
                 if pupil is None: pupil = self.t.loc[ix,"pupil"].lower()
                 outsubdir_filter+=f'_{pupil}'
