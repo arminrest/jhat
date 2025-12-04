@@ -752,7 +752,8 @@ class jwst_photclass(pdastrostatsclass):
         
         
 
-    def find_stars(self, threshold=3, var_bkg=False, primaryhdr=None, scihdr=None, centers=None, use_sextractor=False, bool_mask=None):
+    def find_stars(self, threshold=3, var_bkg=False, primaryhdr=None, scihdr=None, centers=None, use_sextractor=False, bool_mask=None,
+                    sexpath=None,sexworkdir=None):
         
         '''
         Parameters
@@ -1706,9 +1707,11 @@ class jwst_photclass(pdastrostatsclass):
                 
                 ref = Table.read(sci_xy_catalog,format='ascii')
                 xycoords=np.atleast_2d([ref['x'],ref['y']]).T
-                self.find_stars(centers=xycoords, threshold = find_stars_threshold,use_sextractor=use_sextractor,bool_mask=bool_mask)
+                self.find_stars(centers=xycoords, threshold = find_stars_threshold,use_sextractor=use_sextractor,bool_mask=bool_mask,
+                                sexpath=sexpath,sexworkdir=sexworkdir)
             else:
-                self.find_stars(threshold = find_stars_threshold,use_sextractor=use_sextractor,bool_mask=bool_mask)
+                self.find_stars(threshold = find_stars_threshold,use_sextractor=use_sextractor,bool_mask=bool_mask,
+                                    sexpath=sexpath,sexworkdir=sexworkdir)
             #aperture phot, saved in self.t
             if photometry_method == 'aperture':
                 self.aperture_phot()
