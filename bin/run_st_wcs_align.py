@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from jhat import st_wcs_align
-
+import os,sys
 
 wcs_align = st_wcs_align()
 parser = wcs_align.define_options()
@@ -16,6 +16,8 @@ wcs_align.rough_cut_px_min = args.rough_cut_px_min
 wcs_align.rough_cut_px_max = args.rough_cut_px_max
 wcs_align.d_rotated_Nsigma = args.d_rotated_Nsigma
 
+print(f'EEEEEEE XXXXXXXXX ', file=sys.stderr)
+#sys.exit(0)
 
 wcs_align.run_all(args.cal_image,
                  telescope = args.telescope,
