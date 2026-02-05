@@ -34,6 +34,9 @@ align_batch = align_wcs_batch()
 parser = align_batch.define_options()
 args = parser.parse_args()
 
+print(f'DDDDD {args.addprogID2outsubdir}')
+#sys.exit(0)
+
 align_batch.verbose=args.verbose
 align_batch.debug=args.debug
 align_batch.replace_sip = args.replace_sip
@@ -66,7 +69,11 @@ if args.distortioncoeffs_dir is not None:
 ixs_exists,ixs_notexists = align_batch.get_output_filenames(ixs=ixs_all,
                                                             outrootdir=args.outrootdir,
                                                             outsubdir=args.outsubdir,
-                                                            addfilter2outsubdir=args.addfilter2outsubdir)    
+                                                            addfilter2outsubdir=args.addfilter2outsubdir,
+                                                            addprogID2outsubdir=args.addprogID2outsubdir,
+                                                            addversion2outsubdir=args.addversion2outsubdir,
+                                                            addrefcat2outsubdir=args.addrefcat2outsubdir,
+                                                            refcatname=args.refcat)    
 
 
 ixs_todo = ixs_notexists[:]
@@ -103,7 +110,7 @@ if args.condor:
     while i<len(sys.argv):
     #for i in range(1,len(sys.argv)):
         #print(f'index:{i} args:{sys.argv[i]}')
-        # we have to remove outsubdir since later on we splice together outsubdir and addfilter2outsubdir
+        # we have to remove outsubdir since later on we splice together outsubdir and addfilter2outsubdir, addprogID2outsubdir, addversion2outsubdir, addrefcat2outsubdir
         if sys.argv[i] in ['--input_dir','--distortioncoeffs_dir','--outsubdir','--condor_dir']:
             i += 2
             continue
@@ -112,7 +119,7 @@ if args.condor:
             while(i<len(sys.argv)-1 and (re.search('^\-',sys.argv[i]) is None)):
                 i += 1
             continue
-        elif sys.argv[i] in ['--skip_if_exists','--addfilter2outsubdir','--condor']:
+        elif sys.argv[i] in ['--skip_if_exists','--addfilter2outsubdir','--addprogID2outsubdir','--addversion2outsubdir','--addrefcat2outsubdir','--condor']:
             i += 1
             continue
         elif re.search('^\-[p]+',sys.argv[i]):
@@ -147,11 +154,20 @@ if args.condor:
         
         
         cmd += ' '.join(stripped_args)
-        # add the joined outsubdir and addfilter2outsubdir
-        outsubdir_filter = align_batch.addfilter2outsubdir(args.outsubdir,args.addfilter2outsubdir,ix)    
-        print(f'{ix}: {outsubdir_filter}')     
-        if (outsubdir_filter is not None) and (outsubdir_filter!=''):
-            cmd+=f' --outsubdir {outsubdir_filter}'
+        # add the joined outsubdir and addfilter2outsubdir, addprogID2outsubdir, addversion2outsubdir, addrefcat2outsubdir
+        #outsubdir_full = align_batch.addversion2outsubdir(args.outsubdir,args.addversion2outsubdir)            
+        #outsubdir_full = align_batch.addprogID2outsubdir(outsubdir_full,args.addprogID2outsubdir,ix)    
+        #outsubdir_full = align_batch.addfilter2outsubdir(outsubdir_full,args.addfilter2outsubdir,ix)  
+
+        outsubdir_full = align_batch.add2outsubdir(args.outsubdir,ix,args.refcat,addfilter2outsubdir=args.addfilter2outsubdir,
+                                                   addprogID2outsubdir=args.addprogID2outsubdir,
+                                                   addversion2outsubdir=args.addversion2outsubdir,
+                                                   addrefcat2outsubdir=args.addrefcat2outsubdir)
+
+        
+        print(f'{ix}: {outsubdir_full}')     
+        if (outsubdir_full is not None) and (outsubdir_full!=''):
+            cmd+=f' --outsubdir {outsubdir_full}'
         print('GGG',cmd)
         cmdlist.append(cmd)
         
@@ -173,6 +189,8 @@ else:
                         outsubdir = args.outsubdir,
                         coron_info_file = args.coron_info_file,
                         addfilter2outsubdir = args.addfilter2outsubdir,
+                        addprogID2outsubdir = args.addprogID2outsubdir,
+                        addversion2outsubdir = args.addversion2outsubdir,
                         telescope = args.telescope,
                         #skip_applydistortions_if_exists=args.skip_applydistortions_if_exists,
                         photometry_method = args.photometry_method,

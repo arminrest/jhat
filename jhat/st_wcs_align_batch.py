@@ -9,6 +9,7 @@ Created on Mon Apr 25 09:39:07 2022
 import argparse,sys,os,re
 from astropy.io import fits
 import glob
+import pandas as pd
 
 from .pdastro import pdastroclass,unique
 from .st_wcs_align import st_wcs_align
@@ -29,6 +30,7 @@ class align_wcs_batch(pdastroclass):
         self.filter_col = 'filter'
         self.pupil_col = 'pupil'
         self.subarray_col = 'subarray'
+        self.progID_col = 'progID'
 
         self.distortionfiles = pdastroclass()        
 
@@ -48,10 +50,14 @@ class align_wcs_batch(pdastroclass):
         parser.add_argument('--input_dir', default=inputdir, help='Directory in which the input images are located. If $JWST_INPUT_IMAGEDIR is defined, then this dir is taken as default (default=%(default)s)')
         parser.add_argument('--input_files', nargs='+', default=['*_cal.fits'], help='list of cal or rate file(pattern)s to which the distortion files are applied to. "input_dir" is used if not None (default=%(default)s)')
 
-        #parser.add_argument('--outrootdir', default=outrootdir, help='output root directory. The output directoy is the output root directory + the outsubdir if not None.  If $JWST_OUTPUT_ROOTDIR is defined, then this dir is taken as default (default=%(default)s)')
-        #parser.add_argument('--outsubdir', default=None, help='outsubdir added to output root directory (default=%(default)s)')
         parser.add_argument('--addfilter2outsubdir', default=False, action='store_true', help='add the filter to the outsubdir')
-        #parser.add_argument('--overwrite', default=False, action='store_true', help='overwrite files if they exist.')
+        parser.add_argument('--addrefcat2outsubdir',  default=False, action='store_true', help='add the refcatname to the outsubdir.')
+        parser.add_argument('--addprogID2outsubdir',  default=False, action='store_true', help='add the progID to the outsubdir.')
+        if 'VERSION' in os.environ:
+            version=os.environ['VERSION']
+        else:
+            version=None
+        parser.add_argument('--addversion2outsubdir',  default=False, action='store_true', help=f'add the version to the outsubdir. The version needs to be saved in the environment variable $VERSION, which is currently set to {version}')
 
         parser.add_argument('--skip_if_exists', default=False, action='store_true', help='Skip doing the analysis of a given input image if the jhat file already exists, assuming the full analysis has been already done  (default=%(default)s)')
         parser.add_argument('--batch', default=False, action='store_true', help='Skip doing the analysis of a given input image if the jhat file already exists, assuming the full analysis has been already done  (default=%(default)s)')
@@ -89,19 +95,68 @@ class align_wcs_batch(pdastroclass):
                 outsubdir_filter=''
             else:
                 outsubdir_filter+='/'
-            print('FFFFF',filt,self.t.loc[ix,"filter"].lower())
-            print('JJJ',self.t.loc[ix])
-            if filt is None: filt = self.t.loc[ix,"filter"].lower()
-            print('FFFFF2',filt,self.t.loc[ix,"filter"].lower())
+            if filt is None: filt = self.t.loc[ix,self.filter_col].lower()
             outsubdir_filter+=f'{filt}'
-            if (pupil is not None) or  (isinstance(pupil,str) and self.t.loc[ix,"pupil"].lower()!='clear'):
-                if pupil is None: pupil = self.t.loc[ix,"pupil"].lower()
+            if (pupil is not None) or  (isinstance(pupil,str) and self.t.loc[ix,self.pupil_col].lower()!='clear'):
+                if pupil is None: pupil = self.t.loc[ix,self.pupil_col].lower()
                 outsubdir_filter+=f'_{pupil}'
         return(outsubdir_filter)
 
+    def addprogID2outsubdir(self,outsubdir,addprogID2outsubdir,ix,progID=None):
+        outsubdir_progID = outsubdir
+        if addprogID2outsubdir:
+            if outsubdir_progID is None:
+                outsubdir_progID=''
+            else:
+                outsubdir_progID+='/'
+            if progID is None: progID = int(self.t.loc[ix,self.progID_col])
+            outsubdir_progID+=f'prog{progID:05d}'
+        return(outsubdir_progID)
+        
+        
+    def addversion2outsubdir(self,outsubdir,addversion2outsubdir):
+        if 'VERSION' in os.environ:
+            version=os.environ['VERSION']
+        else:
+            raise RuntimeError('--addversion2outsubdir, but environment variable VERSION does not exist!')
+        outsubdir_version = outsubdir
+        if outsubdir_version is None:
+            outsubdir_version=''
+        else:
+            outsubdir_version+='/'
+        outsubdir_version+=f'{version}'
+        return(outsubdir_version)
+    
+    def addrefcat2outsubdir(self,outsubdir,addrefcat2outsubdir,refcatname):
+        outsubdir_refcat= outsubdir
+        if addrefcat2outsubdir:
+            if outsubdir_refcat is None:
+                outsubdir_refcat=''
+            else:
+                outsubdir_refcat+='/'
+            if refcatname is None or refcatname=='':
+                raise RuntimeError(f'--addrefcat2outsubdir, but refcatname="{refcatname}" not defined!')
+            if refcatname in ['gaia','lmc_hst','hawki']:
+                outsubdir_refcat+=f'{refcatname}'
+            else:
+                basename = re.sub('\..*','',os.path.basename(refcatname))
+                outsubdir_refcat+=f'{basename}'
+        return(outsubdir_refcat)
+        
+    def add2outsubdir(self,outsubdir,ix,refcatname,addfilter2outsubdir=False,addprogID2outsubdir=False,addversion2outsubdir=False,addrefcat2outsubdir=False,
+                      filt=None,pupil=None,progID=None):
+
+        outsubdir_full = self.addversion2outsubdir(outsubdir,addversion2outsubdir)            
+        outsubdir_full = self.addrefcat2outsubdir(outsubdir_full,addrefcat2outsubdir,refcatname)    
+        outsubdir_full = self.addprogID2outsubdir(outsubdir_full,addprogID2outsubdir,ix,progID=progID)    
+        outsubdir_full = self.addfilter2outsubdir(outsubdir_full,addfilter2outsubdir,ix,filt=filt,pupil=pupil)    
+        return(outsubdir_full)
+        
     
     #def get_output_filenames(self, suffixmapping = {'cal':'tweakregstep','rate':'tweakregstep'},ixs=None):
-    def get_output_filenames(self, outputsuffix = 'jhat',ixs=None,outrootdir=None,outsubdir=None,addfilter2outsubdir=False):
+    def get_output_filenames(self, outputsuffix = 'jhat',ixs=None,outrootdir=None,outsubdir=None,
+                             addfilter2outsubdir=False,addprogID2outsubdir=False,
+                             addversion2outsubdir=False,addrefcat2outsubdir=False,refcatname=None):
         ixs = self.getindices(ixs)
         ixs_exists=[]
         ixs_notexists=[]
@@ -113,10 +168,18 @@ class align_wcs_batch(pdastroclass):
             #(inputname_nosuffix,inputsuffix)=m.groups()
             #inputbasename = os.path.basename(inputname_nosuffix)
             
-            outsubdir_filter = self.addfilter2outsubdir(outsubdir,addfilter2outsubdir,ix)
+            #outsubdir_full = self.addversion2outsubdir(outsubdir,addversion2outsubdir)
+            #outsubdir_full = self.addprogID2outsubdir(outsubdir_full,addprogID2outsubdir,ix)
+            #outsubdir_full = self.addfilter2outsubdir(outsubdir_full,addfilter2outsubdir,ix)
+            
+            outsubdir_full = self.add2outsubdir(outsubdir,ix,refcatname,addfilter2outsubdir=addfilter2outsubdir,
+                                                addprogID2outsubdir=addprogID2outsubdir,
+                                                addversion2outsubdir=addversion2outsubdir,
+                                                addrefcat2outsubdir=addrefcat2outsubdir)
+
             
             outfilebasename = self.wcs_align.set_outbasename(outrootdir=outrootdir,
-                                                         outsubdir=outsubdir_filter,
+                                                         outsubdir=outsubdir_full,
                                                          inputname=self.t.loc[ix,'filename'])
             
             outfilename = f'{outfilebasename}_{outputsuffix}.fits'
@@ -173,6 +236,11 @@ class align_wcs_batch(pdastroclass):
                 self.t.loc[ix,self.aperture_col]=f'{detector}'
             else:
                 raise RuntimeError('Cannot identify the telescope {hdr["TELESCOP"]}! Must be hst or jwst!')
+            if 'PROGRAM' in hdr:
+                self.t.loc[ix,self.progID_col]=int(hdr["PROGRAM"])
+            else:
+                self.t.loc[ix,self.progID_col]=0
+
             self.t.loc[ix,'telescope']=f'{hdr["TELESCOP"].lower()}'
             self.t.loc[ix,'detector']=f'{detector}'
             self.t.loc[ix,'instrument']=f'{hdr["INSTRUME"].lower()}'
@@ -230,6 +298,8 @@ class align_wcs_batch(pdastroclass):
                 ixs_subarrays.extend(self.ix_equal(self.subarray_col,subarray.lower()))
             print(f'### after subarrays cut ({subarrays}): {len(ixs_subarrays)} input files left')
             self.t = self.t.loc[ixs_subarrays]
+            
+        self.t[self.progID_col]=self.t[self.progID_col].astype(int)
             
         if self.verbose>2:
             print('### Input files:')
@@ -295,6 +365,9 @@ class align_wcs_batch(pdastroclass):
                   outsubdir=None,
                   coron_info_file = None,
                   addfilter2outsubdir=False,
+                  addprogID2outsubdir=False,
+                  addversion2outsubdir=False,
+                  addrefcat2outsubdir=False,
                   overwrite = False,
                   skip_if_exists = False,
                   telescope = None,
@@ -357,7 +430,17 @@ class align_wcs_batch(pdastroclass):
             self.wcs_align.rough_cut_px_max = self.rough_cut_px_max
             self.wcs_align.d_rotated_Nsigma = self.d_rotated_Nsigma
 
-            outsubdir_filter = self.addfilter2outsubdir(outsubdir,addfilter2outsubdir,ix)            
+
+
+            #outsubdir_full = self.addversion2outsubdir(outsubdir,addversion2outsubdir)            
+            #outsubdir_full = self.addprogID2outsubdir(outsubdir_full,addprogID2outsubdir,ix)            
+            #outsubdir_full = self.addfilter2outsubdir(outsubdir_full,addfilter2outsubdir,ix)            
+            
+            outsubdir_full = self.add2outsubdir(outsubdir,ix,refcatname,addfilter2outsubdir=addfilter2outsubdir,
+                                                addprogID2outsubdir=addprogID2outsubdir,
+                                                addversion2outsubdir=addversion2outsubdir,
+                                                addrefcat2outsubdir=addrefcat2outsubdir)
+
             
             if telescope is None:
                 if "telescope" in self.t.columns:
@@ -380,7 +463,7 @@ class align_wcs_batch(pdastroclass):
                                        coron_info_file = coron_info_file,
                                        telescope = telescope4image,
                                        outrootdir = outrootdir,
-                                       outsubdir = outsubdir_filter,
+                                       outsubdir = outsubdir_full,
                                        overwrite = overwrite,
                                        skip_if_exists = skip_if_exists,
                                        #skip_applydistortions_if_exists=skip_applydistortions_if_exists,
@@ -424,7 +507,7 @@ class align_wcs_batch(pdastroclass):
                                            coron_info_file = coron_info_file,
                                            telescope = telescope4image,
                                            outrootdir = outrootdir,
-                                           outsubdir = outsubdir_filter,
+                                           outsubdir = outsubdir_full,
                                            overwrite = overwrite,
                                            skip_if_exists = skip_if_exists,
                                            #skip_applydistortions_if_exists=skip_applydistortions_if_exists,

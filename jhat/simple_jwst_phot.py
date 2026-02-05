@@ -41,7 +41,7 @@ from astroquery.mast import Catalogs
 from astropy.time import Time
 import pandas as pd
 
-from astropy.coordinates import SkyCoord
+#from astropy.coordinates import SkyCoord
 
 from astropy.coordinates import SkyCoord, match_coordinates_sky
 
@@ -170,6 +170,45 @@ def get_refcat_file(refcatfilename,racol=None,deccol=None):
         if not (deccol in cat.t.columns):
             raise RuntimeError(f'Cannot find deccol {deccol} in columns {cat.t.columns}')
     return(cat.t)
+
+def get_hawki_cat_from_fits(fitsfilename,ra0,dec0,radius_deg,radius_factor=1.1,
+                  columns=['ID','ra','dec','ra_error_mas','dec_error_mas','f150w','f356w','f200w','f150w_f356w','q_Jmag','gdr2_source_id','sep_arcmin']):
+    from astropy.table import Table
+    cat = Table.read(fitsfilename)
+
+    #cat = hawki.hawki_catalog()
+    cat.rename_column('ra_deg', 'ra')
+    cat.rename_column('dec_deg', 'dec')
+    cat.rename_column('j_2mass_extrapolated', 'j_magnitude')
+    cat.rename_column('nircam_F150W_magnitude', 'f150w')
+    cat.rename_column('nircam_F356W_magnitude', 'f356w')
+    cat.rename_column('nircam_F200W_magnitude', 'f200w')
+    #print(cat.columns)
+
+    pos0 = SkyCoord(ra=ra0, dec=dec0, unit=(u.deg,u.deg), frame='icrs')
+    pos1 = SkyCoord(ra=cat['ra'], dec=cat['dec'], unit=(u.deg,u.deg), frame='icrs')
+    sep = pos0.separation(pos1)
+    cat['sep_deg'] = sep
+    cat['sep_arcmin'] = sep/60.0
+    cat['f150w_f356w'] = cat['f150w'] - cat['f356w']
+
+    df = cat.to_pandas()
+    del cat
+    # only keep the values within the radius
+    ixs = df.index.values
+    Ntot=len(ixs)
+    (keep,) = np.where(df.loc[ixs,'sep_deg'].le(radius_deg*radius_factor))
+    ixs = ixs[keep]
+    
+    print(f'Keeping {len(ixs)} out of {Ntot} of hawkI sources: all positions within {radius_deg*radius_factor:.4f} deg of RA/Dec=({ra0},{dec0})')
+    df = df.loc[ixs]
+     
+    #print('bbb0',columns)
+    if columns is not None:
+        df = df[columns]
+
+        
+    return(df,'ra','dec')
 
 def get_hawki_cat(ra0,dec0,radius_deg,radius_factor=1.1,
                   columns=['ID','ra','dec','ra_error_mas','dec_error_mas','J2mag','K2mag','J2_K2','q_Jmag','gdr2_source_id','sep_arcmin']):
@@ -1291,7 +1330,7 @@ class jwst_photclass(pdastrostatsclass):
             self.refcat.mainfilter = 'j'
             self.refcat.mainfilter_err = None
             self.refcat.maincolor = 'j_k'
-        elif os.path.basename(refcatname)=='hawki':
+        elif refcatname.lower()=='hawki':
             self.refcat.racol = 'ra'
             self.refcat.deccol = 'dec'
             self.refcat.name = refcatname
@@ -1300,6 +1339,15 @@ class jwst_photclass(pdastrostatsclass):
             self.refcat.mainfilter = 'J2mag'
             self.refcat.mainfilter_err = None
             self.refcat.maincolor = 'J2_K2'
+        elif os.path.basename(refcatname)=='lmc_calibration_field_hawki_gaiadr2_jwstmags.fits':
+            self.refcat.racol = 'ra'
+            self.refcat.deccol = 'dec'
+            self.refcat.name = refcatname
+            self.refcat.short = 'hawki'
+            self.refcat.cols2copy = ['ID','ra_error_mas','dec_error_mas','f150w','f356w','f200w','f150w_f356w']
+            self.refcat.mainfilter = 'f200w'
+            self.refcat.mainfilter_err = None
+            self.refcat.maincolor = 'f150w_f356w'             
         else:
             self.refcat.racol = refcat_racol
             self.refcat.deccol = refcat_deccol
@@ -1341,7 +1389,6 @@ class jwst_photclass(pdastrostatsclass):
         if refcatname.lower()=='gaia':
             self.refcat.t,self.refcat.racol,self.refcat.deccol = get_GAIA_sources(ra0,dec0,radius_deg,mjd=mjd,pm_median=pm_median)
             self.refcat.t['ID']=self.refcat.getindices()
-
         elif os.path.basename(refcatname)=='LMC_gaia_DR3.nrcposs':
             self.refcat.load_spacesep(refcatname)
             self.refcat.t['ID']=self.refcat.getindices()
@@ -1352,6 +1399,10 @@ class jwst_photclass(pdastrostatsclass):
             if (mjd is not None) or pm_median:
                 raise RuntimeError('Cannot correct for proper motion with catalog {refcatname}')
             self.refcat.t,self.refcat.racol,self.refcat.deccol = get_hawki_cat(ra0,dec0,radius_deg)
+        elif os.path.basename(refcatname)=='lmc_calibration_field_hawki_gaiadr2_jwstmags.fits':
+            if (mjd is not None) or pm_median:
+                raise RuntimeError('Cannot correct for proper motion with catalog {refcatname}')
+            self.refcat.t,self.refcat.racol,self.refcat.deccol = get_hawki_cat_from_fits(refcatname,ra0,dec0,radius_deg)
         else:
             if os.path.isfile(refcatname):
                 if self.verbose:

@@ -861,7 +861,7 @@ class st_wcs_align:
 
         parser.add_argument('--skip_use_dq', default=False, action='store_true', help='skip using the DQ extensions for masking')
 
-        parser.add_argument('--refcat', default='Gaia', help='reference catalog. Can be a filename or Gaia (default=%(default)s)')
+        parser.add_argument('--refcat', default='Gaia', help='reference catalog. Can be a filename, gaia, or hawki (default=%(default)s)')
         parser.add_argument('--refcat_racol', default=None, help='RA column of reference catalog. If None, then automatically determined (default=%(default)s)')
         parser.add_argument('--refcat_deccol', default=None, help='Dec column of reference catalog. If None, then automatically determined (default=%(default)s)')
         parser.add_argument('--refcat_magcol', default=None, help='mag column of reference catalog. If None and not one of the default refcats like gaia, then 3rd column is used (default=%(default)s)')
