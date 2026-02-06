@@ -1343,7 +1343,7 @@ class jwst_photclass(pdastrostatsclass):
             self.refcat.racol = 'ra'
             self.refcat.deccol = 'dec'
             self.refcat.name = refcatname
-            self.refcat.short = 'hawki'
+            self.refcat.short = 'hawki_fits'
             self.refcat.cols2copy = ['ID','ra_error_mas','dec_error_mas','f150w','f356w','f200w','f150w_f356w']
             self.refcat.mainfilter = 'f200w'
             self.refcat.mainfilter_err = None

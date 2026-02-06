@@ -140,7 +140,10 @@ class align_wcs_batch(pdastroclass):
                 outsubdir_refcat+=f'{refcatname}'
             else:
                 basename = re.sub('\..*','',os.path.basename(refcatname))
-                outsubdir_refcat+=f'{basename}'
+                if basename == 'lmc_calibration_field_hawki_gaiadr2_jwstmags':  
+                    outsubdir_refcat+='hawki_gaiadr2'
+                else:
+                    outsubdir_refcat+=f'{basename}'
         return(outsubdir_refcat)
         
     def add2outsubdir(self,outsubdir,ix,refcatname,addfilter2outsubdir=False,addprogID2outsubdir=False,addversion2outsubdir=False,addrefcat2outsubdir=False,
