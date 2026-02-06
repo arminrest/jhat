@@ -159,7 +159,8 @@ if args.condor:
         #outsubdir_full = align_batch.addprogID2outsubdir(outsubdir_full,args.addprogID2outsubdir,ix)    
         #outsubdir_full = align_batch.addfilter2outsubdir(outsubdir_full,args.addfilter2outsubdir,ix)  
 
-        outsubdir_full = align_batch.add2outsubdir(args.outsubdir,ix,args.refcat,addfilter2outsubdir=args.addfilter2outsubdir,
+        outsubdir_full = align_batch.add2outsubdir(args.outsubdir,ix,args.refcat,
+                                                   addfilter2outsubdir=args.addfilter2outsubdir,
                                                    addprogID2outsubdir=args.addprogID2outsubdir,
                                                    addversion2outsubdir=args.addversion2outsubdir,
                                                    addrefcat2outsubdir=args.addrefcat2outsubdir)
@@ -191,6 +192,7 @@ else:
                         addfilter2outsubdir = args.addfilter2outsubdir,
                         addprogID2outsubdir = args.addprogID2outsubdir,
                         addversion2outsubdir = args.addversion2outsubdir,
+                        addrefcat2outsubdir = args.addrefcat2outsubdir,
                         telescope = args.telescope,
                         #skip_applydistortions_if_exists=args.skip_applydistortions_if_exists,
                         photometry_method = args.photometry_method,
