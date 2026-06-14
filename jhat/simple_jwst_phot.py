@@ -1860,6 +1860,7 @@ class jwst_photclass(pdastrostatsclass):
                                  refcat_magerrcol=refcat_magerrcol,
                                  refcat_colorcol=refcat_colorcol)
                 
+                #print('CCCCC',refmag_lim)
                 # make an initial cut on reference objects
                 ixs_refcat = self.initial_cut_refcat(refmag_lim = refmag_lim,
                                                      refmagerr_lim = refmagerr_lim, # limits on refcat.refcat_magerrcol, the magnitude error of the reference catalog
@@ -1979,30 +1980,33 @@ class jwst_photclass(pdastrostatsclass):
         ixs_use_refcat = copy.deepcopy(ixs_refcat)
         if self.verbose:
             print(f'########### !!!!!!!!!!  INITIAL CUT on reference catalog: starting with {len(ixs_refcat)} objects')
-        if (refmag_lim[0] is not None) or (refmag_lim[1] is not None):
-            if self.verbose:
-                print(f'refmag_lim={refmag_lim} CUT:')
-            if self.refcat.mainfilter is None:
-                raise RuntimeError('Cannot do refmag_lim cut since the mainfilter is not defined!')
-            ixs_use_refcat = self.refcat.ix_inrange(self.refcat.mainfilter,refmag_lim[0],refmag_lim[1],indices=ixs_use_refcat)
-            if self.verbose:
-                print(f'{len(ixs_use_refcat)} left')
-        if (refmagerr_lim[0] is not None) or (refmagerr_lim[1] is not None):
-            if self.verbose:
-                print(f'refmagerr_lim={refmagerr_lim} CUT:')
-            if self.refcat.mainfilter_err is None:
-                raise RuntimeError('Cannot do refmagerr_lim cut since the mainfilter_err is not defined!')
-            ixs_use_refcat = self.refcat.ix_inrange(self.refcat.mainfilter_err,refmagerr_lim[0],refmagerr_lim[1],indices=ixs_use_refcat)
-            if self.verbose:
-                print(f'{len(ixs_use_refcat)} left')
-        if (refcolor_lim[0] is not None) or (refcolor_lim[1] is not None):
-            if self.verbose:
-                print(f'refcolor_lim={refcolor_lim} CUT:')
-            if self.refcat.maincolor is None:
-                raise RuntimeError('Cannot do refcolor_lim cut since the maincolor is not defined!')
-            ixs_use_refcat = self.refcat.ix_inrange(self.refcat.maincolor,refcolor_lim[0],refcolor_lim[1],indices=ixs_use_refcat)
-            if self.verbose:
-                print(f'{len(ixs_use_refcat)} left')
+        if (refmag_lim is not None):
+            if (refmag_lim[0] is not None) or (refmag_lim[1] is not None):
+                if self.verbose:
+                    print(f'refmag_lim={refmag_lim} CUT:')
+                if self.refcat.mainfilter is None:
+                    raise RuntimeError('Cannot do refmag_lim cut since the mainfilter is not defined!')
+                ixs_use_refcat = self.refcat.ix_inrange(self.refcat.mainfilter,refmag_lim[0],refmag_lim[1],indices=ixs_use_refcat)
+                if self.verbose:
+                    print(f'{len(ixs_use_refcat)} left')
+        if (refmagerr_lim is not None):
+            if (refmagerr_lim[0] is not None) or (refmagerr_lim[1] is not None):
+                if self.verbose:
+                    print(f'refmagerr_lim={refmagerr_lim} CUT:')
+                if self.refcat.mainfilter_err is None:
+                    raise RuntimeError('Cannot do refmagerr_lim cut since the mainfilter_err is not defined!')
+                ixs_use_refcat = self.refcat.ix_inrange(self.refcat.mainfilter_err,refmagerr_lim[0],refmagerr_lim[1],indices=ixs_use_refcat)
+                if self.verbose:
+                    print(f'{len(ixs_use_refcat)} left')
+        if (refcolor_lim is not None):
+            if (refcolor_lim[0] is not None) or (refcolor_lim[1] is not None):
+                if self.verbose:
+                    print(f'refcolor_lim={refcolor_lim} CUT:')
+                if self.refcat.maincolor is None:
+                    raise RuntimeError('Cannot do refcolor_lim cut since the maincolor is not defined!')
+                ixs_use_refcat = self.refcat.ix_inrange(self.refcat.maincolor,refcolor_lim[0],refcolor_lim[1],indices=ixs_use_refcat)
+                if self.verbose:
+                    print(f'{len(ixs_use_refcat)} left')
 
         if self.verbose:
             print(f'{len(ixs_use_refcat)} of image photometry objects pass initial cuts #1, {len(ixs_refcat)-len(ixs_use_refcat)} cut')

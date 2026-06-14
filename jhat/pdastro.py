@@ -182,28 +182,28 @@ class pdastroclass:
         return(errorflag,cmphdr)
         
     def load_spacesep(self,filename,test4commentedheader=True,namesMapping=None,roundingMapping=None,
-                      hexcols=None,auto_find_hexcols=True, delim_whitespace=True,
+                      hexcols=None,auto_find_hexcols=True, sep='\s+',
                       na_values=['None','-','--'],verbose=False,**kwargs):
         
         #kwargs['delim_whitespace']=True
 
         #also test for commented header to make it compatible to old format.
         self.load(filename,na_values=na_values,test4commentedheader=test4commentedheader,
-                  namesMapping=namesMapping,roundingMapping=roundingMapping,delim_whitespace=delim_whitespace,
+                  namesMapping=namesMapping,roundingMapping=roundingMapping,sep=sep,
                   hexcols=hexcols,auto_find_hexcols=auto_find_hexcols,verbose=verbose,**kwargs)
 
         return(0)
 
     def load(self,filename,raiseError=True,test4commentedheader=False,namesMapping=None,roundingMapping=None,
-             hexcols=None,auto_find_hexcols=True,verbose=False,delim_whitespace=True,check4csv=True,**kwargs):
+             hexcols=None,auto_find_hexcols=True,verbose=False,sep='\s+',check4csv=True,**kwargs):
         #self.t = ascii.read(filename,format='commented_header',delimiter='\s',fill_values=[('-',0),('--',0)])
 
         try:
             if verbose: print('Loading %s' % filename)
             if check4csv and re.search('csv$',filename):    
-                self.t = pd.read_csv(filename,delim_whitespace=delim_whitespace,comment='#',**kwargs)
+                self.t = pd.read_csv(filename,sep=sep,comment='#',**kwargs)
             else:
-                self.t = pd.read_table(filename,delim_whitespace=delim_whitespace,**kwargs)
+                self.t = pd.read_table(filename,sep=sep,**kwargs)
             self.filename = filename
         except Exception as e:
             print('ERROR: could not read %s!' % filename)
