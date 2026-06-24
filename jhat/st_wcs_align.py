@@ -1706,8 +1706,6 @@ class st_wcs_align:
                 sexworkdir=None,
                 **kwargs):
         
-        print(f'HELLO WORLD YEEEEEEESSSSSSSSS', file=sys.stderr)
-
         for k in kwargs.keys():
             if k in self.__dict__.keys():
                 self.__dict__[k] = kwargs[k]
